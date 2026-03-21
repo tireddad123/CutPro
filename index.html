@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Lucida+Grande:wght@400;700&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1308,11 +1309,11 @@
 
   /* ── WELCOME OVERLAY ──────────────────────────────────────────────── */
   #welcome-overlay {
-    position: fixed; inset: 0; z-index: 400;
-    background: rgba(0,0,0,0.82);
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.88);
     display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(3px);
-    animation: fadeInOverlay 0.4s ease;
+    backdrop-filter: blur(4px);
+    animation: fadeInOverlay 0.35s ease;
   }
   @keyframes fadeInOverlay {
     from { opacity: 0; } to { opacity: 1; }
@@ -1327,6 +1328,7 @@
     width: 90%;
     box-shadow: 0 24px 80px rgba(0,0,0,0.7);
     position: relative;
+    pointer-events: auto;
   }
   .welcome-card h1 {
     font-size: 22px; color: #fff; margin-bottom: 4px; font-weight: bold;
@@ -2444,8 +2446,8 @@
         Shortcuts: <b>Space</b> play &nbsp;·&nbsp; <b>B</b> blade &nbsp;·&nbsp; <b>I/O</b> mark in/out &nbsp;·&nbsp; <b>←/→</b> step frames
       </div>
       <div>
-        <button class="welcome-start-btn" id="welcome-start">Start Editing →</button>
-        <span class="welcome-dont-show" id="welcome-dont-show">Don't show again</span>
+        <button class="welcome-start-btn" id="welcome-start" onclick="(function(){var o=document.getElementById('welcome-overlay');if(o){o.style.opacity='0';o.style.transition='opacity 0.3s';setTimeout(function(){o.classList.add('hidden');},300);}})()">Start Editing →</button>
+        <span class="welcome-dont-show" id="welcome-dont-show" onclick="(function(){try{localStorage.setItem('cutpro-welcome-seen','1');}catch(e){}var o=document.getElementById('welcome-overlay');if(o){o.style.opacity='0';o.style.transition='opacity 0.3s';setTimeout(function(){o.classList.add('hidden');},300);}})()">Don't show again</span>
       </div>
     </div>
   </div>
@@ -2926,7 +2928,74 @@
       </div>
 
       <!-- LUT INSPECTOR SECTION -->
-      
+      <div class="inspector-section" id="lut-section">
+        <div class="inspector-section-title">▸ Colour Grade (LUT)</div>
+        <div class="inspector-body">
+          <div class="lut-grid" id="lut-grid">
+            <!-- populated by JS -->
+          </div>
+          <div class="lut-intensity-row">
+            <span class="lut-intensity-label">Intensity</span>
+            <input type="range" class="param-slider" id="lut-intensity" min="0" max="100" value="100" style="flex:1">
+            <span style="font-size:10px;color:var(--text-secondary);width:32px;text-align:right;font-family:'Courier New',monospace" id="lut-intensity-val">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOLUME ENVELOPE INSPECTOR SECTION -->
+      <div class="inspector-section" id="vol-section">
+        <div class="inspector-section-title">▸ Volume Envelope</div>
+        <div class="inspector-body">
+          <div style="font-size:10px;color:var(--text-secondary);margin-bottom:5px;">Drag the yellow line on the clip to set volume keyframes.</div>
+          <div class="param-row">
+            <span class="param-label">Master Vol</span>
+            <input type="range" class="param-slider" id="vol-master" min="0" max="200" value="100">
+            <span class="param-val" id="vol-master-val">100%</span>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:4px;">
+            <button class="tool-btn" id="vol-reset-btn" style="font-size:9px;height:20px;flex:1;">Reset Envelope</button>
+            <button class="tool-btn" id="vol-duck-btn" style="font-size:9px;height:20px;flex:1;">Duck Under Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="inspector-section" id="fade-section">
+        <div class="inspector-section-title">▸ Fade</div>
+        <div class="inspector-body">
+          <div class="param-row">
+            <span class="param-label">Fade In</span>
+            <input type="range" class="param-slider" id="p-fade-in" min="0" max="10" step="0.1" value="0">
+            <span class="param-val" id="pv-fade-in">0.0s</span>
+          </div>
+          <div class="param-row">
+            <span class="param-label">Fade Out</span>
+            <input type="range" class="param-slider" id="p-fade-out" min="0" max="10" step="0.1" value="0">
+            <span class="param-val" id="pv-fade-out">0.0s</span>
+          </div>
+          <div style="display:flex; gap:4px; margin-top:4px;">
+            <button class="tool-btn" id="fade-preset-none"  style="font-size:9px;height:20px;flex:1;">None</button>
+            <button class="tool-btn" id="fade-preset-short" style="font-size:9px;height:20px;flex:1;">0.5s</button>
+            <button class="tool-btn" id="fade-preset-med"   style="font-size:9px;height:20px;flex:1;">1s</button>
+            <button class="tool-btn" id="fade-preset-long"  style="font-size:9px;height:20px;flex:1;">2s</button>
+          </div>
+          <div style="color:var(--text-secondary);font-size:9px;margin-top:6px;line-height:1.5;">
+            Select a clip on the timeline, then drag the fade handles or use sliders.
+          </div>
+        </div>
+      </div>
+      <div class="inspector-section">
+        <div class="inspector-section-title">▸ Clip Info</div>
+        <div class="inspector-body" id="clip-info">
+          <div style="color:var(--text-secondary); font-size:10px; line-height:1.7;">
+            <div>Name: —</div>
+            <div>Duration: —</div>
+            <div>Resolution: —</div>
+            <div>FPS: —</div>
+            <div>Codec: —</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </div><!-- /workspace -->
 
@@ -7538,6 +7607,27 @@ document.getElementById('vol-duck-btn')?.addEventListener('click', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Reset stale welcome-seen flag (in case of version mismatch)
+// Users who got stuck can reload and it clears automatically
+(function() {
+  try {
+    // If welcome-overlay exists and is not hidden, ensure localStorage matches
+    const wov = document.getElementById('welcome-overlay');
+    if (wov && !wov.classList.contains('hidden')) {
+      // Overlay is showing — good. Make sure buttons work.
+      const btn = document.getElementById('welcome-start');
+      if (btn && !btn._wired) {
+        btn._wired = true;
+        btn.addEventListener('click', function() {
+          wov.style.opacity = '0';
+          wov.style.transition = 'opacity 0.3s';
+          setTimeout(function() { wov.classList.add('hidden'); }, 310);
+        });
+      }
+    }
+  } catch(e) {}
+})();
+
 // INIT
 // ─────────────────────────────────────────────────────────────────────────────
 drawRuler();
@@ -7798,25 +7888,43 @@ document.getElementById('fade-preset-long').addEventListener('click',  () => app
   const startBtn = document.getElementById('welcome-start');
   const dontShow = document.getElementById('welcome-dont-show');
 
+  // Guard: if elements don't exist, bail
+  if (!overlay || !startBtn || !dontShow) return;
+
   function dismissWelcome() {
     overlay.style.opacity = '0';
     overlay.style.transition = 'opacity 0.3s ease';
-    setTimeout(() => overlay.classList.add('hidden'), 300);
+    setTimeout(() => overlay.classList.add('hidden'), 320);
+    try { localStorage.setItem('cutpro-welcome-seen-tmp', '1'); } catch(e) {}
   }
 
-  // Hide if user previously dismissed
-  if (localStorage.getItem('cutpro-welcome-seen')) {
-    overlay.classList.add('hidden');
-  }
+  // Hide only if user explicitly clicked "Don't show again"
+  // Accept any truthy stored value for compatibility across versions
+  try {
+    const seen = localStorage.getItem('cutpro-welcome-seen');
+    if (seen && seen !== '0') overlay.classList.add('hidden');
+  } catch(e) {}
 
-  startBtn.addEventListener('click', dismissWelcome);
-  dontShow.addEventListener('click', () => {
-    localStorage.setItem('cutpro-welcome-seen', '1');
+  // Use onclick (not addEventListener) so it can't be duplicated or blocked
+  startBtn.onclick = function(e) {
+    e.stopPropagation();
     dismissWelcome();
+  };
+
+  dontShow.onclick = function(e) {
+    e.stopPropagation();
+    try { localStorage.setItem('cutpro-welcome-seen', 'permanent'); } catch(e2) {}
+    dismissWelcome();
+  };
+
+  // Click anywhere on the overlay backdrop (not the card) also dismisses
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) dismissWelcome();
   });
 
-  // Also dismiss on ? key to re-show (toggle)
-  document.addEventListener('keydown', (e) => {
+  // ? key toggles overlay
+  document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key === '?' || e.key === '/') {
       if (overlay.classList.contains('hidden')) {
         overlay.classList.remove('hidden');
