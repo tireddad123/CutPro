@@ -2438,6 +2438,13 @@
   .transition-dur-row{display:flex;align-items:center;gap:6px;margin-top:4px}
 
 </style>
+
+<style id="v3-inline-overrides">
+#browser .panel-tabs, #browser .panel-header { position: relative; z-index: 20; }
+#browser .browser-search { position: relative; z-index: 19; }
+#music-library { position:absolute; top:42px; left:0; right:0; bottom:0; inset:auto; z-index:10; }
+</style>
+
 </head>
 <body>
 
@@ -9915,5 +9922,105 @@ on('ai-cancel-btn','click', function(){
 })();
 
 </script>
+
+<script>
+(function(){
+  function on(id, evt, fn){ try{ var el=document.getElementById(id); if(el) el.addEventListener(evt, fn);}catch(e){} }
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+  function ready(fn){ if (window.state && document.getElementById('timeline-tracks')) fn(); else setTimeout(function(){ ready(fn); }, 120); }
+  function closeAICleanup(){ var m=document.getElementById('ai-cleanup-modal'); if(m) m.classList.remove('open'); }
+  function hideOverlays(){ closeAICleanup(); var d=document.getElementById('drag-overlay'); if(d) d.classList.remove('show'); }
+  on('btn-ai-cleanup','click', function(){ var m=document.getElementById('ai-cleanup-modal'); if(m) m.classList.add('open'); });
+  (function(){ var root=document; ['#ai-header-close','.ai-header-close','#ai-cancel-btn','.ai-cancel-btn'].forEach(function(sel){ root.querySelectorAll(sel).forEach(function(btn){ btn.addEventListener('click', closeAICleanup); }); }); var m=document.getElementById('ai-cleanup-modal'); if(m) m.addEventListener('click', function(e){ if(e.target===m) closeAICleanup(); }); document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeAICleanup(); }); })();
+  function activateTab(name){ try{ var tabs=document.querySelectorAll('#browser .panel-tab'); tabs.forEach(function(t){ t.classList.remove('active'); }); var musicPanel=document.getElementById('music-library'); if(name==='music'){ document.getElementById('tab-music')?.classList.add('active'); musicPanel?.classList.add('open'); } else { musicPanel?.classList.remove('open'); document.getElementById('tab-'+name)?.classList.add('active'); } hideOverlays(); }catch(e){} }
+  on('tab-bin','click', function(){ activateTab('bin'); });
+  on('tab-effects','click', function(){ activateTab('effects'); });
+  on('tab-music','click', function(){ activateTab('music'); });
+  ['tab-bin','tab-effects','tab-music'].forEach(function(id){ var el=document.getElementById(id); if(el){ el.addEventListener('mousedown', hideOverlays, true); }});
+  ready(function(){
+    if (typeof state.linkedSelection === 'undefined') state.linkedSelection = true;
+    window.newLinkGroup = window.newLinkGroup || function(){ return 'lg_'+uid(); };
+    window.getLinkedSiblings = window.getLinkedSiblings || function(entry){ if(!entry||!entry.linkGroup) return []; return (state.timeline||[]).filter(function(e){ return e.linkGroup===entry.linkGroup && e.id!==entry.id; }); };
+    on('tl-btn-linked','click', function(){ state.linkedSelection = !state.linkedSelection; var btn=document.getElementById('tl-btn-linked'); if(btn) btn.classList.toggle('active', state.linkedSelection); });
+    if (typeof window.addToTimeline === 'function'){
+      const _addToTimeline = window.addToTimeline;
+      window.addToTimeline = function(clipId, trackId){
+        try{
+          const clip = (state.clips||[]).find(function(c){ return c.id===clipId; });
+          if (!clip) return _addToTimeline(clipId, trackId);
+          if (clip.type !== 'video') return _addToTimeline(clipId, trackId);
+          const nextStart = function(tId){ const ex=(state.timeline||[]).filter(function(t){ return t.track===tId; }); return ex.length? Math.max.apply(null, ex.map(function(t){ return t.start+t.duration; })) : 0; };
+          const startV = nextStart('v1'); const dur = clip.duration || 10; const group = newLinkGroup();
+          const mk = function(track, role){ return { id: uid(), clipId: clipId, track: track, start: startV, duration: dur, inPoint: 0, outPoint: dur, fadeIn: 0, fadeOut: 0, role: role, linkGroup: group }; };
+          state.timeline.push(mk('v1','video'), mk('a1','audio'));
+          state.seqDuration = Math.max(state.seqDuration||0, startV+dur+1);
+          if (typeof renderTimeline==='function') renderTimeline(); if (typeof setStatus==='function') setStatus('Added linked A/V');
+        }catch(e){ _addToTimeline(clipId, trackId); }
+      }
+    }
+    if (typeof window.makeDraggable === 'function' && typeof window.makeResizable === 'function'){
+      const _makeResizable = window.makeResizable;
+      window.makeDraggable = function(el, entry){
+        el.addEventListener('mousedown', function(e){
+          if (e.target.classList.contains('clip-handle')) return;
+          if (state.currentTool==='blade'){ if (typeof bladeClip==='function') bladeClip(entry,e); return; }
+          e.preventDefault();
+          const linked = state.linkedSelection ? getLinkedSiblings(entry) : [];
+          const startX = e.clientX; const primaryStart = entry.start; const sibStarts = linked.map(function(x){ return x.start; });
+          function onMove(e2){ const dx = e2.clientX - startX; const rawStart = Math.max(0, primaryStart + pxToSec(dx)); const snapped = typeof snapTime==='function' ? snapTime(rawStart, entry.id) : {time:rawStart}; entry.start = snapped.time; el.style.left = secToPx(entry.start)+'px'; const dt = entry.start - primaryStart; linked.forEach(function(x,i){ x.start = Math.max(0, sibStarts[i]+dt); }); if (typeof renderTimeline==='function') renderTimeline(); }
+          function onUp(){ document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); if (typeof renderTimeline==='function') renderTimeline(); }
+          document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
+        });
+      };
+      window.makeResizable = function(el, entry){
+        _makeResizable(el, entry);
+        var leftH = el.querySelector('.clip-handle.left'); var rightH = el.querySelector('.clip-handle.right');
+        if (rightH){ rightH.addEventListener('mousedown', function(e){ e.preventDefault(); e.stopPropagation(); const linked = state.linkedSelection ? getLinkedSiblings(entry) : []; const startX = e.clientX; const startDur = entry.duration; const sDur = linked.map(function(x){ return x.duration; }); function onMove(e2){ const dx=e2.clientX-startX; const rawEnd=entry.start+Math.max(1,startDur+pxToSec(dx)); const snapped= typeof snapTime==='function'? snapTime(rawEnd, entry.id):{time:rawEnd}; entry.duration = Math.max(1, snapped.time - entry.start); el.style.width = secToPx(entry.duration)+'px'; const dd = entry.duration - startDur; linked.forEach(function(x,i){ x.duration = Math.max(1, sDur[i]+dd); }); if (typeof renderTimeline==='function') renderTimeline(); } function onUp(){ document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); if (typeof renderTimeline==='function') renderTimeline(); } document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); }); }
+        if (leftH){ leftH.addEventListener('mousedown', function(e){ e.preventDefault(); e.stopPropagation(); const linked = state.linkedSelection ? getLinkedSiblings(entry) : []; const startX=e.clientX; const startStart=entry.start; const startDur=entry.duration; const sStart=linked.map(function(x){ return x.start; }); const sDur=linked.map(function(x){ return x.duration; }); function onMove(e2){ const dx=e2.clientX-startX; const newStart=Math.max(0,startStart+pxToSec(dx)); const delta=newStart-startStart; entry.start=newStart; entry.duration=Math.max(1,startDur-delta); el.style.left=secToPx(entry.start)+'px'; el.style.width=secToPx(entry.duration)+'px'; linked.forEach(function(x,i){ x.start=Math.max(0,sStart[i]+delta); x.duration=Math.max(1,sDur[i]-delta); }); if (typeof renderTimeline==='function') renderTimeline(); } function onUp(){ document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); if (typeof renderTimeline==='function') renderTimeline(); } document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); }); }
+      };
+    }
+    document.addEventListener('keydown', function(e){ if (e.target && /(INPUT|TEXTAREA)/.test(e.target.tagName)) return; if (e.key==='u'||e.key==='U'){ var entry=(state.timeline||[]).find(function(t){ return t.id===state.selectedTimelineId; }); if(entry&&entry.linkGroup){ var g=entry.linkGroup; (state.timeline||[]).filter(function(t){ return t.linkGroup===g; }).forEach(function(t){ t.linkGroup=null; }); if (typeof renderTimeline==='function') renderTimeline(); }} else if (e.key==='l'||e.key==='L'){ var sel=(state.timeline||[]).filter(function(t){ return t.id===state.selectedTimelineId || t._uiSelected; }); if(sel.length===2){ var group='lg_'+uid(); sel.forEach(function(t){ t.linkGroup=group; }); state.linkedSelection=true; document.getElementById('tl-btn-linked')?.classList.add('active'); if (typeof renderTimeline==='function') renderTimeline(); } } });
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  function safe(fn){ try{ return fn&&fn(); }catch(e){} }
+  function activateTab(name){
+    try{
+      document.querySelectorAll('#browser .panel-tab').forEach(t=>t.classList.remove('active'));
+      const ml=document.getElementById('music-library');
+      if(name==='music'){ document.getElementById('tab-music')?.classList.add('active'); ml?.classList.add('open'); }
+      else { ml?.classList.remove('open'); document.getElementById('tab-'+name)?.classList.add('active'); }
+      const o=document.getElementById('drag-overlay'); o&&o.classList.remove('show');
+    }catch(e){}
+  }
+  const tb=document.getElementById('tab-bin');
+  const te=document.getElementById('tab-effects');
+  const tm=document.getElementById('tab-music');
+  if (tb) tb.addEventListener('click', function(e){ e.stopImmediatePropagation(); activateTab('bin'); }, true);
+  if (te) te.addEventListener('click', function(e){ e.stopImmediatePropagation(); activateTab('effects'); }, true);
+  if (tm) tm.addEventListener('click', function(e){
+    e.stopImmediatePropagation(); activateTab('music');
+    setTimeout(()=>{ safe(()=>window.renderMusicLibrary && renderMusicLibrary()); }, 0);
+    safe(()=> window.refreshCachedAudioUrls && refreshCachedAudioUrls().then(()=>{ safe(()=>window.updateCacheSizeDisplay && updateCacheSizeDisplay()); }).catch(()=>{}));
+  }, true);
+
+  const addBtn=document.getElementById('music-add-to-bin-btn');
+  if (addBtn) addBtn.addEventListener('click', function(){
+    try{
+      const lib = (typeof getFullLibrary==='function')? getFullLibrary(): (window.MUSIC_LIBRARY||[]);
+      let id = (window.musicState&&musicState.selectedTrackId) || (window.musicState&&musicState.previewTrack&&musicState.previewTrack.id);
+      if (!id){ const first = document.querySelector('#music-list .music-item'); if (first) id = first.dataset.id; }
+      const track = lib.find(t=> t.id===id);
+      if (track && typeof addMusicToBin==='function') { addMusicToBin(track); }
+      else { (window.setStatus||console.log)('Select a track first'); }
+    }catch(e){}
+  }, true);
+})();
+</script>
+
 </body>
 </html>
