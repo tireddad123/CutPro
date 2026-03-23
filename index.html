@@ -3146,7 +3146,7 @@
   <!-- STATUS BAR -->
   <div id="statusbar">
     <div class="status-seg"><div class="status-dot"></div><span>Ready</span></div>
-    <div class="status-seg" id="status-msg">Drop a clip to begin, or press ? for help</div>
+    <div class="status-seg" id="status-msg" aria-live=\"polite\">Drop a clip to begin, or press ? for help</div>
     <div class="status-seg" style="gap:3px;">
       <span style="color:var(--text-secondary)">Snap</span>
       <div id="snap-status-dot"></div>
@@ -3213,6 +3213,12 @@ const TRACK_ORDER = ['v2', 'v1', 'a1'];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
+// Safe HTML escape for user-visible strings
+function esc(s){
+  s = (s===undefined||s===null) ? '' : String(s);
+  return s.replace(/[&<>\"'`]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;','`':'&#96;'}[m]));
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 function on(id, evt, fn) { try { var el = document.getElementById(id); if (el) el.addEventListener(evt, fn); } catch(e) {} }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3319,7 +3325,7 @@ var renderBin = function() {
     item.innerHTML = `
       <div class="bin-thumb">${clip.type === 'audio' ? '🎵' : '🎬'}</div>
       <div class="bin-info">
-        <div class="bin-name" title="${clip.name}">${clip.name}</div>
+        <div class="bin-name" title="${esc(clip.name)}">${esc(clip.name)}</div>
         <div class="bin-meta">${formatTC(clip.duration)} · ${clip.type}${bpmBadge}${beatBadge}${analysingBadge}</div>
       </div>`;
     item.addEventListener('click', () => selectBinClip(clip.id));
@@ -3342,7 +3348,7 @@ function updateClipInfo(id) {
   const snapReady = clip.bpm         ? `<div style="color:#4a8a2a;margin-top:4px;">✓ Beat-snap ready</div>` : '';
   document.getElementById('clip-info').innerHTML = `
     <div style="color:var(--text-secondary); font-size:10px; line-height:1.9;">
-      <div><span style="color:var(--text-label)">Name:</span> ${clip.name}</div>
+      <div><span style="color:var(--text-label)">Name:</span> ${esc(clip.name)}</div>
       <div><span style="color:var(--text-label)">Duration:</span> ${formatTC(clip.duration)}</div>
       <div><span style="color:var(--text-label)">Type:</span> ${clip.type}</div>
       ${bpmInfo}${beatInfo}${snapReady}
@@ -3429,7 +3435,7 @@ var addToTimeline = function(clipId, trackId) {
   }
 
   renderTimeline();
-  setStatus(`Added "${clip.name}" to ${trackId}`);
+  setStatus(`Added "${esc(clip.name)}" to ${trackId}`);
 }
 
 var renderTimeline = function() {
@@ -3458,7 +3464,7 @@ var renderTimeline = function() {
         ${entry.fadeOut > 0 ? `<div class="fade-out-overlay" style="width:${fadeOutW}px"></div><span class="fade-triangle" style="right:${Math.max(2,fadeOutW-12)}px">◀</span>` : ''}
         <div class="fade-handle fade-in-handle"  style="left:${Math.max(6, fadeInW - 5)}px"  title="Drag to set Fade In"></div>
         <div class="fade-handle fade-out-handle" style="right:${Math.max(6, fadeOutW - 5)}px" title="Drag to set Fade Out"></div>
-        <span style="position:relative;z-index:1">${clip.name}</span>
+        <span style="position:relative;z-index:1">${esc(clip.name)}</span>
         ${(entry.fadeIn > 0 || entry.fadeOut > 0) ? `<span class="fade-badge">${entry.fadeIn > 0 ? 'F▶' : ''}${entry.fadeIn > 0 && entry.fadeOut > 0 ? ' ' : ''}${entry.fadeOut > 0 ? '◀F' : ''}</span>` : ''}
         <div class="clip-handle right"></div>`;
       // draw waveform if available
@@ -4975,8 +4981,8 @@ function renderMusicLibrary() {
         ${isPlaying ? '⏸' : '▶'}
       </button>
       <div class="music-info">
-        <div class="music-title">${track.title}</div>
-        <div class="music-artist">${track.artist}</div>
+        <div class="music-title">${esc(track.title)}</div>
+        <div class="music-artist">${esc(track.artist)}</div>
         <div class="music-tags">${tagsHtml}<span class="music-tag bpm-tag">${track.bpm} BPM</span></div>
       </div>
       <div class="music-dur">${track.dur}</div>
@@ -4997,7 +5003,7 @@ function renderMusicLibrary() {
     // Select
     item.addEventListener('click', () => {
       musicState.selectedTrackId = track.id;
-      document.getElementById('music-preview-title').textContent = `${track.title} — ${track.artist} · ${track.license}`;
+      document.getElementById('music-preview-title').textContent = `${esc(track.title)} — ${esc(track.artist)} · ${esc(track.license)}`;
       renderMusicLibrary();
     });
 
@@ -5034,7 +5040,7 @@ function toggleMusicPreview(track) {
       renderMusicLibrary();
     });
     musicState.previewAudio.addEventListener('error', () => {
-      setStatus(`⚠ Could not load "${track.title}" — check your connection`);
+      setStatus(`⚠ Could not load "${esc(track.title)}" — check your connection`);
       musicState.previewTrack = null;
       renderMusicLibrary();
     });
@@ -5047,7 +5053,7 @@ function toggleMusicPreview(track) {
   });
 
   document.getElementById('music-prev-play').textContent = '⏸';
-  document.getElementById('music-preview-title').textContent = `▶ ${track.title} — ${track.artist} · ${track.license}`;
+  document.getElementById('music-preview-title').textContent = `▶ ${esc(track.title)} — ${esc(track.artist)} · ${esc(track.license)}`;
   renderMusicLibrary();
 }
 
@@ -5125,8 +5131,8 @@ function getFullLibrary() {
       item.innerHTML = `
         <button class="music-play-btn${isPlaying ? ' playing' : ''}" data-id="${track.id}">${isPlaying ? '⏸' : '▶'}</button>
         <div class="music-info">
-          <div class="music-title">${track.title}${customBadge}${isCached ? '<span style="color:#3aaa50;font-size:8px;margin-left:4px;">●offline</span>' : ''}</div>
-          <div class="music-artist">${track.artist}</div>
+          <div class="music-title">${esc(track.title)}${customBadge}${isCached ? '<span style="color:#3aaa50;font-size:8px;margin-left:4px;">●offline</span>' : ''}</div>
+          <div class="music-artist">${esc(track.artist)}</div>
           <div class="music-tags">${tagsHtml}<span class="music-tag bpm-tag">${track.bpm} BPM</span></div>
         </div>
         <div class="music-dur">${track.dur || '—'}</div>
@@ -5171,7 +5177,7 @@ function getFullLibrary() {
       });
       item.addEventListener('click', () => {
         musicState.selectedTrackId = track.id;
-        document.getElementById('music-preview-title').textContent = `${track.title} — ${track.artist} · ${track.license || 'Custom'}`;
+        document.getElementById('music-preview-title').textContent = `${esc(track.title)} — ${esc(track.artist)} · ${track.license || 'Custom'}`;
         renderMusicLibrary();
       });
       list.appendChild(item);
@@ -5345,11 +5351,11 @@ document.getElementById('music-clear-cache-btn')?.addEventListener('click', asyn
 var addMusicToBin = async function(track) {
   // Check if already in bin
   if (state.clips.find(c => c.id === 'music_' + track.id)) {
-    setStatus(`"${track.title}" is already in your bin`);
+    setStatus(`"${esc(track.title)}" is already in your bin`);
     return;
   }
 
-  setStatus(`Loading "${track.title}"…`);
+  setStatus(`Loading "${esc(track.title)}"…`);
 
   // If we have preview audio buffered, use it
   if (musicState.previewTrack?.id === track.id && musicState.previewAudio?.src) {
@@ -5400,7 +5406,7 @@ function createMusicClip(track, url) {
   // Switch to bin tab to show it
   document.getElementById('tab-bin').click();
 
-  setStatus(`✓ "${track.title}" added to bin · ${track.license}`);
+  setStatus(`✓ "${esc(track.title)}" added to bin · ${esc(track.license)}`);
 
   // Kick off beat analysis using the URL
   analyzeFromUrl(clip, url);
@@ -5458,7 +5464,7 @@ async function analyzeFromUrl(clip, url) {
     }
     await audioCtx.close();
     renderBin(); renderTimeline();
-    setStatus(`"${clip.name}" — ${beats.length} beats · ${clip.bpm||'?'} BPM`);
+    setStatus(`"${esc(clip.name)}" — ${beats.length} beats · ${clip.bpm||'?'} BPM`);
   } catch(e) { /* silent — beat analysis is best-effort */ }
 }
 
@@ -8648,14 +8654,14 @@ async function refreshCachedAudioUrls() {
 
 // Pin a single track offline
 async function pinTrackOffline(track) {
-  setStatus(`Downloading "${track.title}" for offline use…`);
+  setStatus(`Downloading "${esc(track.title)}" for offline use…`);
   try {
     const resp = await sendSWMessage('CACHE_AUDIO_URLS', { urls: [track.url] });
     cachedAudioUrls.add(track.url);
     renderMusicLibrary();
-    setStatus(`✓ "${track.title}" available offline`);
+    setStatus(`✓ "${esc(track.title)}" available offline`);
   } catch(e) {
-    setStatus(`⚠ Could not cache "${track.title}": ` + e.message);
+    setStatus(`⚠ Could not cache "${esc(track.title)}": ` + e.message);
   }
 }
 
@@ -8665,7 +8671,7 @@ async function unpinTrackOffline(track) {
     await sendSWMessage('UNCACHE_AUDIO_URLS', { urls: [track.url] });
     cachedAudioUrls.delete(track.url);
     renderMusicLibrary();
-    setStatus(`"${track.title}" removed from offline storage`);
+    setStatus(`"${esc(track.title)}" removed from offline storage`);
   } catch(e) { /* silent */ }
 }
 
@@ -8900,7 +8906,7 @@ async function analyzeBeat(clip) {
   if (!clip.file && !clip.url) return;
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
-  setStatus(`🎵 Analysing "${clip.name}"…`);
+  setStatus(`🎵 Analysing "${esc(clip.name)}"…`);
 
   try {
     // Support both local File objects and blob/library URLs
@@ -8914,7 +8920,7 @@ async function analyzeBeat(clip) {
       audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
     } catch (e) {
       await audioCtx.close();
-      setStatus(`Beat analysis skipped — "${clip.name}" not decodable`);
+      setStatus(`Beat analysis skipped — "${esc(clip.name)}" not decodable`);
       return;
     }
 
@@ -9015,10 +9021,10 @@ async function analyzeBeat(clip) {
 
     const bpmStr   = clip.bpm    ? ` · ${clip.bpm} BPM` : '';
     const beatStr  = clip.beatMarkers ? `${clip.beatMarkers.length} beats` : '—';
-    setStatus(`🎵 "${clip.name}" — ${beatStr}${bpmStr} — ready to snap`);
+    setStatus(`🎵 "${esc(clip.name)}" — ${beatStr}${bpmStr} — ready to snap`);
     if (clip.bpm) showLocalNotification(
       'Beat analysis done',
-      `"${clip.name}" — ${beatStr}${bpmStr}`,
+      `"${esc(clip.name)}" — ${beatStr}${bpmStr}`,
       'cutpro-beat', true  // silent = true (low priority)
     );
 
@@ -9192,7 +9198,7 @@ updateNotificationUI(); // set initial icon state
 <!-- ═══════════════════════════════════════════════════════════════════
      EXPORT MODAL
 ═══════════════════════════════════════════════════════════════════ -->
-<div id="export-modal">
+<div id=\"export-modal\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Export\">
   <div class="export-card">
     <div class="export-header">
       <span style="font-size:18px;">🎬</span>
@@ -9306,7 +9312,7 @@ updateNotificationUI(); // set initial icon state
 <!-- ═══════════════════════════════════════════════════════════════════════
      PROJECT SAVE / LOAD MODAL
 ═══════════════════════════════════════════════════════════════════════ -->
-<div id="project-modal">
+<div id=\"project-modal\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Project Manager\">
   <div class="project-card">
     <div class="project-header">
       <span style="font-size:18px;">📁</span>
@@ -9345,7 +9351,7 @@ updateNotificationUI(); // set initial icon state
 <!-- ═══════════════════════════════════════════════════════════════════════
      AI AUDIO CLEANUP MODAL
 ═══════════════════════════════════════════════════════════════════════ -->
-<div id="ai-cleanup-modal">
+<div id=\"ai-cleanup-modal\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI Audio Cleanup\">
   <div class="ai-card">
     <div class="ai-header">
       <span class="ai-header-icon">✦</span>
@@ -9458,7 +9464,7 @@ updateNotificationUI(); // set initial icon state
 <div id="rubber-band"></div>
 
 <!-- SAVE / LOAD MODAL -->
-<div id="save-load-modal">
+<div id=\"save-load-modal\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Save or Load Project\">
   <div class="sl-card">
     <div class="sl-header">
       <span style="font-size:18px;">💾</span>
@@ -10146,7 +10152,7 @@ on('ai-cancel-btn','click', function(){
         (state.clips||[]).filter(c=>!q || (c.name||'').toLowerCase().includes(q)).forEach(clip=>{
           const item=document.createElement('div'); item.className='bin-item'+(clip.id===state.selectedClipId?' selected':''); item.dataset.id=clip.id; item.draggable=true;
           const bpm=clip.bpm?`<span class="bpm-badge">${clip.bpm} BPM</span>`:''; const beats=(clip.beatMarkers&&clip.beatMarkers.length)?`<span class="beats-badge">♩ ${clip.beatMarkers.length}</span>`:''; const ana=(!clip.waveformData && !clip.bpm)?'<span class="analysing-badge">● analysing</span>':'';
-          item.innerHTML=`<div class="bin-thumb">${clip.type==='audio'?'🎵':'🎬'}</div><div class="bin-info"><div class="bin-name" title="${clip.name}">${clip.name}</div><div class="bin-meta">${window.formatTC?formatTC(clip.duration):''} · ${clip.type}${bpm}${beats}${ana}</div></div>`;
+          item.innerHTML=`<div class="bin-thumb">${clip.type==='audio'?'🎵':'🎬'}</div><div class="bin-info"><div class="bin-name" title="${esc(clip.name)}">${esc(clip.name)}</div><div class="bin-meta">${window.formatTC?formatTC(clip.duration):''} · ${clip.type}${bpm}${beats}${ana}</div></div>`;
           item.addEventListener('click',()=>{ window.selectBinClip&&selectBinClip(clip.id); });
           item.addEventListener('dblclick',()=>{ window.openInViewer&&openInViewer(clip.id); });
           item.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/x-clip-id', clip.id); });
@@ -10164,6 +10170,54 @@ on('ai-cancel-btn','click', function(){
   if (window.state){ let last=(state.clips||[]).length; setInterval(()=>{ const n=(state.clips||[]).length; if(n!==last){ last=n; ensureAllMapped(); try{ window.renderBin&&renderBin(); }catch(_){} console.log('[Watcher] clips:', n); } }, 800); }
   hideOverlays(); ensureAllMapped(); try{ window.renderBin&&renderBin(); }catch(_){}
   console.log('[v3.2.2] overlay guard + fallback renderer active');
+})();
+</script>
+
+
+<script id="safe-a11y-v3.2.4">
+(function(){
+  function labelButtons(){
+    document.querySelectorAll('button').forEach(btn=>{
+      if ((btn.getAttribute('aria-label')||'').trim()) return;
+      const title=(btn.getAttribute('title')||'').trim();
+      const txt=(btn.textContent||'').trim();
+      if (title) btn.setAttribute('aria-label', title);
+      else if (!txt){
+        if (btn.classList.contains('music-add-btn')) btn.setAttribute('aria-label','Add track to Bin');
+        if (btn.classList.contains('music-play-btn')) btn.setAttribute('aria-label', btn.classList.contains('playing') ? 'Pause preview' : 'Play preview');
+        if (btn.id==='btn-play') btn.setAttribute('aria-label','Play/Pause');
+      }
+    });
+  }
+  const ro=new MutationObserver(labelButtons); ro.observe(document.documentElement,{subtree:true,childList:true}); labelButtons();
+
+  const MODALS=['export-modal','ai-cleanup-modal','save-load-modal','project-modal'];
+  const FOCUSABLE='a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])';
+  const lastActive=new Map();
+  function trap(el){
+    const isOpen=el.classList.contains('open');
+    if(isOpen){
+      lastActive.set(el.id, document.activeElement);
+      const focusables=el.querySelectorAll(FOCUSABLE); const first=focusables[0]; const last=focusables[focusables.length-1]; if(first) first.focus();
+      function onKey(e){
+        if(e.key==='Tab'){
+          if(focusables.length===0){ e.preventDefault(); return; }
+          if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+          else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+        } else if(e.key==='Escape'){
+          const closeBtn=el.querySelector('.export-close-btn, .ai-header-close, .sl-close, .project-close');
+          if(closeBtn) closeBtn.click(); else el.classList.remove('open');
+        }
+      }
+      el.__trapHandler=onKey; el.addEventListener('keydown', onKey);
+    } else {
+      if(el.__trapHandler){ el.removeEventListener('keydown', el.__trapHandler); delete el.__trapHandler; }
+      const prev=lastActive.get(el.id); if(prev&&prev.focus) prev.focus();
+    }
+  }
+  const mo=new MutationObserver(muts=>{ muts.forEach(m=>{ if(m.type==='attributes' && m.attributeName==='class' && MODALS.includes(m.target.id)){ trap(m.target); } }); });
+  MODALS.forEach(id=>{ const el=document.getElementById(id); if(el){ if(!el.getAttribute('role')){ el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); }
+    mo.observe(el,{attributes:true}); }});
 })();
 </script>
 
