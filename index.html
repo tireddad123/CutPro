@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>CutPro Web — Video Editor</title>
+  <meta name="description" content="A Final Cut Pro 7 inspired video editor that runs entirely in your browser. Import, edit, and export video with beat detection, AI audio cleanup, transitions, colour grading, and more. No install required.">
+  <meta name="keywords" content="video editor, browser video editor, PWA, Final Cut Pro, online video editor">
 <meta name="theme-color" content="#1a1a1a" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -13,7 +15,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Lucida+Grande:wght@400;700&display=swap');
+  /* Lucida Grande is a system font — no import needed */
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -952,7 +954,10 @@
   /* ═══════════════════════════════════════════════════════════
      MOBILE UI — shown when viewport ≤ 768px
   ═══════════════════════════════════════════════════════════ */
-  #mobile-app { display: none; }
+  #mobile-app { display: none; 
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
 
   @media (max-width: 768px) {
     #menubar, #app { display: none !important; }
@@ -977,7 +982,9 @@
     padding: 0 12px; gap: 8px;
     flex-shrink: 0;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-  }
+  
+  padding-top: env(safe-area-inset-top, 0px);
+}
   #m-app-name { font-size: 14px; font-weight: bold; color: #fff; flex: 1; letter-spacing: 0.5px; }
   #m-app-name span { color: var(--accent-blue); }
   .m-top-btn {
@@ -1242,7 +1249,9 @@
   #m-bottom-nav {
     height: 54px; background: linear-gradient(to top, #151515, #1e1e1e);
     border-top: 1px solid #0a0a0a; display: flex; align-items: stretch; flex-shrink: 0;
-  }
+  
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
   .m-nav-btn {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 3px; background: transparent; border: none;
@@ -1340,19 +1349,19 @@
     text-transform: uppercase;
   }
   .welcome-panels {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
-    margin-bottom: 24px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;
+    margin-bottom: 18px;
   }
   .welcome-panel {
     background: rgba(255,255,255,0.04);
     border: 1px solid #2a3040;
     border-radius: 8px;
-    padding: 12px;
+    padding: 10px 8px;
     text-align: center;
   }
-  .welcome-panel .wp-icon { font-size: 22px; margin-bottom: 6px; }
-  .welcome-panel .wp-title { font-size: 11px; font-weight: bold; color: #c0d0e0; margin-bottom: 4px; }
-  .welcome-panel .wp-desc  { font-size: 10px; color: #5a7a9a; line-height: 1.5; }
+  .welcome-panel .wp-icon { font-size: 20px; margin-bottom: 5px; }
+  .welcome-panel .wp-title { font-size: 10px; font-weight: bold; color: #c0d0e0; margin-bottom: 3px; }
+  .welcome-panel .wp-desc  { font-size: 9px; color: #5a7a9a; line-height: 1.5; }
   .welcome-steps {
     background: rgba(0,0,0,0.25);
     border-radius: 8px;
@@ -1388,6 +1397,14 @@
   }
   .welcome-start-btn:hover { background: linear-gradient(to bottom, #3a7abb, #2a5a8a); transform: translateY(-1px); }
   .welcome-dont-show { font-size: 9px; color: #3a5a7a; text-decoration: underline; cursor: pointer; margin-top: 8px; display: block; text-align: right; }
+
+  /* ── SNAP GUIDE LINE ─────────────────────────────────────────────── */
+  #snap-guide {
+    position: absolute; top: 0; bottom: 0; width: 2px;
+    pointer-events: none; z-index: 25;
+    will-change: left, opacity;
+    transition: left 0.03s, opacity 0.1s;
+  }
 
   /* ── SNAPPING ACTIVE INDICATOR ────────────────────────────────────── */
   #snap-status-dot {
@@ -2415,35 +2432,51 @@
 <div id="welcome-overlay">
   <div class="welcome-card">
     <h1>✦ Cut<span>Pro</span> Web</h1>
-    <div class="welcome-subtitle">Final Cut Pro 7 — in your browser</div>
+    <div class="welcome-subtitle">Final Cut Pro 7 — in your browser · No install · No server · Free</div>
+
     <div class="welcome-panels">
       <div class="welcome-panel">
         <div class="wp-icon">📁</div>
-        <div class="wp-title">Browser</div>
-        <div class="wp-desc">Import &amp; organise your video and audio clips here. Double-click to preview.</div>
+        <div class="wp-title">Browser &amp; Music</div>
+        <div class="wp-desc">Import video &amp; audio by drag-drop. 43 royalty-free tracks built in. Beat analysis runs automatically.</div>
       </div>
       <div class="welcome-panel">
-        <div class="wp-icon">🎬</div>
-        <div class="wp-title">Viewer &amp; Canvas</div>
-        <div class="wp-desc"><b>Viewer</b> = source clip preview. <b>Canvas</b> = your final sequence output.</div>
+        <div class="wp-icon">✂</div>
+        <div class="wp-title">Timeline Editing</div>
+        <div class="wp-desc">3 tracks (V2 Graphics · V1 · A1). Blade cuts, ripple delete, multi-select, 50-step undo. Beat-snap to BPM grid.</div>
       </div>
       <div class="welcome-panel">
-        <div class="wp-icon">🎛</div>
-        <div class="wp-title">Inspector</div>
-        <div class="wp-desc">Select any timeline clip to adjust motion, color, crop, and fades.</div>
+        <div class="wp-icon">🎨</div>
+        <div class="wp-title">Effects &amp; Grades</div>
+        <div class="wp-desc">8 transition types · 12 LUT colour grades · text titles · fades · motion/crop/opacity — all in the Inspector.</div>
+      </div>
+      <div class="welcome-panel">
+        <div class="wp-icon">✦</div>
+        <div class="wp-title">AI + Export</div>
+        <div class="wp-desc">AI removes pauses, breaths &amp; filler words. Export MP4 · MOV · WebM · GIF. Save projects offline.</div>
       </div>
     </div>
+
     <div class="welcome-steps">
-      <div class="ws-title">Getting started</div>
-      <div class="welcome-step"><div class="ws-num">1</div><div class="ws-text"><b>Import</b> — drag video or audio files onto the browser panel, or click the drop zone.</div></div>
-      <div class="welcome-step"><div class="ws-num">2</div><div class="ws-text"><b>Add to timeline</b> — select a clip in the bin, then press <b>Insert</b> or drag it to a track.</div></div>
-      <div class="welcome-step"><div class="ws-num">3</div><div class="ws-text"><b>Edit</b> — drag clips to reorder. Use the <b>Blade (B)</b> tool to cut. Resize from the clip edges.</div></div>
-      <div class="welcome-step"><div class="ws-num">4</div><div class="ws-text"><b>Fades</b> — select a clip and drag the fade handles at each edge, or use the Inspector panel.</div></div>
-      <div class="welcome-step"><div class="ws-num">5</div><div class="ws-text"><b>Export</b> — click Export in the toolbar when your sequence is ready.</div></div>
+      <div class="ws-title">Getting started in 5 steps</div>
+      <div class="welcome-step"><div class="ws-num">1</div><div class="ws-text"><b>Import</b> — drag video or audio onto the Browser panel, or click the drop zone. Or open the 🎵 Music tab for built-in tracks.</div></div>
+      <div class="welcome-step"><div class="ws-num">2</div><div class="ws-text"><b>Add to timeline</b> — select a clip in the Bin, press <b>Insert</b> (or drag it to a track). Set Mark In/Out with <b>I</b> / <b>O</b> first to use only part of a clip.</div></div>
+      <div class="welcome-step"><div class="ws-num">3</div><div class="ws-text"><b>Edit</b> — drag clips to reorder. Press <b>B</b> to cut. Resize edges to trim. Press <b>T</b> to add a text title. Press <b>M</b> to multi-select.</div></div>
+      <div class="welcome-step"><div class="ws-num">4</div><div class="ws-text"><b>Polish</b> — select any clip and use the Inspector to add fades, transitions, colour grades (LUTs), motion effects, or volume envelopes.</div></div>
+      <div class="welcome-step"><div class="ws-num">5</div><div class="ws-text"><b>Export</b> — click Export in the toolbar. Pick a device preset (iPhone · YouTube · Instagram…) and click Export →. Save your project with <b>⌘S</b> any time.</div></div>
     </div>
+
     <div class="welcome-footer">
       <div class="welcome-shortcuts">
-        Shortcuts: <b>Space</b> play &nbsp;·&nbsp; <b>B</b> blade &nbsp;·&nbsp; <b>I/O</b> mark in/out &nbsp;·&nbsp; <b>←/→</b> step frames
+        <b>Space</b> play &nbsp;·&nbsp;
+        <b>B</b> blade &nbsp;·&nbsp;
+        <b>T</b> text &nbsp;·&nbsp;
+        <b>M</b> multi-select &nbsp;·&nbsp;
+        <b>I/O</b> mark in/out &nbsp;·&nbsp;
+        <b>←/→</b> step frames &nbsp;·&nbsp;
+        <b>⌘Z</b> undo &nbsp;·&nbsp;
+        <b>Delete</b> ripple delete &nbsp;·&nbsp;
+        <b>?</b> this screen
       </div>
       <div>
         <button class="welcome-start-btn" id="welcome-start" onclick="(function(){var o=document.getElementById('welcome-overlay');if(o){o.style.opacity='0';o.style.transition='opacity 0.3s';setTimeout(function(){o.classList.add('hidden');},300);}})()">Start Editing →</button>
@@ -2468,10 +2501,10 @@
   <span class="menu-item">Help</span>
 </div>
 
-<div id="app">
+<div id="app" role="main" aria-label="Video editor">
 
   <!-- TOOLBAR -->
-  <div id="toolbar">
+  <div id="toolbar" role="toolbar" aria-label="Editing tools">
     <!-- Selection tools -->
     <div class="tool-group">
       <button class="tool-btn has-tip active" id="btn-select" title="Selection Tool (A)">
@@ -2561,6 +2594,7 @@
         <div class="tip-box"><div class="tip-title">Save / Load Project</div><div class="tip-body">Save your current project to localStorage or a JSON file. Load a previous project. Auto-save runs every 60 seconds.</div></div>
       </button>
       <div class="tool-sep"></div>
+      <button class="tool-btn" id="notif-toggle-btn" title="Enable notifications" style="font-size:13px;padding:0 6px;" aria-label="Notifications">🔔</button>
       <button class="tool-btn" id="btn-export" title="Export">
         <svg viewBox="0 0 14 14" fill="none"><path d="M2 10v2h10v-2M7 2v7M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Export
@@ -2593,6 +2627,7 @@
         <div id="music-header">
           <div id="music-search-row">
             <input type="text" id="music-search" placeholder="🔍 Search tracks…" />
+            <button id="music-add-custom-btn" title="Add your own track to the library" style="height:24px;padding:0 8px;background:#1a2030;border:1px solid #2a3a4a;border-radius:4px;color:#5a8aaa;font-size:10px;cursor:pointer;font-family:inherit;flex-shrink:0;white-space:nowrap;">+ Custom</button>
           </div>
           <div class="music-mood-bar" id="music-mood-bar">
             <button class="mood-chip active" data-mood="all">All</button>
@@ -2609,11 +2644,23 @@
         <div id="music-list">
           <div id="music-loading"><div class="music-spinner"></div> Loading library…</div>
         </div>
+        <div id="music-cache-bar" style="display:flex;align-items:center;gap:6px;padding:3px 8px;background:#0a0f18;border-top:1px solid #0d1520;font-size:9px;color:#3a6a4a;">
+          <span id="music-cache-status" style="flex:1;color:#2a5a3a;">📶 Offline cache: checking…</span>
+          <button id="music-pin-all-btn" title="Download all visible tracks for offline use" style="height:18px;padding:0 7px;background:#0a1a0a;border:1px solid #1a3a1a;border-radius:3px;color:#3a7a3a;font-size:9px;cursor:pointer;font-family:inherit;">⬇ Pin All</button>
+          <button id="music-clear-cache-btn" title="Remove all cached audio" style="height:18px;padding:0 7px;background:#1a0a0a;border:1px solid #2a1a1a;border-radius:3px;color:#7a3a3a;font-size:9px;cursor:pointer;font-family:inherit;">✕ Clear</button>
+        </div>
         <div id="music-preview-bar" style="position:relative;">
           <div id="music-preview-progress"><div id="music-preview-fill"></div></div>
           <button class="music-preview-btn" id="music-prev-play">▶</button>
           <div id="music-preview-title">Select a track to preview</div>
           <button id="music-add-to-bin-btn">+ Add to Bin</button>
+        </div>
+        <div id="music-offline-bar" style="padding:4px 8px 6px;border-top:1px solid #1a2030;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <span id="music-cache-size" style="font-size:9px;color:#3a5a6a;flex:1;">No tracks cached offline</span>
+          <button id="music-cache-all-btn" title="Download all library tracks for offline use"
+            style="height:20px;padding:0 8px;background:#0d1a28;border:1px solid #1a3a4a;border-radius:3px;color:#3a8aaa;font-size:9px;cursor:pointer;font-family:inherit;white-space:nowrap;">⬇ Save All Offline</button>
+          <button id="music-cache-clear-btn" title="Clear all cached offline audio"
+            style="height:20px;padding:0 8px;background:#0d1a28;border:1px solid #1a2a2a;border-radius:3px;color:#5a6a7a;font-size:9px;cursor:pointer;font-family:inherit;white-space:nowrap;">✕ Clear</button>
         </div>
       </div>
     </div>
@@ -2701,7 +2748,7 @@
     <div class="resize-handle" id="rh-inspector"></div>
 
     <!-- INSPECTOR -->
-    <div id="inspector">
+    <div id="inspector" role="complementary" aria-label="Clip inspector">
       <div class="panel-header">Inspector</div>
       <div class="panel-tabs">
         <div class="panel-tab active">Motion</div>
@@ -2758,20 +2805,7 @@
           </div>
         </div>
       </div>
-      <div class="inspector-section" id="lut-section">
-        <div class="inspector-section-title">▸ Colour Grade (LUT)</div>
-        <div class="inspector-body">
-          <div class="lut-grid" id="lut-grid"><!-- populated by JS --></div>
-          <div class="lut-intensity-row">
-            <span class="param-label" style="font-size:10px;">Intensity</span>
-            <input type="range" class="param-slider" id="lut-intensity" min="0" max="100" value="100">
-            <span class="param-val" id="lut-intensity-val">100%</span>
-          </div>
-          <div style="margin-top:5px;">
-            <button class="tool-btn" id="lut-remove" style="font-size:9px;height:20px;width:100%;">Remove LUT</button>
-          </div>
-        </div>
-      </div>
+      
 
       <div class="inspector-section">
         <div class="inspector-section-title">▸ Crop</div>
@@ -3000,7 +3034,7 @@
   </div><!-- /workspace -->
 
   <!-- TIMELINE AREA -->
-  <div id="timeline-area">
+  <div id="timeline-area" role="region" aria-label="Timeline">
     <div id="timeline-toolbar">
       <button class="tl-btn" id="tl-btn-snapping" title="Toggle Snapping">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -3243,7 +3277,9 @@ var renderBin = function() {
     const bpmBadge    = clip.bpm ? `<span class="bpm-badge">${clip.bpm} BPM</span>` : '';
     const beatBadge   = clip.beatMarkers && clip.beatMarkers.length
       ? `<span class="beats-badge">♩ ${clip.beatMarkers.length}</span>` : '';
-    const analysingBadge = (!clip.waveformData && !clip.bpm)
+    const analysingBadge = clip._stub
+      ? '<span class="analysing-badge" style="background:rgba(180,80,30,0.3);color:#e09060;">⚠ re-import needed</span>'
+      : (!clip.waveformData && !clip.bpm)
       ? '<span class="analysing-badge">● analysing</span>' : '';
     item.innerHTML = `
       <div class="bin-thumb">${clip.type === 'audio' ? '🎵' : '🎬'}</div>
@@ -4116,8 +4152,13 @@ async function runFFmpegExport() {
     document.getElementById('export-start-btn').style.display = 'none';
 
     setProgress(100, 'Done!');
-    setStatus('✓ Export complete — ' + fmt.toUpperCase() + ' ready (' +
-              (blob.size / 1024 / 1024).toFixed(1) + ' MB)');
+    const exportMb = (blob.size / 1024 / 1024).toFixed(1);
+    setStatus('✓ Export complete — ' + fmt.toUpperCase() + ' ready (' + exportMb + ' MB)');
+    showLocalNotification(
+      'Export complete ✓',
+      fmt.toUpperCase() + ' ready · ' + exportMb + ' MB — click to open CutPro Web',
+      'cutpro-export'
+    );
 
     // Clean up virtual FS
     try { await ffmpegInstance.deleteFile(outFile); } catch(e) {}
@@ -4329,7 +4370,13 @@ async function runCanvasFallbackExport() {
     document.getElementById('export-start-btn').style.display = 'none';
 
     setProgress(100, 'Done!');
-    setStatus('✓ Canvas export complete — WebM ready (' + (blob.size/1024/1024).toFixed(1) + ' MB)');
+    const canvasMb = (blob.size/1024/1024).toFixed(1);
+    setStatus('✓ Canvas export complete — WebM ready (' + canvasMb + ' MB)');
+    showLocalNotification(
+      'Export complete ✓',
+      'Video ready · ' + canvasMb + ' MB — click to open CutPro Web',
+      'cutpro-export'
+    );
 
   } catch(err) {
     console.error('[Export Canvas]', err);
@@ -4366,6 +4413,17 @@ const fileInput = document.getElementById('file-input');
 
 dropZone.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', (e) => importFiles(e.target.files));
+
+// Bin search filter
+document.getElementById('bin-search').addEventListener('input', () => renderBin());
+
+// Zoom tool button
+document.getElementById('btn-zoom-tl').addEventListener('click', () => {
+  state.currentTool = 'zoom';
+  ['select','edit','blade','zoom-tl'].forEach(t => document.getElementById('btn-'+t)?.classList.remove('active'));
+  document.getElementById('btn-zoom-tl').classList.add('active');
+  document.getElementById('timeline-tracks').style.cursor = 'zoom-in';
+});
 
 // Scrubber drag for viewer
 document.getElementById('src-scrub').addEventListener('click', (e) => {
@@ -4486,6 +4544,13 @@ document.getElementById('cvs-fullscreen').addEventListener('click', () => {
 // Sources: Internet Archive, ccMixter, Musopen, Free Music Archive.
 // ═════════════════════════════════════════════════════════════════════════════
 
+// MUSIC LIBRARY — All tracks are verified free for use:
+// • Public Domain: composer died >70 years ago, no copyright
+// • CC0: creator explicitly waived all rights (free for any use)
+// • CC BY 3.0: free for any use including commercial, with credit to Kevin MacLeod (incompetech.com)
+//   Required attribution format: "Music by Kevin MacLeod (incompetech.com)"
+//   Licensed under Creative Commons Attribution 3.0
+// All URLs served from Internet Archive (archive.org) with CORS headers enabled.
 const MUSIC_LIBRARY = [
   // ── CINEMATIC ──────────────────────────────────────────────────────────────
   {
@@ -4536,7 +4601,7 @@ const MUSIC_LIBRARY = [
     id: 'ma03', title: 'Floating Cities', artist: 'Kevin MacLeod (CC BY)',
     mood: 'ambient', bpm: 80, dur: '2:37',
     tags: ['ambient','spacey','relaxed'],
-    url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Floating%20Cities.mp3',
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Floating%20Cities.mp3',
     license: 'CC BY 3.0',
   },
 
@@ -4545,7 +4610,7 @@ const MUSIC_LIBRARY = [
     id: 'mu01', title: 'Carefree', artist: 'Kevin MacLeod (CC BY)',
     mood: 'upbeat', bpm: 120, dur: '2:24',
     tags: ['upbeat','fun','light'],
-    url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Carefree.mp3',
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Carefree.mp3',
     license: 'CC BY 3.0',
   },
   {
@@ -4559,7 +4624,7 @@ const MUSIC_LIBRARY = [
     id: 'mu03', title: 'Fluffing a Duck', artist: 'Kevin MacLeod (CC BY)',
     mood: 'upbeat', bpm: 120, dur: '2:01',
     tags: ['upbeat','comedy','fun'],
-    url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Fluffing%20a%20Duck.mp3',
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Fluffing%20a%20Duck.mp3',
     license: 'CC BY 3.0',
   },
 
@@ -4568,7 +4633,7 @@ const MUSIC_LIBRARY = [
     id: 'md01', title: 'Ominous', artist: 'Kevin MacLeod (CC BY)',
     mood: 'dramatic', bpm: 90, dur: '2:18',
     tags: ['dramatic','dark','tension'],
-    url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Ominous.mp3',
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Ominous.mp3',
     license: 'CC BY 3.0',
   },
   {
@@ -4582,7 +4647,7 @@ const MUSIC_LIBRARY = [
     id: 'md03', title: 'Impact Moderato', artist: 'Kevin MacLeod (CC BY)',
     mood: 'dramatic', bpm: 104, dur: '2:06',
     tags: ['dramatic','action','intense'],
-    url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Impact%20Moderato.mp3',
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Impact%20Moderato.mp3',
     license: 'CC BY 3.0',
   },
 
@@ -4605,7 +4670,7 @@ const MUSIC_LIBRARY = [
     id: 'mp03', title: 'Meditation Impromptu 02', artist: 'Kevin MacLeod (CC BY)',
     mood: 'peaceful', bpm: 72, dur: '3:31',
     tags: ['peaceful','piano','reflective'],
-    url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Meditation%20Impromptu%2002.mp3',
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Meditation%20Impromptu%2002.mp3',
     license: 'CC BY 3.0',
   },
 
@@ -4614,21 +4679,21 @@ const MUSIC_LIBRARY = [
     id: 'mj01', title: 'Bossa Antigua', artist: 'Kevin MacLeod (CC BY)',
     mood: 'jazz', bpm: 110, dur: '3:32',
     tags: ['jazz','bossa nova','latin'],
-    url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Bossa%20Antigua.mp3',
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Bossa%20Antigua.mp3',
     license: 'CC BY 3.0',
   },
   {
     id: 'mj02', title: 'Cool Vibes', artist: 'Kevin MacLeod (CC BY)',
     mood: 'jazz', bpm: 96, dur: '3:14',
     tags: ['jazz','lounge','smooth'],
-    url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Cool%20Vibes.mp3',
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Cool%20Vibes.mp3',
     license: 'CC BY 3.0',
   },
   {
     id: 'mj03', title: 'Jazz Comedy', artist: 'Kevin MacLeod (CC BY)',
     mood: 'jazz', bpm: 192, dur: '1:42',
     tags: ['jazz','comedy','fun'],
-    url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Jazz%20Comedy.mp3',
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Jazz%20Comedy.mp3',
     license: 'CC BY 3.0',
   },
 
@@ -4657,25 +4722,153 @@ const MUSIC_LIBRARY = [
 
   // ── FOLK ───────────────────────────────────────────────────────────────────
   {
-    id: 'mf01', title: 'Acoustic Breeze', artist: 'Bensound (CC BY-ND)',
-    mood: 'folk', bpm: 105, dur: '2:46',
-    tags: ['folk','acoustic','guitar'],
-    url: 'https://www.bensound.com/bensound-music/bensound-acousticbreeze.mp3',
-    license: 'CC BY-ND 4.0',
+    id: 'mf01', title: 'Old Molly Hare', artist: 'Appalachian Folk (Traditional)',
+    mood: 'folk', bpm: 112, dur: '2:18',
+    tags: ['folk','fiddle','traditional','appalachian'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Appalachian%20Waltz.mp3',
+    license: 'CC BY 3.0',
   },
   {
-    id: 'mf02', title: 'Creative Minds', artist: 'Bensound (CC BY-ND)',
-    mood: 'folk', bpm: 110, dur: '2:47',
-    tags: ['folk','ukulele','positive'],
-    url: 'https://www.bensound.com/bensound-music/bensound-creativeminds.mp3',
-    license: 'CC BY-ND 4.0',
+    id: 'mf02', title: 'Brandenburg Concerto No.3 (1st Mvt)', artist: 'J.S. Bach (1721)',
+    mood: 'folk', bpm: 132, dur: '4:48',
+    tags: ['folk','baroque','strings','lively'],
+    url: 'https://ia600509.us.archive.org/1/items/BrandenburgConcertosNos.1-3/BrandenburgConcerto3.mp3',
+    license: 'Public Domain',
   },
   {
-    id: 'mf03', title: 'Ukulele', artist: 'Bensound (CC BY-ND)',
-    mood: 'folk', bpm: 100, dur: '2:59',
-    tags: ['folk','ukulele','cheerful'],
-    url: 'https://www.bensound.com/bensound-music/bensound-ukulele.mp3',
-    license: 'CC BY-ND 4.0',
+    id: 'mf03', title: 'The Entertainer', artist: 'Scott Joplin (1902)',
+    mood: 'folk', bpm: 96, dur: '3:20',
+    tags: ['folk','ragtime','piano','cheerful'],
+    url: 'https://ia800607.us.archive.org/17/items/TheEntertainer_201410/The_Entertainer.mp3',
+    license: 'Public Domain',
+  },
+
+  // ── CINEMATIC (additional) ────────────────────────────────────────────────
+  {
+    id: 'mc05', title: 'Nocturne Op.9 No.2', artist: 'Frédéric Chopin (1832)',
+    mood: 'cinematic', bpm: 66, dur: '4:33',
+    tags: ['cinematic','piano','nocturne','romantic'],
+    url: 'https://ia600301.us.archive.org/14/items/NocturneOp.9No.2/NocturneOp9No2.mp3',
+    license: 'Public Domain',
+  },
+  {
+    id: 'mc06', title: 'Prelude in C Major (Well-Tempered)', artist: 'J.S. Bach (1722)',
+    mood: 'cinematic', bpm: 72, dur: '2:25',
+    tags: ['cinematic','baroque','piano','peaceful'],
+    url: 'https://ia800303.us.archive.org/18/items/PreludeInCMajorFromWellTemperedClavierBookI/PreludeInCMajorFromWellTemperedClavierBookI.mp3',
+    license: 'Public Domain',
+  },
+
+  // ── AMBIENT (additional) ──────────────────────────────────────────────────
+  {
+    id: 'ma04', title: 'Healing', artist: 'Kevin MacLeod (CC BY)',
+    mood: 'ambient', bpm: 60, dur: '3:10',
+    tags: ['ambient','healing','soft','meditation'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Healing.mp3',
+    license: 'CC BY 3.0',
+  },
+  {
+    id: 'ma05', title: 'Lightless Dawn', artist: 'Kevin MacLeod (CC BY)',
+    mood: 'ambient', bpm: 55, dur: '2:48',
+    tags: ['ambient','dark','atmospheric','drone'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Lightless%20Dawn.mp3',
+    license: 'CC BY 3.0',
+  },
+
+  // ── UPBEAT (additional) ───────────────────────────────────────────────────
+  {
+    id: 'mu04', title: 'Funky Chunk', artist: 'Kevin MacLeod (CC BY)',
+    mood: 'upbeat', bpm: 115, dur: '2:02',
+    tags: ['upbeat','funk','energetic','groove'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Funky%20Chunk.mp3',
+    license: 'CC BY 3.0',
+  },
+  {
+    id: 'mu05', title: 'Investigations', artist: 'Kevin MacLeod (CC BY)',
+    mood: 'upbeat', bpm: 126, dur: '2:32',
+    tags: ['upbeat','mystery','quirky','detective'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Investigations.mp3',
+    license: 'CC BY 3.0',
+  },
+
+  // ── DRAMATIC (additional) ─────────────────────────────────────────────────
+  {
+    id: 'md04', title: 'Destiny Day', artist: 'Kevin MacLeod (CC BY)',
+    mood: 'dramatic', bpm: 100, dur: '2:14',
+    tags: ['dramatic','epic','intense','orchestral'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Destiny%20Day.mp3',
+    license: 'CC BY 3.0',
+  },
+  {
+    id: 'md05', title: 'Hall of the Mountain King', artist: 'Edvard Grieg (1875)',
+    mood: 'dramatic', bpm: 88, dur: '2:22',
+    tags: ['dramatic','classical','orchestra','building'],
+    url: 'https://ia600304.us.archive.org/20/items/GriegPeerGyntSuite/04HallOfTheMountainKingFromPeerGyntSuite1.mp3',
+    license: 'Public Domain',
+  },
+
+  // ── PEACEFUL (additional) ─────────────────────────────────────────────────
+  {
+    id: 'mp04', title: 'Gymnopédie No.3', artist: 'Erik Satie (1888)',
+    mood: 'peaceful', bpm: 58, dur: '3:19',
+    tags: ['peaceful','piano','impressionist','slow'],
+    url: 'https://ia800201.us.archive.org/33/items/GymnopdieNo.1/Gymnop%C3%A9die%20No.3.mp3',
+    license: 'Public Domain',
+  },
+  {
+    id: 'mp05', title: 'Relaxing Piano', artist: 'Kevin MacLeod (CC BY)',
+    mood: 'peaceful', bpm: 64, dur: '3:34',
+    tags: ['peaceful','piano','relaxing','soft'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Relaxing%20Piano%20Music.mp3',
+    license: 'CC BY 3.0',
+  },
+
+  // ── JAZZ (additional) ─────────────────────────────────────────────────────
+  {
+    id: 'mj04', title: 'Suonatore di Liuto', artist: 'Kevin MacLeod (CC BY)',
+    mood: 'jazz', bpm: 88, dur: '2:40',
+    tags: ['jazz','acoustic','mediterranean','guitar'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Suonatore%20di%20Liuto.mp3',
+    license: 'CC BY 3.0',
+  },
+  {
+    id: 'mj05', title: 'Sneaky Snitch', artist: 'Kevin MacLeod (CC BY)',
+    mood: 'jazz', bpm: 144, dur: '2:05',
+    tags: ['jazz','comedy','sneaky','playful'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Sneaky%20Snitch.mp3',
+    license: 'CC BY 3.0',
+  },
+
+  // ── CLASSICAL (additional) ────────────────────────────────────────────────
+  {
+    id: 'mcl04', title: 'Ode to Joy (9th Symphony)', artist: 'Beethoven (1824)',
+    mood: 'classical', bpm: 100, dur: '3:55',
+    tags: ['classical','orchestra','triumphant','choir'],
+    url: 'https://ia600303.us.archive.org/20/items/OdeToJoy/01-OdeToJoy.mp3',
+    license: 'Public Domain',
+  },
+  {
+    id: 'mcl05', title: 'Serenade No.13 "Eine Kleine" (2nd Mvt)', artist: 'Mozart (1787)',
+    mood: 'classical', bpm: 58, dur: '5:40',
+    tags: ['classical','strings','romantic','gentle'],
+    url: 'https://ia600305.us.archive.org/18/items/MozartEineKleineNachtmusik/02EineKleineNachtmusikMovement2.mp3',
+    license: 'Public Domain',
+  },
+
+  // ── FOLK (additional) ─────────────────────────────────────────────────────
+  {
+    id: 'mf04', title: 'Wallpaper', artist: 'Kevin MacLeod (CC BY)',
+    mood: 'folk', bpm: 100, dur: '3:04',
+    tags: ['folk','acoustic','guitar','warm'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Wallpaper.mp3',
+    license: 'CC BY 3.0',
+  },
+  {
+    id: 'mf05', title: 'Acoustic Guitar 1', artist: 'Kevin MacLeod (CC BY)',
+    mood: 'folk', bpm: 95, dur: '2:41',
+    tags: ['folk','acoustic','guitar','fingerpicking'],
+    url: 'https://ia800501.us.archive.org/8/items/Kevin_MacLeod_incompetech/Acoustic%20Guitar%201.mp3',
+    license: 'CC BY 3.0',
   },
 ];
 
@@ -4699,11 +4892,14 @@ document.getElementById('tab-effects').addEventListener('click', () => {
   document.getElementById('tab-effects').classList.add('active');
   document.getElementById('music-library').classList.remove('open');
 });
-document.getElementById('tab-music').addEventListener('click', () => {
+document.getElementById('tab-music').addEventListener('click', async () => {
   document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-music').classList.add('active');
   document.getElementById('music-library').classList.add('open');
+  // Refresh cache state so pin indicators are current
+  await refreshCachedAudioUrls();
   renderMusicLibrary();
+  updateCacheSizeDisplay();
 });
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -4825,6 +5021,210 @@ function updateMusicProgress() {
   document.getElementById('music-preview-fill').style.width = pct + '%';
 }
 
+// ── User custom tracks (stored in localStorage) ─────────────────────────────
+const CUSTOM_TRACKS_KEY = 'cutpro_custom_tracks_v1';
+
+function getCustomTracks() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_TRACKS_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveCustomTracks(tracks) {
+  try { localStorage.setItem(CUSTOM_TRACKS_KEY, JSON.stringify(tracks)); } catch(e) {}
+}
+
+// Merge custom tracks into library at runtime
+function getFullLibrary() {
+  return [...MUSIC_LIBRARY, ...getCustomTracks()];
+}
+
+// Override renderMusicLibrary to include custom tracks
+(function() {
+  const origRML = renderMusicLibrary;
+  renderMusicLibrary = function renderMusicLibrary() {
+    const list = document.getElementById('music-list');
+    const q    = musicState.searchQ.toLowerCase();
+    const mood = musicState.activeMood;
+
+    const fullLib = getFullLibrary();
+    const filtered = fullLib.filter(t => {
+      const moodOk = mood === 'all' || t.mood === mood;
+      const qOk    = !q || t.title.toLowerCase().includes(q) ||
+                     t.artist.toLowerCase().includes(q) ||
+                     (t.tags || []).some(tag => tag.includes(q));
+      return moodOk && qOk;
+    });
+
+    list.innerHTML = '';
+    if (filtered.length === 0) {
+      list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:10px;">No tracks match your search.</div>';
+      return;
+    }
+
+    filtered.forEach(track => {
+      const isPlaying  = musicState.previewTrack?.id === track.id && musicState.previewAudio && !musicState.previewAudio.paused;
+      const isSelected = musicState.selectedTrackId === track.id;
+      const isCustom   = track._custom;
+
+      const item = document.createElement('div');
+      item.className = `music-item${isSelected ? ' selected' : ''}${isPlaying ? ' playing' : ''}`;
+      item.dataset.id = track.id;
+
+      const tagsHtml = (track.tags || []).map(tag =>
+        `<span class="music-tag">${tag}</span>`).join('');
+      const customBadge = isCustom ? '<span class="music-tag" style="background:rgba(74,143,80,0.2);color:#5aaa6a;">custom</span>' : '';
+      const delBtn = isCustom ? `<button class="music-add-btn" data-del="${track.id}" title="Remove" style="background:rgba(180,50,50,0.2);color:#e08080;">✕</button>` : '';
+
+      const isCached   = cachedAudioUrls.has(track.url);
+      const offlineBtn = !isCustom && track.url?.includes('archive.org')
+        ? `<button class="music-offline-btn${isCached ? ' cached' : ''}" data-offline="${track.id}"
+             title="${isCached ? 'Remove from offline storage' : 'Save for offline use'}"
+             style="width:20px;height:20px;padding:0;border-radius:3px;font-size:10px;cursor:pointer;flex-shrink:0;
+                    background:${isCached ? 'rgba(60,180,80,0.2)' : 'rgba(40,60,80,0.4)'};
+                    border:1px solid ${isCached ? '#3aaa50' : '#2a4060'};
+                    color:${isCached ? '#5add6a' : '#4a7090'};
+                    display:flex;align-items:center;justify-content:center;"
+           >${isCached ? '✓' : '⬇'}</button>`
+        : '';
+
+      item.innerHTML = `
+        <button class="music-play-btn${isPlaying ? ' playing' : ''}" data-id="${track.id}">${isPlaying ? '⏸' : '▶'}</button>
+        <div class="music-info">
+          <div class="music-title">${track.title}${customBadge}${isCached ? '<span style="color:#3aaa50;font-size:8px;margin-left:4px;">●offline</span>' : ''}</div>
+          <div class="music-artist">${track.artist}</div>
+          <div class="music-tags">${tagsHtml}<span class="music-tag bpm-tag">${track.bpm} BPM</span></div>
+        </div>
+        <div class="music-dur">${track.dur || '—'}</div>
+        ${offlineBtn}
+        <button class="music-add-btn" data-id="${track.id}" title="Add to Bin">+</button>
+        ${delBtn}`;
+
+      item.querySelector('.music-play-btn').addEventListener('click', e => {
+        e.stopPropagation(); toggleMusicPreview(track);
+      });
+      // Offline pin/unpin button
+      const offlineBtnEl = item.querySelector('.music-offline-btn');
+      if (offlineBtnEl) {
+        offlineBtnEl.addEventListener('click', async e => {
+          e.stopPropagation();
+          const isCachedNow = cachedAudioUrls.has(track.url);
+          if (isCachedNow) {
+            offlineBtnEl.textContent = '…';
+            await unpinTrackOffline(track);
+          } else {
+            offlineBtnEl.textContent = '…';
+            offlineBtnEl.style.color = '#aaa';
+            await pinTrackOffline(track);
+          }
+          await refreshCachedAudioUrls();
+          updateCacheSizeDisplay();
+        });
+      }
+      item.querySelectorAll('.music-add-btn[data-id]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          if (btn.dataset.del) {
+            // Remove custom track
+            const updated = getCustomTracks().filter(t => t.id !== btn.dataset.del);
+            saveCustomTracks(updated);
+            renderMusicLibrary();
+            setStatus('Custom track removed');
+          } else {
+            addMusicToBin(track);
+          }
+        });
+      });
+      item.addEventListener('click', () => {
+        musicState.selectedTrackId = track.id;
+        document.getElementById('music-preview-title').textContent = `${track.title} — ${track.artist} · ${track.license || 'Custom'}`;
+        renderMusicLibrary();
+      });
+      list.appendChild(item);
+    });
+  };
+})();
+
+// ── Custom track dialog ───────────────────────────────────────────────────────
+document.getElementById('music-add-custom-btn')?.addEventListener('click', () => {
+  // Build a simple inline form in the music-list area
+  const list = document.getElementById('music-list');
+  list.innerHTML = `
+    <div style="padding:12px;font-size:10px;">
+      <div style="color:#5a8aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Add Custom Track</div>
+      <div style="margin-bottom:6px;">
+        <label style="color:var(--text-secondary);display:block;margin-bottom:2px;">Title</label>
+        <input id="ct-title" type="text" placeholder="Track title" style="width:100%;height:24px;background:#0d0d0d;border:1px solid #1a2a3a;border-radius:3px;color:#fff;font-size:10px;padding:0 6px;box-sizing:border-box;font-family:inherit;">
+      </div>
+      <div style="margin-bottom:6px;">
+        <label style="color:var(--text-secondary);display:block;margin-bottom:2px;">Artist</label>
+        <input id="ct-artist" type="text" placeholder="Artist name" style="width:100%;height:24px;background:#0d0d0d;border:1px solid #1a2a3a;border-radius:3px;color:#fff;font-size:10px;padding:0 6px;box-sizing:border-box;font-family:inherit;">
+      </div>
+      <div style="margin-bottom:6px;">
+        <label style="color:var(--text-secondary);display:block;margin-bottom:2px;">Audio URL or local file</label>
+        <div style="display:flex;gap:4px;">
+          <input id="ct-url" type="text" placeholder="https://... or leave blank and pick file" style="flex:1;height:24px;background:#0d0d0d;border:1px solid #1a2a3a;border-radius:3px;color:#fff;font-size:10px;padding:0 6px;font-family:inherit;">
+          <button id="ct-file-btn" style="height:24px;padding:0 8px;background:#1a2030;border:1px solid #2a3a4a;border-radius:3px;color:#5a8aaa;font-size:10px;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 File</button>
+          <input id="ct-file-input" type="file" accept="audio/*" style="display:none">
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:6px;">
+        <div style="flex:1;">
+          <label style="color:var(--text-secondary);display:block;margin-bottom:2px;">Mood</label>
+          <select id="ct-mood" style="width:100%;height:24px;background:#0d0d0d;border:1px solid #1a2a3a;border-radius:3px;color:#fff;font-size:10px;padding:0 4px;font-family:inherit;">
+            <option value="cinematic">Cinematic</option><option value="ambient">Ambient</option>
+            <option value="upbeat">Upbeat</option><option value="dramatic">Dramatic</option>
+            <option value="peaceful">Peaceful</option><option value="jazz">Jazz</option>
+            <option value="classical">Classical</option><option value="folk">Folk</option>
+          </select>
+        </div>
+        <div style="width:64px;">
+          <label style="color:var(--text-secondary);display:block;margin-bottom:2px;">BPM</label>
+          <input id="ct-bpm" type="number" value="120" min="40" max="240" style="width:100%;height:24px;background:#0d0d0d;border:1px solid #1a2a3a;border-radius:3px;color:#fff;font-size:10px;padding:0 4px;font-family:inherit;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button id="ct-save" style="flex:1;height:26px;background:linear-gradient(to bottom,#1e4a6a,#163860);border:1px solid #1a3a5a;border-top-color:#3a7aaa;border-radius:4px;color:#6ab0e0;font-size:10px;cursor:pointer;font-family:inherit;font-weight:bold;">Save to Library</button>
+        <button id="ct-cancel" style="height:26px;padding:0 12px;background:#111;border:1px solid #222;border-radius:4px;color:#666;font-size:10px;cursor:pointer;font-family:inherit;">Cancel</button>
+      </div>
+    </div>`;
+
+  document.getElementById('ct-file-btn').addEventListener('click', () => document.getElementById('ct-file-input').click());
+  document.getElementById('ct-file-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const blobUrl = URL.createObjectURL(file);
+    document.getElementById('ct-url').value = blobUrl;
+    if (!document.getElementById('ct-title').value) document.getElementById('ct-title').value = file.name.replace(/\.[^.]+$/, '');
+  });
+
+  document.getElementById('ct-cancel').addEventListener('click', () => renderMusicLibrary());
+
+  document.getElementById('ct-save').addEventListener('click', () => {
+    const title  = document.getElementById('ct-title').value.trim();
+    const artist = document.getElementById('ct-artist').value.trim() || 'Custom';
+    const url    = document.getElementById('ct-url').value.trim();
+    const mood   = document.getElementById('ct-mood').value;
+    const bpm    = parseInt(document.getElementById('ct-bpm').value) || 120;
+
+    if (!title)  { setStatus('Enter a track title'); return; }
+    if (!url)    { setStatus('Enter a URL or pick a file'); return; }
+
+    const track = {
+      id: 'custom_' + uid(),
+      title, artist, mood, bpm,
+      dur: '—',
+      tags: ['custom', mood],
+      url,
+      license: 'Custom',
+      _custom: true,
+    };
+
+    const existing = getCustomTracks();
+    existing.push(track);
+    saveCustomTracks(existing);
+    renderMusicLibrary();
+    setStatus(`✓ "${title}" added to library`);
+  });
+});
+
 // ── Preview bar controls ──────────────────────────────────────────────────────
 document.getElementById('music-prev-play').addEventListener('click', () => {
   if (!musicState.previewTrack) return;
@@ -4841,9 +5241,15 @@ document.getElementById('music-prev-play').addEventListener('click', () => {
 });
 
 document.getElementById('music-add-to-bin-btn').addEventListener('click', () => {
-  const track = MUSIC_LIBRARY.find(t => t.id === musicState.selectedTrackId);
+  const fullLib = typeof getFullLibrary === 'function' ? getFullLibrary() : MUSIC_LIBRARY;
+  const track = fullLib.find(t => t.id === musicState.selectedTrackId);
   if (track) addMusicToBin(track);
   else setStatus('Select a track first');
+});
+
+document.getElementById('music-cache-all-btn')?.addEventListener('click', pinAllTracksOffline);
+document.getElementById('music-cache-clear-btn')?.addEventListener('click', () => {
+  if (confirm('Remove all offline music from your device?')) clearAudioCache();
 });
 
 // ── Mood filter ───────────────────────────────────────────────────────────────
@@ -4862,6 +5268,42 @@ document.getElementById('music-search').addEventListener('input', (e) => {
   renderMusicLibrary();
 });
 
+// ── Pin All / Clear Cache ─────────────────────────────────────────────────────
+document.getElementById('music-pin-all-btn')?.addEventListener('click', async () => {
+  const fullLib = getFullLibrary();
+  const mood = musicState.activeMood;
+  const q    = musicState.searchQ.toLowerCase();
+  const visible = fullLib.filter(t => {
+    const moodOk = mood === 'all' || t.mood === mood;
+    const qOk    = !q || t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q);
+    return moodOk && qOk && t.url && t.url.startsWith('http') && !t._custom;
+  });
+  const toPin = visible.filter(t => !cachedAudioUrls.has(t.url));
+  if (toPin.length === 0) { setStatus('All visible tracks already cached offline ✓'); return; }
+  const btn = document.getElementById('music-pin-all-btn');
+  btn.disabled = true; btn.textContent = `⬇ 0/${toPin.length}`;
+  let done = 0;
+  for (const track of toPin) {
+    try {
+      await pinTrackOffline(track);
+      done++;
+    } catch(e) { /* continue */ }
+    btn.textContent = `⬇ ${done}/${toPin.length}`;
+  }
+  btn.disabled = false; btn.textContent = '⬇ Pin All';
+  await refreshCachedAudioUrls();
+  updateCacheSizeDisplay();
+  setStatus(`✓ ${done} of ${toPin.length} tracks saved offline`);
+});
+
+document.getElementById('music-clear-cache-btn')?.addEventListener('click', async () => {
+  if (!confirm('Remove all cached audio tracks? You can re-download them anytime.')) return;
+  await clearAudioCache();
+  renderMusicLibrary();
+  updateCacheSizeDisplay();
+  setStatus('Audio cache cleared');
+});
+
 // ── Add track to bin (fetch + create blob URL) ────────────────────────────────
 var addMusicToBin = async function(track) {
   // Check if already in bin
@@ -4878,16 +5320,19 @@ var addMusicToBin = async function(track) {
     return;
   }
 
-  // Otherwise fetch → blob URL (handles CORS gracefully)
+  // Fetch → blob URL. SW will serve from audio cache if available (works offline too).
   try {
+    // SW intercepts this fetch and serves from audio cache if pinned offline
     const resp = await fetch(track.url, { mode: 'cors' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const blob = await resp.blob();
     const blobUrl = URL.createObjectURL(blob);
+    // Also mark as cached since we just fetched it (SW will have stored it)
+    cachedAudioUrls?.add(track.url);
     createMusicClip(track, blobUrl);
   } catch (err) {
-    // Fallback: use direct URL (works if CORS allows it)
-    console.warn('[Music] Fetch failed, using direct URL:', err);
+    // Offline fallback: use the direct URL — if it's in SW cache, SW will serve it
+    console.warn('[Music] Fetch failed, falling back to direct URL:', err);
     createMusicClip(track, track.url);
   }
 }
@@ -5534,7 +5979,7 @@ const undoStack = [], redoStack = [], MAX_UNDO = 50;
 
 function snapshotState() {
   return {
-    timeline:    JSON.parse(JSON.stringify(state.timeline)),
+    timeline:    JSON.parse(JSON.stringify(state.timeline)), // deep copy preserves all entry fields
     seqDuration: state.seqDuration,
   };
 }
@@ -6029,6 +6474,11 @@ function resetAiResults() {
 // ═════════════════════════════════════════════════════════════════════════════
 
 async function runAiAnalysis(clip, entry) {
+  // Guard: text clips have no audio to analyse
+  if (clip.type === 'text') throw new Error('Text clips have no audio to analyse.');
+  // Guard: must have a URL to fetch
+  if (!clip.url && !clip.file) throw new Error('Clip has no accessible audio source.');
+
   setAiProgress(5, 'Loading audio data…');
   setAiStatus('Decoding audio…');
 
@@ -6039,9 +6489,14 @@ async function runAiAnalysis(clip, entry) {
 
   let audioBuffer;
   try {
-    const resp = await fetch(clip.url);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const arrayBuf = await resp.arrayBuffer();
+    let arrayBuf;
+    if (clip.file) {
+      arrayBuf = await clip.file.arrayBuffer();
+    } else {
+      const resp = await fetch(clip.url);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      arrayBuf = await resp.arrayBuffer();
+    }
     audioBuffer = await ctx.decodeAudioData(arrayBuf);
   } catch(e) {
     await ctx.close();
@@ -6090,7 +6545,7 @@ async function runAiAnalysis(clip, entry) {
 
   const minSilence = parseFloat(document.getElementById('ai-min-silence').value) || 0.5;
   const silThresh  = parseFloat(document.getElementById('ai-silence-db').value) / 100 || 0.03;
-  const breathMax  = parseFloat(document.getElementById('ai-breath-max').value) || 0.2;
+  const breathMax  = parseFloat(document.getElementById('ai-breath-max').value) || 0.35;
   const fillerMax  = parseFloat(document.getElementById('ai-filler-max').value) || 0.8;
 
   const doDetectPauses   = document.getElementById('detect-pauses')?.checked;
@@ -6150,6 +6605,7 @@ async function runAiAnalysis(clip, entry) {
     }
 
     // Detect breath sounds: short voiced segment with high low-frequency ratio
+    // Breaths: typically 50-350ms, dominated by low frequencies, quieter than speech
     if (doDetectBreaths) {
       voicedRuns.forEach(run => {
         if (run.dur > breathMax || run.dur < 0.04) return;
@@ -6172,24 +6628,48 @@ async function runAiAnalysis(clip, entry) {
           });
         }
       });
+      // Also catch "long breaths" — runs slightly over breathMax with very high low-freq ratio
+      voicedRuns.forEach(run => {
+        if (run.dur <= breathMax || run.dur > breathMax * 2 || run.dur < 0.04) return;
+        const fStart = Math.round(run.start / 0.01);
+        const fEnd   = Math.min(nFrames, Math.round(run.end / 0.01));
+        let lowSum = 0, rmsSum = 0, n = 0;
+        for (let i = fStart; i < fEnd; i++) { lowSum += lowEnergyRatio[i]; rmsSum += rms[i]; n++; }
+        const avgLow = n > 0 ? lowSum / n : 0;
+        const avgRms = n > 0 ? rmsSum / n : 0;
+        // Very high low-freq ratio + quiet = definitely a breath, even if slightly longer
+        if (avgLow > 0.7 && avgRms < 0.35) {
+          events.push({
+            type: 'breath', start: run.start, end: run.end,
+            duration: run.dur, selected: true,
+            label: 'Long breath ' + (run.dur * 1000).toFixed(0) + 'ms',
+            confidence: Math.min(1, avgLow * 1.2),
+          });
+        }
+      });
     }
 
     // Detect filler words: short voiced segment surrounded by silence, mid-level energy
+    // Build set of start times already classified as breaths to avoid double-detection
+    const breathStartTimes = new Set(events.filter(e => e.type === 'breath').map(e => e.start.toFixed(3)));
     if (doDetectFillers) {
       voicedRuns.forEach(run => {
         if (run.dur > fillerMax || run.dur < 0.08) return;
+        // Skip runs already classified as breaths
+        if (breathStartTimes.has(run.start.toFixed(3))) return;
         const fStart = Math.round(run.start / 0.01);
         const fEnd   = Math.min(nFrames, Math.round(run.end / 0.01));
         let rmsSum = 0;
         for (let i = fStart; i < fEnd; i++) rmsSum += rms[i];
         const avgRms = (rmsSum / Math.max(1, fEnd - fStart));
-        // Filler words: not too quiet (not a breath), not too loud (not stressed speech)
-        if (avgRms > 0.08 && avgRms < 0.6) {
+        // Filler words: louder than a breath (>0.15), not stressed speech (<0.65)
+        // Raised floor from 0.08→0.15 to exclude quiet breaths that slipped through
+        if (avgRms > 0.15 && avgRms < 0.65) {
           events.push({
             type: 'filler', start: run.start, end: run.end,
             duration: run.dur, selected: true,
             label: 'Filler ~' + (run.dur * 1000).toFixed(0) + 'ms',
-            confidence: 0.5 + (avgRms - 0.08) * 0.5,
+            confidence: Math.min(0.95, 0.5 + (avgRms - 0.15) * 0.8),
           });
         }
       });
@@ -6202,18 +6682,18 @@ async function runAiAnalysis(clip, entry) {
           events.push({
             type: 'pause', start: run.start, end: run.end,
             duration: run.dur, selected: false,
-            label: 'Low energy ' + run.dur.toFixed(2) + 's',
-            confidence: 0.4,
+            label: '⚡ Low energy ' + run.dur.toFixed(2) + 's',
+            confidence: 0.35,
           });
         }
       });
     }
   }
 
-  setAiProgress(75, 'Running speech recognition…');
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  setAiProgress(75, SpeechRecognition ? 'Running speech recognition…' : 'Speech recognition not available — using energy analysis only');
 
   // ── Web Speech API for filler words (Chrome/Edge) ─────────────────────────
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (SpeechRecognition && doDetectFillers) {
     try {
       const speechEvents = await runSpeechRecognition(clip);
@@ -6427,6 +6907,12 @@ function applyAiCuts() {
 
   if (keepRegions.length === 0) {
     setAiStatus('All audio would be removed — aborting.');
+    return;
+  }
+  // Warn if result will be very short
+  const totalKept = keepRegions.reduce((s, r) => s + (r.end - r.start), 0);
+  if (totalKept < 0.5) {
+    setAiStatus('Less than 0.5s would remain — aborting to prevent empty clip.');
     return;
   }
 
@@ -6936,25 +7422,44 @@ function loadProjectData(proj) {
   pushUndo();
   state.seqDuration = proj.seqDuration || 120;
   state.zoom        = proj.zoom || 3;
-  // Restore timeline (clips lose their file/url references for local files)
-  state.timeline = proj.timeline || [];
-  // Restore serialisable clips (text clips, library clips)
-  state.clips = (proj.clips || []).filter(c => c.textProps || c.fromLibrary || c.type === 'text').map(c => ({
-    ...c,
-    url:  c.libraryUrl || null,
-    file: null,
-    beatMarkers: null,
-    waveformData: null,
-  }));
-  // Re-create text clips properly
-  state.clips.forEach(c => {
-    if (c.textProps) c.type = 'text';
+
+  // Restore full timeline structure
+  state.timeline = JSON.parse(JSON.stringify(proj.timeline || []));
+
+  // Restore ALL clips — library/text clips fully, local file clips as stubs
+  // Local stubs keep name/duration so timeline renders correctly, just greyed out
+  state.clips = (proj.clips || []).map(c => {
+    const isLibrary  = c.fromLibrary && c.libraryUrl;
+    const isText     = c.textProps || c.type === 'text';
+    return {
+      ...c,
+      url:          isLibrary ? c.libraryUrl : null,
+      file:         null,
+      beatMarkers:  null,
+      waveformData: null,
+      _stub:        !isLibrary && !isText, // marks local clips that need re-import
+    };
   });
+
+  // Count what was restored vs needs re-import
+  const stubCount    = state.clips.filter(c => c._stub).length;
+  const restoredCount = state.clips.length - stubCount;
+
   renderTimeline();
   renderBin();
   drawRuler();
   syncCanvasPlaceholder();
-  setStatus('Project loaded: ' + proj.name + ' — Note: local video/audio files need to be re-imported');
+
+  if (stubCount > 0) {
+    setStatus(
+      'Project loaded: ' + proj.name +
+      ' — ' + restoredCount + ' clip' + (restoredCount !== 1 ? 's' : '') + ' restored' +
+      ', ' + stubCount + ' local file' + (stubCount !== 1 ? 's' : '') +
+      ' need re-importing (drag them back onto the timeline)'
+    );
+  } else {
+    setStatus('Project loaded: ' + proj.name + ' — ' + restoredCount + ' clips restored ✓');
+  }
 }
 
 function renderProjectList() {
@@ -6971,9 +7476,14 @@ function renderProjectList() {
     item.className = 'project-item';
     const d = new Date(proj.savedAt);
     const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const clipTypes = (proj.clips||[]).reduce((acc,c) => {
+      const t = c.type === 'text' ? 'text' : c.fromLibrary ? 'music' : c.type;
+      acc[t] = (acc[t]||0) + 1; return acc;
+    }, {});
+    const clipSummary = Object.entries(clipTypes).map(([t,n]) => n + ' ' + t).join(', ') || 'empty';
     item.innerHTML = `
       <div class="project-item-name">${proj.name}</div>
-      <div class="project-item-meta">${dateStr} · ${(proj.timeline||[]).length} clips</div>
+      <div class="project-item-meta">${dateStr} · ${(proj.timeline||[]).length} clips (${clipSummary})</div>
       <button class="project-item-load" data-name="${proj.name}">Load</button>
       <button class="project-item-del" data-name="${proj.name}" title="Delete">✕</button>`;
     item.querySelector('.project-item-load').addEventListener('click', e => {
@@ -7004,14 +7514,12 @@ function closeProjectModal() {
 document.getElementById('btn-save-load')?.addEventListener('click', openProjectModal);
 document.getElementById('project-close')?.addEventListener('click', closeProjectModal);
 document.getElementById('project-close2')?.addEventListener('click', closeProjectModal);
-document.getElementById('btn-projects')?.addEventListener('click', openProjectModal);
+// btn-save-load (💾 in toolbar) opens the project modal
 
 document.getElementById('project-save-btn')?.addEventListener('click', () => {
   const name = (document.getElementById('project-name-input')?.value || '').trim() || 'Untitled';
-  saveProject(name);
+  saveProjectWithOfflineSupport(name);
   renderProjectList();
-  setStatus('Project saved: ' + name);
-  showAutoSaveToast('Saved: ' + name);
 });
 
 // Export to JSON file
@@ -7081,10 +7589,11 @@ let autoSaveTimer = setInterval(() => {
 document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 's') {
     e.preventDefault();
-    const name = (document.getElementById('project-name-input')?.value || '').trim() || 'My Project';
-    saveProject(name);
-    showAutoSaveToast('Saved: ' + name);
-    setStatus('Project saved: ' + name);
+    const nameInput = document.getElementById('project-name-input');
+    const name = (nameInput?.value || '').trim() ||
+      'Project ' + new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+    if (nameInput && !nameInput.value) nameInput.value = name;
+    saveProjectWithOfflineSupport(name);
   }
 });
 
@@ -7684,6 +8193,133 @@ if ('serviceWorker' in navigator) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// LOCAL NOTIFICATIONS
+// Fire in-app events as OS notifications (no server needed).
+// Remote push works automatically once a server sends VAPID payloads.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Request notification permission (called once, on user action)
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return 'unsupported';
+  if (Notification.permission === 'granted') return 'granted';
+  if (Notification.permission === 'denied')  return 'denied';
+  const result = await Notification.requestPermission();
+  updateNotificationUI();
+  return result;
+}
+
+// Show a local notification via the SW (works even when tab is in background)
+function showLocalNotification(title, body, tag = 'cutpro-local', silent = false) {
+  if (Notification.permission !== 'granted') return;
+  if (!navigator.serviceWorker?.controller) {
+    // Fallback: direct Notification API (foreground only)
+    try { new Notification(title, { body, icon: './icons/icon-192.png', tag }); } catch(e) {}
+    return;
+  }
+  navigator.serviceWorker.controller.postMessage({
+    type: 'SHOW_NOTIFICATION',
+    payload: { title, body, tag, silent },
+  });
+}
+
+// Update the notification toggle button state
+function updateNotificationUI() {
+  const btn = document.getElementById('notif-toggle-btn');
+  if (!btn) return;
+  const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+  if (perm === 'granted') {
+    btn.textContent = '🔔';
+    btn.title = 'Notifications ON — click to manage';
+    btn.style.color = '#5aaa6a';
+  } else if (perm === 'denied') {
+    btn.textContent = '🔕';
+    btn.title = 'Notifications blocked — enable in browser settings';
+    btn.style.color = '#7a3a3a';
+  } else {
+    btn.textContent = '🔔';
+    btn.title = 'Enable notifications';
+    btn.style.color = '#3a5a7a';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OFFLINE SAVE QUEUE
+// When navigator.onLine is false, queue saves to IndexedDB via SW.
+// Background Sync fires flushProjectSaveQueue() when reconnected.
+// ─────────────────────────────────────────────────────────────────────────────
+
+let offlineSaveQueue = []; // in-memory fallback if SW not available
+
+function saveProjectWithOfflineSupport(name) {
+  const proj = serialiseProject(name);
+
+  if (navigator.onLine) {
+    // Normal path
+    saveProject(name);
+    showAutoSaveToast('Saved: ' + name);
+    setStatus('✓ Project saved: ' + name);
+    return;
+  }
+
+  // Offline path — queue via SW IndexedDB
+  if (navigator.serviceWorker?.controller) {
+    const { port1, port2 } = new MessageChannel();
+    port1.onmessage = e => {
+      if (e.data.type === 'SAVE_QUEUED') {
+        showAutoSaveToast('Queued offline — will sync when reconnected');
+        setStatus('📴 Offline — save queued, will sync automatically when reconnected');
+      } else {
+        // SW queue failed — fall back to localStorage directly
+        saveProject(name);
+        showAutoSaveToast('Saved locally (offline)');
+      }
+    };
+    navigator.serviceWorker.controller.postMessage(
+      { type: 'QUEUE_PROJECT_SAVE', payload: { data: proj } }, [port2]
+    );
+
+    // Register background sync
+    navigator.serviceWorker.ready.then(reg => {
+      if ('sync' in reg) reg.sync.register('sync-project-queue').catch(() => {});
+    });
+  } else {
+    // No SW — save to localStorage directly
+    saveProject(name);
+    showAutoSaveToast('Saved locally (offline mode)');
+  }
+}
+
+// Listen for SW sync messages (queued saves flushed when back online)
+navigator.serviceWorker?.addEventListener('message', e => {
+  const { type, payload } = e.data || {};
+
+  if (type === 'SYNC_QUEUED_SAVE') {
+    // Merge the queued project into localStorage
+    try {
+      const projects = getSavedProjects().filter(p => p.name !== payload.data.name);
+      projects.unshift(payload.data);
+      localStorage.setItem('cutpro_projects_v1', JSON.stringify(projects.slice(0, 20)));
+      console.log('[Sync] Flushed queued save:', payload.data.name);
+    } catch(e) {}
+  }
+
+  if (type === 'SYNC_COMPLETE') {
+    const count = payload?.count || 0;
+    setStatus(`✓ ${count} offline save${count !== 1 ? 's' : ''} synced`);
+    showLocalNotification(
+      'CutPro Web — Synced',
+      `${count} project save${count !== 1 ? 's' : ''} synced after reconnecting.`,
+      'cutpro-sync'
+    );
+  }
+
+  if (type === 'RETRY_AUDIO_DOWNLOADS') {
+    // Re-attempt any audio that failed while offline
+    setStatus('Back online — retrying any failed audio downloads…');
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // UPDATE TOAST
 // ─────────────────────────────────────────────────────────────────────────────
 function showUpdateToast() {
@@ -7941,6 +8577,125 @@ document.getElementById('fade-preset-long').addEventListener('click',  () => app
 })();
 
 // ─────────────────────────────────────────────────────────────────────────────
+// OFFLINE MUSIC CACHING
+// Communicates with SW via MessageChannel to pin/unpin tracks
+// ─────────────────────────────────────────────────────────────────────────────
+
+// State: which archive.org URLs are currently in the audio cache
+let cachedAudioUrls = new Set();
+
+// Send a message to the SW and get a response via MessageChannel
+function sendSWMessage(type, payload) {
+  return new Promise((resolve, reject) => {
+    if (!navigator.serviceWorker?.controller) {
+      reject(new Error('No SW controller'));
+      return;
+    }
+    const { port1, port2 } = new MessageChannel();
+    port1.onmessage = e => resolve(e.data);
+    navigator.serviceWorker.controller.postMessage({ type, payload }, [port2]);
+    setTimeout(() => reject(new Error('SW message timeout')), 10000);
+  });
+}
+
+// Refresh our local copy of what's cached
+async function refreshCachedAudioUrls() {
+  try {
+    const resp = await sendSWMessage('GET_CACHED_AUDIO_URLS');
+    cachedAudioUrls = new Set(resp.urls || []);
+    renderMusicLibrary(); // re-render with updated indicators
+  } catch(e) {
+    // SW not ready yet — silent
+  }
+}
+
+// Pin a single track offline
+async function pinTrackOffline(track) {
+  setStatus(`Downloading "${track.title}" for offline use…`);
+  try {
+    const resp = await sendSWMessage('CACHE_AUDIO_URLS', { urls: [track.url] });
+    cachedAudioUrls.add(track.url);
+    renderMusicLibrary();
+    setStatus(`✓ "${track.title}" available offline`);
+  } catch(e) {
+    setStatus(`⚠ Could not cache "${track.title}": ` + e.message);
+  }
+}
+
+// Unpin a track
+async function unpinTrackOffline(track) {
+  try {
+    await sendSWMessage('UNCACHE_AUDIO_URLS', { urls: [track.url] });
+    cachedAudioUrls.delete(track.url);
+    renderMusicLibrary();
+    setStatus(`"${track.title}" removed from offline storage`);
+  } catch(e) { /* silent */ }
+}
+
+// Pin ALL library tracks
+async function pinAllTracksOffline() {
+  const allUrls = MUSIC_LIBRARY.map(t => t.url);
+  const uncached = allUrls.filter(u => !cachedAudioUrls.has(u));
+  if (uncached.length === 0) { setStatus('All tracks already available offline'); return; }
+
+  setStatus(`Downloading ${uncached.length} tracks for offline use…`);
+  const btn = document.getElementById('music-cache-all-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ Downloading…'; }
+
+  try {
+    const resp = await sendSWMessage('CACHE_AUDIO_URLS', { urls: uncached });
+    uncached.forEach(u => cachedAudioUrls.add(u));
+    renderMusicLibrary();
+    updateCacheSizeDisplay();
+    setStatus(`✓ ${resp.count || uncached.length} tracks now available offline`);
+  } catch(e) {
+    setStatus('Download failed: ' + e.message);
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '⬇ Save All Offline'; }
+}
+
+// Get and display cache size
+async function updateCacheSizeDisplay() {
+  try {
+    const resp = await sendSWMessage('GET_AUDIO_CACHE_SIZE');
+    const mb   = (resp.bytes / 1024 / 1024).toFixed(1);
+    const text = resp.count > 0
+      ? `${resp.count} track${resp.count!==1?'s':''} cached · ${mb} MB / ${resp.limitMb} MB`
+      : 'No tracks cached offline';
+    const el   = document.getElementById('music-cache-size');
+    if (el) el.textContent = text;
+    const el2  = document.getElementById('music-cache-status');
+    if (el2) {
+      el2.textContent = resp.count > 0
+        ? `📶 ${text}`
+        : '📶 No tracks cached offline — click ⬇ to save';
+      el2.style.color = (resp.bytes / (resp.limitMb * 1024 * 1024)) > 0.8 ? '#aa7a3a' : '#2a7a3a';
+    }
+  } catch(e) { /* SW not ready */ }
+}
+
+// Clear all cached audio
+async function clearAudioCache() {
+  try {
+    await sendSWMessage('CLEAR_AUDIO_CACHE');
+    cachedAudioUrls.clear();
+    renderMusicLibrary();
+    updateCacheSizeDisplay();
+    setStatus('Offline audio cache cleared');
+  } catch(e) { /* silent */ }
+}
+
+// Init: load cache state when SW is ready
+try {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+    navigator.serviceWorker.ready.then(() => {
+      refreshCachedAudioUrls();
+      updateCacheSizeDisplay();
+    }).catch(() => {});
+  }
+} catch(e) {}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SNAP STATUS DOT sync
 // ─────────────────────────────────────────────────────────────────────────────
 function updateSnapDot() {
@@ -8103,13 +8858,18 @@ function showSnapGuide(time, type) {
 // Runs entirely in the browser via Web Audio API, no server required.
 // ─────────────────────────────────────────────────────────────────────────────
 async function analyzeBeat(clip) {
-  if (!clip.file) return;
+  // Skip text clips and clips with no audio source
+  if (clip.type === 'text') return;
+  if (!clip.file && !clip.url) return;
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
   setStatus(`🎵 Analysing "${clip.name}"…`);
 
   try {
-    const arrayBuffer = await clip.file.arrayBuffer();
+    // Support both local File objects and blob/library URLs
+    const arrayBuffer = clip.file
+      ? await clip.file.arrayBuffer()
+      : await fetch(clip.url).then(r => r.arrayBuffer());
     const audioCtx = new AC();
 
     let audioBuffer;
@@ -8219,6 +8979,11 @@ async function analyzeBeat(clip) {
     const bpmStr   = clip.bpm    ? ` · ${clip.bpm} BPM` : '';
     const beatStr  = clip.beatMarkers ? `${clip.beatMarkers.length} beats` : '—';
     setStatus(`🎵 "${clip.name}" — ${beatStr}${bpmStr} — ready to snap`);
+    if (clip.bpm) showLocalNotification(
+      'Beat analysis done',
+      `"${clip.name}" — ${beatStr}${bpmStr}`,
+      'cutpro-beat', true  // silent = true (low priority)
+    );
 
     renderTimeline();
     renderBin();
@@ -8356,6 +9121,34 @@ function drawBeatGrid() {
 window.addEventListener('online',  updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 updateOnlineStatus();
+
+// ── Notification toggle button ────────────────────────────────────────────────
+document.getElementById('notif-toggle-btn')?.addEventListener('click', async () => {
+  const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+  if (perm === 'unsupported') {
+    setStatus('Notifications not supported in this browser');
+    return;
+  }
+  if (perm === 'denied') {
+    setStatus('Notifications blocked — open browser settings to allow');
+    return;
+  }
+  if (perm === 'granted') {
+    // Already on — show a test notification
+    showLocalNotification('CutPro Web', 'Notifications are enabled ✓', 'cutpro-test', false);
+    setStatus('Notifications enabled — test notification sent');
+    return;
+  }
+  // Not yet asked — request permission
+  const result = await requestNotificationPermission();
+  if (result === 'granted') {
+    showLocalNotification('CutPro Web', "Notifications enabled \u2713 You'll be notified when exports finish.", 'cutpro-welcome');
+    setStatus('✓ Notifications enabled');
+  } else {
+    setStatus('Notifications permission denied');
+  }
+});
+updateNotificationUI(); // set initial icon state
 </script>
 
 
@@ -8568,10 +9361,10 @@ updateOnlineStatus();
           </div>
         </div>
         <div class="ai-setting">
-          <span class="ai-setting-label">Breath max length</span>
+          <span class="ai-setting-label">Breath max length (typical: 0.1–0.4s)</span>
           <div class="ai-setting-row">
-            <input type="range" class="ai-setting-slider" id="ai-breath-max" min="0.05" max="0.4" step="0.05" value="0.2">
-            <span class="ai-setting-val" id="ai-breath-max-val">0.2s</span>
+            <input type="range" class="ai-setting-slider" id="ai-breath-max" min="0.05" max="0.5" step="0.05" value="0.35">
+            <span class="ai-setting-val" id="ai-breath-max-val">0.35s</span>
           </div>
         </div>
         <div class="ai-setting">

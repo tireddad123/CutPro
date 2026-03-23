@@ -2,12 +2,15 @@
   "name": "CutPro Web",
   "short_name": "CutPro",
   "description": "A Final Cut Pro 7 inspired video editor PWA",
-  "start_url": "/index.html",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#111111",
   "theme_color": "#1a1a1a",
   "orientation": "landscape",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -20,6 +23,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjI0IiBmaWxsPSIjMWExYTJlIi8+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIzMiIgcng9IjI0IiBmaWxsPSIjMWUzMjUwIi8+PHJlY3QgeT0iOCIgd2lkdGg9IjE5MiIgaGVpZ2h0PSIyNCIgZmlsbD0iIzFlMzI1MCIvPjxnIGZpbGw9IiM0YThmY2QiPjxwb2x5Z29uIHBvaW50cz0iOTYsMzYgMTAyLDk2IDk2LDE1NiA5MCw5NiIvPjxwb2x5Z29uIHBvaW50cz0iMzYsOTYgOTYsOTAgMTU2LDk2IDk2LDEwMiIvPjxwb2x5Z29uIHBvaW50cz0iNTAsNTAgOTQsOTQgMTQyLDE0MiA5OCw5OCIvPjxwb2x5Z29uIHBvaW50cz0iMTQyLDUwIDk4LDk0IDUwLDE0MiA5NCw5OCIvPjwvZz48L3N2Zz4=",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "screenshots": [
@@ -37,20 +46,39 @@
       "short_name": "New",
       "description": "Start a new editing sequence",
       "url": "/index.html?new=1",
-      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "icons/icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ],
   "file_handlers": [
     {
       "action": "/index.html",
       "accept": {
-        "video/mp4": [".mp4"],
-        "video/quicktime": [".mov"],
-        "video/webm": [".webm"],
-        "video/x-msvideo": [".avi"],
-        "audio/mpeg": [".mp3"],
-        "audio/wav": [".wav"],
-        "audio/aac": [".aac"]
+        "video/mp4": [
+          ".mp4"
+        ],
+        "video/quicktime": [
+          ".mov"
+        ],
+        "video/webm": [
+          ".webm"
+        ],
+        "video/x-msvideo": [
+          ".avi"
+        ],
+        "audio/mpeg": [
+          ".mp3"
+        ],
+        "audio/wav": [
+          ".wav"
+        ],
+        "audio/aac": [
+          ".aac"
+        ]
       }
     }
   ],
@@ -63,5 +91,7 @@
   "prefer_related_applications": false,
   "edge_side_panel": {
     "preferred_width": 480
-  }
+  },
+  "scope": "./",
+  "id": "./"
 }
