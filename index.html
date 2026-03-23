@@ -2426,33 +2426,10 @@
 
 </style>
 
-<!-- [patch] TOP MENU & IMPORT DIAGNOSTICS CSS -->
-<style id="cp-tools-css">
-/* Tools (⋯) dropdown */
-#cp-tools-wrap{position:relative;display:inline-block}
-#cp-tools-btn{height:26px;min-width:26px;padding:0 8px;background:linear-gradient(to bottom,#3e3e3e,#292929);border:1px solid #1a1a1a;border-top-color:#4a4a4a;border-radius:3px;color:#d8d8d8;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.1);font-family:inherit}
-#cp-tools-menu{position:absolute;right:0;top:30px;background:#161616;border:1px solid #2a2a2a;border-radius:6px;min-width:220px;display:none;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.6)}
-#cp-tools-menu.open{display:block}
-.cp-tools-item{display:flex;gap:8px;align-items:center;padding:8px 10px;color:#cfcfcf;font-size:11px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer}
-.cp-tools-item:last-child{border-bottom:none}
-.cp-tools-item:hover{background:#202020}
-.cp-tools-item input{accent-color:#4a8fcd;cursor:pointer}
-/* Import Diagnostics modal */
-#cp-diag-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
-#cp-diag-card{background:linear-gradient(160deg,#1a1e28,#12151e);border:1px solid #2a3040;border-radius:10px;width:560px;max-width:95vw;box-shadow:0 24px 80px rgba(0,0,0,.8);overflow:hidden}
-#cp-diag-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #1e2530;color:#fff;font-weight:bold;font-size:13px}
-#cp-diag-body{padding:12px 14px;color:#8ab0d0;font-size:11px}
-#cp-diag-body code{background:#0d0d0d;border:1px solid #1a1a1a;border-radius:3px;padding:0 4px}
-#cp-diag-body .row{display:flex;align-items:center;gap:8px;margin:8px 0}
-#cp-diag-footer{display:flex;gap:8px;justify-content:flex-end;padding:10px 14px;border-top:1px solid #1e2530}
-.cp-btn{height:26px;padding:0 12px;border-radius:4px;border:1px solid #2a2a2a;background:#1a1a1a;color:#aaa;font-size:11px;cursor:pointer;font-family:inherit}
-.cp-btn.primary{background:linear-gradient(to bottom,#2a5080,#1e3a5a);border-color:#2a3a5a;color:#cfe6ff}
-.cp-kv{display:grid;grid-template-columns:140px 1fr;gap:6px;align-items:center;margin:10px 0;color:#9ab0c8}
-.cp-ok{color:#7add8a}
-.cp-warn{color:#e0b060}
-.cp-bad{color:#e08080}
-#cp-diag-drop{margin-top:10px;border:1px dashed #3a3a3a;border-radius:6px;padding:14px;text-align:center;color:#8a8a8a}
-#cp-diag-drop.dragover{border-color:#4a8fcd;color:#4a8fcd;background:rgba(74,143,205,.08)}
+<style id="cp-fileinput-overlay">
+#drop-zone{position:relative;}
+#drop-zone #file-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;pointer-events:auto;}
+#drop-zone.drag-mode #file-input{pointer-events:none;}
 </style>
 </head>
 <body>
@@ -2612,6 +2589,7 @@
       <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M5 5l5 2-5 2V5z" fill="currentColor"/></svg>
       Render
     </button>
+ <button class=\"tool-btn\" id=\"btn-import-test\" title=\"Import test clip\">➕ Test Clip</button>
 
     <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
       <button class="tool-btn has-tip" id="btn-multi-select" title="Multi-select (M)" style="font-size:10px;">
@@ -2648,7 +2626,7 @@
       </div>
       <div class="drop-zone" id="drop-zone">
         ⬆ Drop video files here<br>or click to import
-        <input type="file" id="file-input" style="display:none" accept="video/*,audio/*" multiple />
+        <input type="file" id="file-input" accept="video/*,audio/*" multiple />
       </div>
 
       <!-- MUSIC LIBRARY OVERLAY (inside #browser, positioned absolute) -->
@@ -4473,10 +4451,10 @@ async function runCanvasFallbackExport() {
 
   // Highlight drop zone
   dropZone.addEventListener('dragover', e=>{ e.preventDefault(); e.stopPropagation(); dropZone.classList.add('dragover'); });
-  // [patch] disabled duplicate dnd -> dropZone.addEventListener('dragleave', ()=> dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('dragleave', ()=> dropZone.classList.remove('dragover'));
 
   // Handle drops
-  // [patch] disabled duplicate dnd -> dropZone.addEventListener('drop', e=>{
+  dropZone.addEventListener('drop', e=>{
     e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('dragover'); hide();
     if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files);
   });
@@ -4518,9 +4496,9 @@ document.addEventListener('drop', (e) => {
 });
 
 // Bin drop zone
-// [patch] disabled duplicate dnd -> dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-// [patch] disabled duplicate dnd -> dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-// [patch] disabled duplicate dnd -> dropZone.addEventListener('drop', (e) => {
+dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
   e.preventDefault(); e.stopPropagation();
   dropZone.classList.remove('dragover');
   if (e.dataTransfer.files.length) importFiles(e.dataTransfer.files);
@@ -9941,81 +9919,62 @@ window.mRenderTimeline=mRenderTimeline;
 })();
 </script>
 
-<!-- [patch] TOP MENU & IMPORT DIAGNOSTICS SCRIPT -->
-<script id="cp-tools-script">
+<script id="cp-test-import">
 (function(){
-  try{
-    var tb = document.getElementById('toolbar');
-    if(!tb || document.getElementById('cp-tools-wrap')) return;
-    // Tools button
-    var wrap = document.createElement('div'); wrap.id='cp-tools-wrap'; wrap.style.marginLeft='6px';
-    var btn = document.createElement('button'); btn.id='cp-tools-btn'; btn.title='Tools'; btn.textContent='⋯';
-    var menu = document.createElement('div'); menu.id='cp-tools-menu';
-    menu.innerHTML =
-      '<div class="cp-tools-item"><input type="checkbox" id="cp-safe-toggle"/> <label for="cp-safe-toggle" style="flex:1;cursor:pointer">Show Safe Zones</label></div>' +
-      '<div class="cp-tools-item"><input type="checkbox" id="cp-snap-toggle" checked/> <label for="cp-snap-toggle" style="flex:1;cursor:pointer">Snapping Enabled</label></div>' +
-      '<div class="cp-tools-item" id="cp-open-diag">🧪 Import diagnostics…</div>';
-    wrap.appendChild(btn); wrap.appendChild(menu);
-    // Insert near right side before Export button
-    var exportBtn = document.getElementById('btn-export');
-    if(exportBtn && exportBtn.parentElement){
-      exportBtn.parentElement.insertBefore(wrap, exportBtn);
-    } else {
-      tb.appendChild(wrap);
+  function showStatus(msg){ try{ setStatus(msg); }catch(e){ /* ignore */ } }
+  function makeTestWav(seconds, hz){
+    seconds = seconds||2; hz = hz||440;
+    var sr = 44100, ch = 1, samples = Math.max(1, Math.floor(seconds*sr));
+    var buffer = new ArrayBuffer(44 + samples*2);
+    var view = new DataView(buffer);
+    var p=0;
+    // RIFF header
+    view.setUint32(p, 0x46464952, false); p+=4; // 'RIFF' BE for ascii
+    view.setUint32(p, 36 + samples*2, true); p+=4; // size
+    view.setUint32(p, 0x45564157, false); p+=4; // 'WAVE'
+    view.setUint32(p, 0x20746d66, false); p+=4; // 'fmt '
+    view.setUint32(p, 16, true); p+=4; // PCM chunk
+    view.setUint16(p, 1, true); p+=2; // PCM
+    view.setUint16(p, ch, true); p+=2; // channels
+    view.setUint32(p, sr, true); p+=4; // sample rate
+    view.setUint32(p, sr*ch*2, true); p+=4; // byte rate
+    view.setUint16(p, ch*2, true); p+=2; // block align
+    view.setUint16(p, 16, true); p+=2; // bits/sample
+    view.setUint32(p, 0x61746164, false); p+=4; // 'data'
+    view.setUint32(p, samples*2, true); p+=4; // data size
+    var amp = 0.3, t = 0, dt = 2*Math.PI*hz/sr;
+    for (var i=0;i<samples;i++){
+      var s = Math.sin(t)*amp; t += dt;
+      view.setInt16(44 + i*2, (s*32767)|0, true);
     }
-    btn.addEventListener('click', function(){ menu.classList.toggle('open'); });
-    document.addEventListener('click', function(e){ if(!wrap.contains(e.target)) menu.classList.remove('open'); });
-    // Toggles
-    var safeCb = menu.querySelector('#cp-safe-toggle');
-    if(safeCb){ safeCb.addEventListener('change', function(){
-      var s1 = document.getElementById('safe-src');
-      var s2 = document.getElementById('safe-cvs');
-      [s1,s2].forEach(function(el){ if(!el) return; el.classList.toggle('show', safeCb.checked); });
-    });}
-    var snapCb = menu.querySelector('#cp-snap-toggle');
-    if(snapCb){ snapCb.checked = (window.state && state.snappingEnabled!==false);
-      snapCb.addEventListener('change', function(){ if(window.state){ state.snappingEnabled = !!snapCb.checked; } }); }
-    // Diagnostics modal factory
-    function ensureDiag(){
-      if(document.getElementById('cp-diag-overlay')) return;
-      var ov = document.createElement('div'); ov.id='cp-diag-overlay'; ov.innerHTML =
-        '<div id="cp-diag-card">' +
-          '<div id="cp-diag-head">🧪 Import diagnostics</div>' +
-          '<div id="cp-diag-body">' +
-            '<div class="cp-kv"><div>Drag & Drop API</div><div id="cp-k-dnd">—</div></div>' +
-            '<div class="cp-kv"><div>File input</div><div id="cp-k-file">—</div></div>' +
-            '<div class="cp-kv"><div>Storage (localStorage)</div><div id="cp-k-store">—</div></div>' +
-            '<div class="cp-kv"><div>AudioContext</div><div id="cp-k-audio">—</div></div>' +
-            '<div id="cp-diag-drop">Drop files here to test · or <button class="cp-btn" id="cp-diag-pick">Pick files</button></div>' +
-          '</div>' +
-          '<div id="cp-diag-footer"><button class="cp-btn primary" id="cp-diag-close">Close</button></div>' +
-        '</div>';
-      document.body.appendChild(ov);
-      // Wiring
-      function set(id, ok, detail){
-        var el = document.getElementById(id); if(!el) return;
-        el.textContent = detail || (ok? 'OK' : 'Unavailable');
-        el.className = ok? 'cp-ok' : 'cp-bad';
+    return new Blob([view], {type:'audio/wav'});
+  }
+  function importTest(){
+    try{
+      var blob = makeTestWav(2, 440);
+      var file = new File([blob], 'test_tone.wav', {type:'audio/wav'});
+      if (window.importFiles) {
+        importFiles([file]);
+        showStatus('✓ Test clip imported');
+      } else {
+        showStatus('✗ importFiles() not available');
       }
-      try { set('cp-k-dnd', 'draggable' in document.createElement('span')); } catch(e){ set('cp-k-dnd', false);}
-      try { var fi = document.createElement('input'); fi.type='file'; set('cp-k-file', !!fi && fi.type==='file'); } catch(e){ set('cp-k-file', false);}
-      try { set('cp-k-store', !!window.localStorage, (function(){try{localStorage.setItem('cp-test','1');localStorage.removeItem('cp-test');return 'OK';}catch(e){return 'Blocked';}})()); } catch(e){ set('cp-k-store', false);}
-      try { var AC = window.AudioContext || window.webkitAudioContext; set('cp-k-audio', !!AC); } catch(e){ set('cp-k-audio', false);}
-      // Drop zone
-      var dz = document.getElementById('cp-diag-drop');
-      var pick = document.getElementById('cp-diag-pick');
-      var fileInput = document.createElement('input'); fileInput.type='file'; fileInput.multiple=true; fileInput.style.display='none';
-      document.body.appendChild(fileInput);
-      function onFiles(fs){ if(!fs || !fs.length) return; if(window.importFiles) importFiles(fs); }
-      pick.addEventListener('click', function(){ fileInput.click(); });
-      fileInput.addEventListener('change', function(e){ onFiles(e.target.files); e.target.value=''; });
-      ;['dragenter','dragover'].forEach(function(evt){ dz.addEventListener(evt, function(e){ e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); }); });
-      ;['dragleave','drop'].forEach(function(evt){ dz.addEventListener(evt, function(e){ e.preventDefault(); e.stopPropagation(); if(evt==='drop' && e.dataTransfer && e.dataTransfer.files){ onFiles(e.dataTransfer.files);} dz.classList.remove('dragover'); }); });
-      document.getElementById('cp-diag-close').addEventListener('click', function(){ ov.style.display='none'; });
-    }
-    menu.querySelector('#cp-open-diag').addEventListener('click', function(){ ensureDiag(); document.getElementById('cp-diag-overlay').style.display='flex'; });
-  }catch(e){ console.warn('[cp-patch] tools init failed', e); }
+    }catch(e){ showStatus('✗ Test import failed'); }
+  }
+  document.getElementById('btn-import-test')?.addEventListener('click', importTest);
+  // During drag, let the drop zone receive events under the transparent input
+  var dz = document.getElementById('drop-zone');
+  var fi = document.getElementById('file-input');
+  if (dz && fi){
+    var depth = 0;
+    function onEnter(e){ depth++; dz.classList.add('drag-mode'); }
+    function onLeave(e){ depth = Math.max(0, depth-1); if(depth===0) dz.classList.remove('drag-mode'); }
+    document.addEventListener('dragenter', onEnter, false);
+    document.addEventListener('dragleave', onLeave, false);
+    document.addEventListener('drop', function(){ depth=0; dz.classList.remove('drag-mode'); }, false);
+  }
 })();
 </script>
+
 </body>
 </html>
