@@ -3356,6 +3356,10 @@ function updateSrcScrub() {
 // IMPORT
 // ─────────────────────────────────────────────────────────────────────────────
 function importFiles(files) {
+  // Ensure Bin tab is visible and filter cleared before listing imports
+  document.getElementById('tab-bin')?.click();
+  const __bs = document.getElementById('bin-search'); if (__bs) __bs.value = '';
+
   Array.from(files).forEach(file => {
     const url = URL.createObjectURL(file);
     const id = uid();
