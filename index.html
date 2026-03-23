@@ -3194,7 +3194,7 @@ const TRACK_ORDER = ['v2', 'v1', 'a1'];
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
-function on(id, evt, fn) { try { var el = document.getElementById(id); if (el) el.addEventListener(evt, fn); } catch(e) { /* no-op */ } }
+function on(id, evt, fn) { try { var el = document.getElementById(id); if (el) el.addEventListener(evt, fn); } catch(e) {} }
 // ─────────────────────────────────────────────────────────────────────────────
 function uid() { return Math.random().toString(36).slice(2,9); }
 
@@ -3731,7 +3731,7 @@ const FFMPEG_CORE = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.
 const FFMPEG_WASM = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
 
 // ── Open export modal ─────────────────────────────────────────────────────
-on('btn-export','click', () => {
+document.getElementById('btn-export').addEventListener('click', () => {
   if (state.timeline.length === 0) { setStatus('Add clips to the timeline first'); return; }
   openExportModal();
 });
@@ -3854,11 +3854,11 @@ document.querySelectorAll('.export-device-preset').forEach(btn => {
     setStatus('Preset: ' + preset.label);
   });
 });
-on('export-close','click', () => {
+document.getElementById('export-close').addEventListener('click', () => {
   exportAborted = true;
   document.getElementById('export-modal').classList.remove('open');
 });
-on('export-cancel','click', () => {
+document.getElementById('export-cancel').addEventListener('click', () => {
   exportAborted = true;
   document.getElementById('export-modal').classList.remove('open');
 });
@@ -3891,7 +3891,7 @@ function setProgress(pct, label) {
 }
 
 // ── Entry point ────────────────────────────────────────────────────────────
-on('export-start-btn','click', () => {
+document.getElementById('export-start-btn').addEventListener('click', () => {
   document.getElementById('export-progress-section').classList.add('show');
   const isolated = typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated;
   if (isolated) {
@@ -9884,6 +9884,36 @@ window.addEventListener('resize',function(){mDrawRuler();mUpdatePlayhead();});
 window.mRenderBin=mRenderBin;
 window.mRenderTimeline=mRenderTimeline;
 })();
+
+// AI CLEANUP — open/close wiring (patched)
+on('btn-ai-cleanup','click', function(){
+  var m = document.getElementById('ai-cleanup-modal');
+  if(m) m.classList.add('open');
+});
+on('ai-header-close','click', function(){
+  var m = document.getElementById('ai-cleanup-modal');
+  if(m) m.classList.remove('open');
+});
+on('ai-cancel-btn','click', function(){
+  var m = document.getElementById('ai-cleanup-modal');
+  if(m) m.classList.remove('open');
+});
+// click outside the card closes
+(function(){
+  var m = document.getElementById('ai-cleanup-modal');
+  if(!m) return;
+  m.addEventListener('click', function(e){ if(e.target === m) m.classList.remove('open'); });
+})();
+// Esc to close
+(function(){
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      var m = document.getElementById('ai-cleanup-modal');
+      if(m && m.classList.contains('open')) m.classList.remove('open');
+    }
+  });
+})();
+
 </script>
 </body>
 </html>
