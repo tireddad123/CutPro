@@ -2456,6 +2456,8 @@
 .bin-folder .bf-del:hover { background:#2a2a2a; color:#aaa; }
 </style>
 
+
+<style id="hide-welcome-css">#welcome-overlay{display:none!important}</style>
 </head>
 <body>
 
@@ -10097,13 +10099,23 @@ on('ai-cancel-btn','click', function(){
 </script>
 
 
+
+
+
+<script id="remove-welcome-js">
+(function(){
+  try { localStorage.setItem('cutpro-welcome-seen','1'); } catch(e) {}
+  var w = document.getElementById('welcome-overlay');
+  if (w && w.parentNode) { w.parentNode.removeChild(w); }
+})();
+</script>
+
+
 <script id="overlay-fallback-v3-2-2">
-/* CutPro Web – Overlay Reset + Fallback Renderer (v3.2.2 inline) */
 (function(){
   const on=(id,evt,fn)=>{try{const el=document.getElementById(id);if(el)el.addEventListener(evt,fn);}catch(e){}};
   const safe=fn=>{try{return fn&&fn();}catch(e){}}
-
-  // 1) Overlay hard reset + guard CSS
+  // Guard CSS
   (function(){
     if(!document.getElementById('cutpro-v322-overlay-guard')){
       const css=document.createElement('style');
@@ -10113,47 +10125,28 @@ on('ai-cancel-btn','click', function(){
       document.head.appendChild(css);
     }
   })();
-  function hideOverlays(){
-    const ml=document.getElementById('music-library'); ml&&ml.classList.remove('open');
-    const d=document.getElementById('drag-overlay'); d&&d.classList.remove('show');
-  }
-  ;['tab-bin','tab-effects','tab-music'].forEach(id=>{on(id,'mousedown',hideOverlays)});
-  const tb=document.getElementById('tab-bin');
-  const te=document.getElementById('tab-effects');
-  const tm=document.getElementById('tab-music');
+  function hideOverlays(){ document.getElementById('music-library')?.classList.remove('open'); document.getElementById('drag-overlay')?.classList.remove('show'); }
+  ['tab-bin','tab-effects','tab-music'].forEach(id=>{ on(id,'mousedown',hideOverlays); });
+  const tb=document.getElementById('tab-bin'); const te=document.getElementById('tab-effects'); const tm=document.getElementById('tab-music');
   tb&&tb.addEventListener('click',e=>{e.stopImmediatePropagation?.(); safe(()=>window.activateTab&&activateTab('bin'));},true);
   te&&te.addEventListener('click',e=>{e.stopImmediatePropagation?.(); safe(()=>window.activateTab&&activateTab('effects'));},true);
   tm&&tm.addEventListener('click',e=>{e.stopImmediatePropagation?.(); safe(()=>window.activateTab&&activateTab('music'));},true);
-
-  // 2) Bin: default-map + fallback renderer
   function ensureFolders(){ if(!window.state) return; if(!state.binFolders) state.binFolders=[{id:'root',name:'All Clips',expanded:true}]; if(!state.binMap) state.binMap={}; }
   function ensureAllMapped(){ try{ ensureFolders(); (state.clips||[]).forEach(c=>{ if(!state.binMap[c.id]) state.binMap[c.id]='root'; }); }catch(e){} }
-
-  if (typeof window.renderBin === 'function'){
-    const _rb = window.renderBin;
-    window.renderBin = function(){
+  if (typeof window.renderBin==='function'){
+    const _rb=window.renderBin;
+    window.renderBin=function(){
       ensureAllMapped();
-      // allow original to attempt grouped render
       let ok=true; try{ _rb(); }catch(e){ ok=false; console.warn('[Bin] original render failed, falling back', e); }
-      const list = document.getElementById('bin-list');
-      if(!list) return;
-      const hasClips = (state.clips||[]).length>0;
-      const any = !!list.querySelector('.bin-item');
+      const list=document.getElementById('bin-list'); if(!list) return;
+      const hasClips=(state.clips||[]).length>0; const any=!!list.querySelector('.bin-item');
       if(hasClips && !any){
-        // flat list fallback
         list.innerHTML='';
-        const qEl=document.getElementById('bin-search');
-        const q=qEl? (qEl.value||'').toLowerCase():'';
+        const q=(document.getElementById('bin-search')?.value||'').toLowerCase();
         (state.clips||[]).filter(c=>!q || (c.name||'').toLowerCase().includes(q)).forEach(clip=>{
-          const item=document.createElement('div');
-          item.className='bin-item'+(clip.id===state.selectedClipId?' selected':'');
-          item.dataset.id=clip.id; item.draggable=true;
-          const bpm=clip.bpm?`<span class="bpm-badge">${clip.bpm} BPM</span>`:'';
-          const beats=(clip.beatMarkers&&clip.beatMarkers.length)?`<span class="beats-badge">♩ ${clip.beatMarkers.length}</span>`:'';
-          const ana=(!clip.waveformData && !clip.bpm)?'<span class="analysing-badge">● analysing</span>':'';
-          item.innerHTML=`<div class="bin-thumb">${clip.type==='audio'?'🎵':'🎬'}</div>`+
-                         `<div class="bin-info"><div class="bin-name" title="${clip.name}">${clip.name}</div>`+
-                         `<div class="bin-meta">${window.formatTC?formatTC(clip.duration):''} · ${clip.type}${bpm}${beats}${ana}</div></div>`;
+          const item=document.createElement('div'); item.className='bin-item'+(clip.id===state.selectedClipId?' selected':''); item.dataset.id=clip.id; item.draggable=true;
+          const bpm=clip.bpm?`<span class="bpm-badge">${clip.bpm} BPM</span>`:''; const beats=(clip.beatMarkers&&clip.beatMarkers.length)?`<span class="beats-badge">♩ ${clip.beatMarkers.length}</span>`:''; const ana=(!clip.waveformData && !clip.bpm)?'<span class="analysing-badge">● analysing</span>':'';
+          item.innerHTML=`<div class="bin-thumb">${clip.type==='audio'?'🎵':'🎬'}</div><div class="bin-info"><div class="bin-name" title="${clip.name}">${clip.name}</div><div class="bin-meta">${window.formatTC?formatTC(clip.duration):''} · ${clip.type}${bpm}${beats}${ana}</div></div>`;
           item.addEventListener('click',()=>{ window.selectBinClip&&selectBinClip(clip.id); });
           item.addEventListener('dblclick',()=>{ window.openInViewer&&openInViewer(clip.id); });
           item.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/x-clip-id', clip.id); });
@@ -10161,28 +10154,15 @@ on('ai-cancel-btn','click', function(){
         });
         console.log('[Bin fallback] flat render:', (state.clips||[]).length, 'items');
       }
-      try{ const listCount=document.getElementById('bin-list').querySelectorAll('.bin-item').length; console.log('[Bin] clips:', state.clips?.length||0, 'listed:', listCount); }catch(_){ }
+      try{ const count=document.getElementById('bin-list').querySelectorAll('.bin-item').length; console.log('[Bin] clips:', state.clips?.length||0, 'listed:', count); }catch(_){ }
     }
   }
-
-  // 3) Import: guarantee map + re-render
-  if (typeof window.importFiles === 'function'){
-    const _imp = window.importFiles;
-    window.importFiles = function(files){
-      _imp(files);
-      setTimeout(()=>{ ensureAllMapped(); safe(()=>window.renderBin&&renderBin()); }, 0);
-      console.log('[Import] files:', files && files.length);
-    };
+  if (typeof window.importFiles==='function'){
+    const _imp=window.importFiles;
+    window.importFiles=function(files){ _imp(files); setTimeout(()=>{ ensureAllMapped(); try{ window.renderBin&&renderBin(); }catch(_){} },0); console.log('[Import] files:', files&&files.length); };
   }
-
-  // Watch for clip array growth (covers drag/drop edge cases)
-  if (window.state){
-    let last = (state.clips||[]).length;
-    setInterval(()=>{ const n=(state.clips||[]).length; if(n!==last){ last=n; ensureAllMapped(); safe(()=>window.renderBin&&renderBin()); console.log('[Watcher] clips:', n); } }, 800);
-  }
-
-  // 4) Force initial reset + render on load
-  hideOverlays(); ensureAllMapped(); safe(()=>window.renderBin&&renderBin());
+  if (window.state){ let last=(state.clips||[]).length; setInterval(()=>{ const n=(state.clips||[]).length; if(n!==last){ last=n; ensureAllMapped(); try{ window.renderBin&&renderBin(); }catch(_){} console.log('[Watcher] clips:', n); } }, 800); }
+  hideOverlays(); ensureAllMapped(); try{ window.renderBin&&renderBin(); }catch(_){}
   console.log('[v3.2.2] overlay guard + fallback renderer active');
 })();
 </script>
