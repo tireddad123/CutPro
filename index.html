@@ -2447,16 +2447,12 @@
 
 
 <style id="bin-folders-css">
-/* Remove Browser search row */
 #browser .browser-search { display: none !important; }
-/* Bin folders UI */
-.bin-folder { padding:6px 8px; background:#1f1f1f; border-bottom:1px solid #0f0f0f;
-  display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
+.bin-folder { padding:6px 8px; background:#1f1f1f; border-bottom:1px solid #0f0f0f; display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
 .bin-folder:hover { background:#242424; }
 .bin-folder .bf-caret { width:12px; color:#8a8a8a; }
 .bin-folder .bf-name { flex:1; color:#d0d0d0; font-weight:bold; font-size:10px; }
-.bin-folder .bf-del { width:18px; height:18px; background:#222; border:1px solid #333; border-radius:3px;
-  color:#666; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.bin-folder .bf-del { width:18px; height:18px; background:#222; border:1px solid #333; border-radius:3px; color:#666; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .bin-folder .bf-del:hover { background:#2a2a2a; color:#aaa; }
 </style>
 
@@ -10047,65 +10043,56 @@ on('ai-cancel-btn','click', function(){
   function createFolder(name){ ensureFolders(); var id='f_'+uid(); state.binFolders.push({ id:id, name:name||('Folder '+state.binFolders.length), expanded:true }); renderBin(); }
   function deleteFolder(id){ ensureFolders(); if (id==='root') return; Object.keys(state.binMap).forEach(function(cid){ if(state.binMap[cid]===id) state.binMap[cid]='root'; }); state.binFolders = state.binFolders.filter(function(f){ return f.id!==id; }); renderBin(); }
   function renameFolder(id){ ensureFolders(); var f=state.binFolders.find(function(x){return x.id===id}); if(!f) return; var nm=prompt('Folder name', f.name); if(nm){ f.name=nm; renderBin(); } }
-
-  // + Folder button in Browser header (idempotent)
   (function(){ var hdr=document.querySelector('#browser .panel-header'); if (hdr && !document.getElementById('bin-new-folder-btn')){ var btn=document.createElement('button'); btn.id='bin-new-folder-btn'; btn.className='tool-btn'; btn.textContent='+ Folder'; btn.title='Create folder'; btn.style.cssText='margin-left:auto;height:18px;font-size:9px;padding:0 6px;'; btn.addEventListener('click', function(){ var nm=prompt('Folder name'); if(nm) createFolder(nm); }); hdr.appendChild(btn); } })();
-
-  // Override renderBin (folder-aware)
   window.renderBin = function(){
-    ensureFolders();
-    var list = document.getElementById('bin-list'); if (!list) return; list.innerHTML='';
+    ensureFolders(); var list = document.getElementById('bin-list'); if (!list) return; list.innerHTML='';
     var qEl = document.getElementById('bin-search'); var q = qEl ? (qEl.value||'').toLowerCase() : '';
-
     state.binFolders.forEach(function(f){
-      // Folder header
       var header=document.createElement('div'); header.className='bin-folder'; header.dataset.id=f.id;
       header.innerHTML = '<span class="bf-caret">'+(f.expanded?'▾':'▸')+'</span>'+
                          '<span class="bf-name">'+(f.name||'Folder')+'</span>'+
                          (f.id!=='root' ? '<button class="bf-del" title="Delete">✕</button>' : '');
       header.addEventListener('click', function(e){ if (e.target.classList.contains('bf-del')) return; f.expanded=!f.expanded; renderBin(); });
       if (f.id!=='root') header.addEventListener('dblclick', function(){ renameFolder(f.id); });
-      // DnD move support
       header.addEventListener('dragover', function(e){ e.preventDefault(); header.style.background='rgba(74,143,205,0.2)'; });
       header.addEventListener('dragleave', function(){ header.style.background=''; });
       header.addEventListener('drop', function(e){ e.preventDefault(); header.style.background=''; var cid=e.dataTransfer.getData('text/x-clip-id'); if(cid){ moveClipToFolder(cid, f.id); renderBin(); }});
-      // Delete button
       if (f.id!=='root') header.querySelector('.bf-del')?.addEventListener('click', function(e){ e.stopPropagation(); if (confirm('Delete folder ''+f.name+''? Items will move to All Clips.')) deleteFolder(f.id); });
-      list.appendChild(header);
-      if (!f.expanded) return;
-
-      // Items in this folder
-      (state.clips||[])
-        .filter(function(c){ return (state.binMap[c.id]||'root')===f.id; })
-        .filter(function(c){ return !q || c.name.toLowerCase().includes(q); })
-        .forEach(function(clip){
-          var item=document.createElement('div');
-          item.className='bin-item'+(clip.id===state.selectedClipId?' selected':'');
-          item.dataset.id=clip.id; item.draggable=true;
-          var bpmBadge = clip.bpm ? ('<span class="bpm-badge">'+clip.bpm+' BPM</span>') : '';
-          var beatBadge = (clip.beatMarkers && clip.beatMarkers.length) ? ('<span class="beats-badge">♩ '+clip.beatMarkers.length+'</span>') : '';
-          var analysingBadge = clip._stub
-             ? '<span class="analysing-badge" style="background:rgba(180,80,30,0.3);color:#e09060;">⚠ re-import needed</span>'
-             : (!clip.waveformData && !clip.bpm) ? '<span class="analysing-badge">● analysing</span>' : '';
-          item.innerHTML = '<div class="bin-thumb">'+(clip.type==='audio'?'🎵':'🎬')+'</div>'+
-                           '<div class="bin-info">'+
-                           '  <div class="bin-name" title="'+clip.name+'">'+clip.name+'</div>'+
-                           '  <div class="bin-meta">'+(window.formatTC? formatTC(clip.duration):'')+' · '+clip.type+bpmBadge+beatBadge+analysingBadge+'</div>'+
-                           '</div>';
-          // Keep existing bin interactions
-          item.addEventListener('click', function(){ window.selectBinClip && selectBinClip(clip.id); });
-          item.addEventListener('dblclick', function(){ window.openInViewer && openInViewer(clip.id); });
-          item.addEventListener('dragstart', function(e){ e.dataTransfer.setData('text/x-clip-id', clip.id); });
-          list.appendChild(item);
-        });
+      list.appendChild(header); if (!f.expanded) return;
+      (state.clips||[]).filter(function(c){ return (state.binMap[c.id]||'root')===f.id; })
+                       .filter(function(c){ return !q || c.name.toLowerCase().includes(q); })
+                       .forEach(function(clip){
+        var item=document.createElement('div'); item.className='bin-item'+(clip.id===state.selectedClipId?' selected':''); item.dataset.id=clip.id; item.draggable=true;
+        var bpmBadge = clip.bpm ? ('<span class="bpm-badge">'+clip.bpm+' BPM</span>') : '';
+        var beatBadge = (clip.beatMarkers && clip.beatMarkers.length) ? ('<span class="beats-badge">♩ '+clip.beatMarkers.length+'</span>') : '';
+        var analysingBadge = clip._stub ? '<span class="analysing-badge" style="background:rgba(180,80,30,0.3);color:#e09060;">⚠ re-import needed</span>' : (!clip.waveformData && !clip.bpm) ? '<span class="analysing-badge">● analysing</span>' : '';
+        item.innerHTML = '<div class="bin-thumb">'+(clip.type==='audio'?'🎵':'🎬')+'</div>'+
+                         '<div class="bin-info">'+
+                         '  <div class="bin-name" title="'+clip.name+'">'+clip.name+'</div>'+
+                         '  <div class="bin-meta">'+(window.formatTC? formatTC(clip.duration):'')+' · '+clip.type+bpmBadge+beatBadge+analysingBadge+'</div>'+
+                         '</div>';
+        item.addEventListener('click', function(){ window.selectBinClip && selectBinClip(clip.id); });
+        item.addEventListener('dblclick', function(){ window.openInViewer && openInViewer(clip.id); });
+        item.addEventListener('dragstart', function(e){ e.dataTransfer.setData('text/x-clip-id', clip.id); });
+        list.appendChild(item);
+      });
     });
   };
-
-  // Default existing clips to root
   (window.state && state.clips || []).forEach(function(c){ ensureFolders(); if(!state.binMap[c.id]) state.binMap[c.id]='root'; });
-
-  // First render if app is already running
   if (document.readyState !== 'loading') { try { renderBin(); } catch(_){} }
+})();
+</script>
+
+
+<script id="bin-folders-augment">
+(function(){
+  function ensureAllMapped(){ try{ if(!window.state) return; if(!state.binMap) state.binMap={}; (state.clips||[]).forEach(function(c){ if(!state.binMap[c.id]) state.binMap[c.id]='root'; }); }catch(e){} }
+  if (typeof window.renderBin === 'function'){
+    const _rb = window.renderBin; window.renderBin = function(){ ensureAllMapped(); return _rb(); };
+  }
+  if (typeof window.importFiles === 'function'){
+    const _imp = window.importFiles; window.importFiles = function(files){ _imp(files); setTimeout(function(){ ensureAllMapped(); if (typeof renderBin==='function') renderBin(); }, 0); };
+  }
 })();
 </script>
 
