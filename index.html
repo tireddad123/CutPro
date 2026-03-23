@@ -278,8 +278,21 @@
     font-size: 10px;
     cursor: pointer;
     transition: all 0.2s;
-  }
-  .drop-zone:hover, .drop-zone.dragover {
+  
+ position: relative;
+}
+  
+#drop-zone #file-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+#drop-zone.drag-mode #file-input { pointer-events: none; }
+.drop-zone:hover, .drop-zone.dragover {
     border-color: var(--accent-blue);
     background: rgba(74,143,205,0.08);
     color: var(--accent-blue);
@@ -2425,12 +2438,6 @@
   .transition-dur-row{display:flex;align-items:center;gap:6px;margin-top:4px}
 
 </style>
-
-<style id="cp-fileinput-overlay">
-#drop-zone{position:relative;}
-#drop-zone #file-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;pointer-events:auto;}
-#drop-zone.drag-mode #file-input{pointer-events:none;}
-</style>
 </head>
 <body>
 
@@ -2589,7 +2596,6 @@
       <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M5 5l5 2-5 2V5z" fill="currentColor"/></svg>
       Render
     </button>
- <button class=\"tool-btn\" id=\"btn-import-test\" title=\"Import test clip\">➕ Test Clip</button>
 
     <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
       <button class="tool-btn has-tip" id="btn-multi-select" title="Multi-select (M)" style="font-size:10px;">
@@ -4413,56 +4419,13 @@ async function runCanvasFallbackExport() {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-
+// FILE IMPORT
 // ─────────────────────────────────────────────────────────────────────────────
-// FILE IMPORT (updated)
-// ─────────────────────────────────────────────────────────────────────────────
-(function(){
-  const dropZone = document.getElementById('drop-zone');
-  const fileInput = document.getElementById('file-input');
-  const dragOverlay = document.getElementById('drag-overlay');
-  if (!dropZone || !fileInput) return;
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
 
-  // Prevent duplicate wiring if this code runs twice
-  if (dropZone.dataset.importWired === '1') return; 
-  dropZone.dataset.importWired = '1';
-
-  function handleFiles(fs){
-    if(!fs || !fs.length) return;
-    if (typeof importFiles === 'function') importFiles(fs);
-    else console.warn('[CutPro] importFiles(...) not available');
-  }
-
-  // Click-to-import
-  dropZone.addEventListener('click', ()=> fileInput.click());
-  fileInput.addEventListener('change', e=> { handleFiles(e.target.files); e.target.value=''; });
-
-  // Global drag overlay with depth guard so flicker is avoided
-  let depth = 0;
-  const show = ()=> dragOverlay && dragOverlay.classList.add('show');
-  const hide = ()=> dragOverlay && dragOverlay.classList.remove('show');
-
-  ['dragenter','dragover'].forEach(evt => document.addEventListener(evt, e=>{
-    e.preventDefault(); e.stopPropagation(); depth++; show();
-  }, false));
-  document.addEventListener('dragleave', e=>{
-    e.preventDefault(); e.stopPropagation(); depth = Math.max(0, depth-1); if(depth===0) hide();
-  }, false);
-
-  // Highlight drop zone
-  dropZone.addEventListener('dragover', e=>{ e.preventDefault(); e.stopPropagation(); dropZone.classList.add('dragover'); });
-  dropZone.addEventListener('dragleave', ()=> dropZone.classList.remove('dragover'));
-
-  // Handle drops
-  dropZone.addEventListener('drop', e=>{
-    e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('dragover'); hide();
-    if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files);
-  });
-  document.addEventListener('drop', e=>{
-    e.preventDefault(); e.stopPropagation(); hide();
-    if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files);
-  });
-})();
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => importFiles(e.target.files));
 
 // Bin search filter
 document.getElementById('bin-search').addEventListener('input', () => renderBin());
@@ -4496,11 +4459,9 @@ document.addEventListener('drop', (e) => {
 });
 
 // Bin drop zone
-dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', (e) => {
-  e.preventDefault(); e.stopPropagation();
-  dropZone.classList.remove('dragover');
+dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); dropZone.classList.add('drag-mode'); });
+dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); dropZone.classList.remove('drag-mode'); });
+dropZone.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('dragover'); dropZone.classList.remove('drag-mode');
   if (e.dataTransfer.files.length) importFiles(e.dataTransfer.files);
 });
 
@@ -9918,63 +9879,5 @@ window.mRenderBin=mRenderBin;
 window.mRenderTimeline=mRenderTimeline;
 })();
 </script>
-
-<script id="cp-test-import">
-(function(){
-  function showStatus(msg){ try{ setStatus(msg); }catch(e){ /* ignore */ } }
-  function makeTestWav(seconds, hz){
-    seconds = seconds||2; hz = hz||440;
-    var sr = 44100, ch = 1, samples = Math.max(1, Math.floor(seconds*sr));
-    var buffer = new ArrayBuffer(44 + samples*2);
-    var view = new DataView(buffer);
-    var p=0;
-    // RIFF header
-    view.setUint32(p, 0x46464952, false); p+=4; // 'RIFF' BE for ascii
-    view.setUint32(p, 36 + samples*2, true); p+=4; // size
-    view.setUint32(p, 0x45564157, false); p+=4; // 'WAVE'
-    view.setUint32(p, 0x20746d66, false); p+=4; // 'fmt '
-    view.setUint32(p, 16, true); p+=4; // PCM chunk
-    view.setUint16(p, 1, true); p+=2; // PCM
-    view.setUint16(p, ch, true); p+=2; // channels
-    view.setUint32(p, sr, true); p+=4; // sample rate
-    view.setUint32(p, sr*ch*2, true); p+=4; // byte rate
-    view.setUint16(p, ch*2, true); p+=2; // block align
-    view.setUint16(p, 16, true); p+=2; // bits/sample
-    view.setUint32(p, 0x61746164, false); p+=4; // 'data'
-    view.setUint32(p, samples*2, true); p+=4; // data size
-    var amp = 0.3, t = 0, dt = 2*Math.PI*hz/sr;
-    for (var i=0;i<samples;i++){
-      var s = Math.sin(t)*amp; t += dt;
-      view.setInt16(44 + i*2, (s*32767)|0, true);
-    }
-    return new Blob([view], {type:'audio/wav'});
-  }
-  function importTest(){
-    try{
-      var blob = makeTestWav(2, 440);
-      var file = new File([blob], 'test_tone.wav', {type:'audio/wav'});
-      if (window.importFiles) {
-        importFiles([file]);
-        showStatus('✓ Test clip imported');
-      } else {
-        showStatus('✗ importFiles() not available');
-      }
-    }catch(e){ showStatus('✗ Test import failed'); }
-  }
-  document.getElementById('btn-import-test')?.addEventListener('click', importTest);
-  // During drag, let the drop zone receive events under the transparent input
-  var dz = document.getElementById('drop-zone');
-  var fi = document.getElementById('file-input');
-  if (dz && fi){
-    var depth = 0;
-    function onEnter(e){ depth++; dz.classList.add('drag-mode'); }
-    function onLeave(e){ depth = Math.max(0, depth-1); if(depth===0) dz.classList.remove('drag-mode'); }
-    document.addEventListener('dragenter', onEnter, false);
-    document.addEventListener('dragleave', onLeave, false);
-    document.addEventListener('drop', function(){ depth=0; dz.classList.remove('drag-mode'); }, false);
-  }
-})();
-</script>
-
 </body>
 </html>
