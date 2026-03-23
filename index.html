@@ -3194,6 +3194,8 @@ const TRACK_ORDER = ['v2', 'v1', 'a1'];
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
+function on(id, evt, fn) { try { var el = document.getElementById(id); if (el) el.addEventListener(evt, fn); } catch(e) { /* no-op */ } }
+// ─────────────────────────────────────────────────────────────────────────────
 function uid() { return Math.random().toString(36).slice(2,9); }
 
 function formatTC(sec) {
@@ -3729,7 +3731,7 @@ const FFMPEG_CORE = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.
 const FFMPEG_WASM = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
 
 // ── Open export modal ─────────────────────────────────────────────────────
-document.getElementById('btn-export').addEventListener('click', () => {
+on('btn-export','click', () => {
   if (state.timeline.length === 0) { setStatus('Add clips to the timeline first'); return; }
   openExportModal();
 });
@@ -3852,11 +3854,11 @@ document.querySelectorAll('.export-device-preset').forEach(btn => {
     setStatus('Preset: ' + preset.label);
   });
 });
-document.getElementById('export-close').addEventListener('click', () => {
+on('export-close','click', () => {
   exportAborted = true;
   document.getElementById('export-modal').classList.remove('open');
 });
-document.getElementById('export-cancel').addEventListener('click', () => {
+on('export-cancel','click', () => {
   exportAborted = true;
   document.getElementById('export-modal').classList.remove('open');
 });
@@ -3889,7 +3891,7 @@ function setProgress(pct, label) {
 }
 
 // ── Entry point ────────────────────────────────────────────────────────────
-document.getElementById('export-start-btn').addEventListener('click', () => {
+on('export-start-btn','click', () => {
   document.getElementById('export-progress-section').classList.add('show');
   const isolated = typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated;
   if (isolated) {
