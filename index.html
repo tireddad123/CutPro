@@ -1,242 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>CutPro</title>
+<meta charset="UTF-8"/>
+<title>Timeline Prototype</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
 :root{
-  --bg:#111;--panel:#1e1e1e;--panel2:#252525;
-  --text:#d8d8d8;--muted:#888;--accent:#4a8fcd;
-  font-family:"Lucida Grande","Helvetica Neue",Arial,sans-serif;font-size:11px;
+  --bg:#0e0e0e;
+  --panel:#1a1a1a;
+  --panel2:#222;
+  --grid:#2b2b2b;
+  --text:#ddd;
+  --accent:#f0b400;
+  --vColor:#3a6a9a;
+  --gColor:#6b4bb6;
+  --aColor:#3d6b3d;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size:11px;
 }
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden}
 *{box-sizing:border-box}
-#app{display:flex;flex-direction:column;height:100%}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden}
 
-/* Toolbar */
-#toolbar{height:38px;display:flex;align-items:center;gap:6px;padding:0 8px;
-  background:linear-gradient(#3a3a3a,#262626);border-bottom:1px solid #111}
-.tool-btn{height:26px;border-radius:3px;padding:0 8px;
-  background:linear-gradient(#3e3e3e,#292929);
-  border:1px solid #1a1a1a;color:var(--text);cursor:pointer}
-.tool-sep{width:1px;height:22px;background:#444;margin:0 4px}
+#app{
+  display:flex;
+  height:100%;
+}
 
-/* Layout */
-#workspace{flex:1;display:flex}
-#browser{width:240px;background:var(--panel);border-right:1px solid #111}
-#center{flex:1;display:flex;flex-direction:column}
+/* ───── Track Headers ───── */
+#track-headers{
+  width:180px;
+  background:linear-gradient(#2a2a2a,#1e1e1e);
+  border-right:1px solid #111;
+}
 
-/* Timeline */
-#timeline{height:220px;background:#111}
-.track{height:40px;border-bottom:1px solid #222;position:relative}
+.track-header{
+  height:44px;
+  display:flex;
+  align-items:center;
+  padding:0 8px;
+  gap:6px;
+  border-bottom:1px solid #111;
+}
+
+.track-header .label{
+  flex:1;
+  font-weight:bold;
+}
+.track-header.v2{background:#241c36}
+.track-header.v1{background:#1b2736}
+.track-header.a1{background:#1f2b1f}
+
+.track-header button{
+  width:18px;height:18px;
+  background:#333;border:none;color:#aaa;
+  border-radius:3px;cursor:pointer;
+}
+
+/* ───── Timeline Body ───── */
+#timeline{
+  flex:1;
+  position:relative;
+  overflow:auto;
+  background:var(--bg)
+}
+
+.timeline-row{
+  height:44px;
+  position:relative;
+  border-bottom:1px solid #111;
+}
+
+.timeline-grid{
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px);
+  background-size:48px 100%;
+  pointer-events:none;
+}
+
+/* ───── Playhead ───── */
+#playhead{
+  position:absolute;
+  top:0;bottom:0;
+  width:2px;
+  left:4px;
+  background:var(--accent);
+  z-index:10;
+}
+
+/* ───── Clips ───── */
 .clip{
-  position:absolute;top:4px;bottom:4px;
-  background:#3a6a9a;border-radius:3px;
-  padding:0 6px;display:flex;align-items:center;cursor:grab
+  position:absolute;
+  top:6px;
+  bottom:6px;
+  border-radius:4px;
+  padding:0 6px;
+  display:flex;
+  align-items:center;
+  font-size:10px;
+  cursor:grab;
+  color:#fff;
 }
-
-/* Modals */
-.modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.65);
-  display:none;align-items:center;justify-content:center;z-index:99
-}
-.card{
-  background:#1a1e28;border:1px solid #2a3040;
-  border-radius:8px;padding:14px;width:440px
-}
-.card h2{margin:0 0 12px;font-size:14px}
-.row{font-size:10px;color:#aaa;margin-bottom:6px}
-.row button{margin-left:6px}
-
-/* Status */
-#statusbar{height:18px;padding:0 8px;font-size:9px;color:var(--muted);
-  display:flex;align-items:center;
-  background:linear-gradient(#1e1e1e,#161616);border-top:1px solid #111}
+.clip.video{background:var(--vColor)}
+.clip.graphics{background:var(--gColor)}
+.clip.audio{background:var(--aColor)}
 </style>
 </head>
 
 <body>
 <div id="app">
 
-<!-- TOOLBAR -->
-<div id="toolbar">
-  <button class="tool-btn" onclick="saveProject()">Save Project</button>
-  <button class="tool-btn" onclick="openProject()">Open Project</button>
-  <button class="tool-btn" onclick="openHistory()">History</button>
-  <div class="tool-sep"></div>
-  <button class="tool-btn" onclick="addClip()">+ Clip</button>
-</div>
-
-<div id="workspace">
-  <div id="browser"></div>
-  <div id="center">
-    <div id="timeline">
-      <div class="track" id="v1"></div>
-    </div>
+<!-- TRACK HEADERS -->
+<div id="track-headers">
+  <div class="track-header v2">
+    <span class="label">V2 GR</span>
+    <button>➕</button>
+    <button>🔒</button>
+  </div>
+  <div class="track-header v1">
+    <span class="label">V1</span>
+    <button>👁</button>
+    <button>🔒</button>
+  </div>
+  <div class="track-header a1">
+    <span class="label">A1</span>
+    <button>🔊</button>
+    <button>🔒</button>
   </div>
 </div>
 
-<div id="statusbar">
-  <span id="statusText">Ready</span>
+<!-- TIMELINE -->
+<div id="timeline">
+  <div class="timeline-grid"></div>
+  <div id="playhead"></div>
+
+  <div class="timeline-row" data-track="v2"></div>
+  <div class="timeline-row" data-track="v1"></div>
+  <div class="timeline-row" data-track="a1"></div>
 </div>
 
 </div>
-
-<!-- HISTORY MODAL -->
-<div class="modal" id="historyModal">
-  <div class="card">
-    <h2>Version History</h2>
-    <div id="historyList"></div>
-    <div style="text-align:right">
-      <button onclick="closeHistory()">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- FILE INPUT -->
-<input type="file" id="openInput" accept=".cutpro" hidden>
 
 <script>
-/* ================= STATE ================= */
-const state = {
-  clips: [],
-  editCount: 0
-};
-
-/* ================= AUTO SAVE ================= */
-function autoSave() {
-  const project = {
-    version: "1.0",
-    savedAt: Date.now(),
-    timeline: state.clips
+/* Simple clip drop for demo */
+document.querySelectorAll('.timeline-row').forEach(row=>{
+  row.ondragover = e => e.preventDefault();
+  row.ondrop = e => {
+    const clip = document.createElement('div');
+    clip.className = 'clip ' + (
+      row.dataset.track === 'a1' ? 'audio' :
+      row.dataset.track === 'v2' ? 'graphics' : 'video'
+    );
+    clip.textContent = 'Clip';
+    clip.style.left = e.offsetX + 'px';
+    clip.style.width = '140px';
+    row.appendChild(clip);
   };
-  localStorage.setItem("cutpro-autosave", JSON.stringify(project));
-
-  state.editCount++;
-  if (state.editCount % 30 === 0) snapshot("Auto snapshot");
-  setStatus("Saved");
-}
-
-/* ================= RESTORE ================= */
-function restore() {
-  const s = localStorage.getItem("cutpro-autosave");
-  if (!s) return;
-  const p = JSON.parse(s);
-  state.clips = p.timeline || [];
-  render();
-  setStatus("Restored autosave");
-}
-restore();
-
-/* ================= SNAPSHOTS ================= */
-function snapshot(label="Manual snapshot") {
-  const history = JSON.parse(localStorage.getItem("cutpro-history") || "[]");
-  history.unshift({
-    id: crypto.randomUUID(),
-    label,
-    time: new Date().toLocaleTimeString(),
-    timeline: JSON.parse(JSON.stringify(state.clips))
-  });
-  localStorage.setItem("cutpro-history", JSON.stringify(history.slice(0,20)));
-}
-
-function openHistory() {
-  const list = document.getElementById("historyList");
-  list.innerHTML = "";
-  const history = JSON.parse(localStorage.getItem("cutpro-history") || "[]");
-
-  history.forEach(h => {
-    const div = document.createElement("div");
-    div.className = "row";
-    div.textContent = `${h.time} · ${h.label}`;
-    const btn = document.createElement("button");
-    btn.textContent = "Restore";
-    btn.onclick = () => {
-      state.clips = JSON.parse(JSON.stringify(h.timeline));
-      render();
-      autoSave();
-      closeHistory();
-    };
-    div.appendChild(btn);
-    list.appendChild(div);
-  });
-  historyModal.style.display = "flex";
-}
-
-function closeHistory() {
-  historyModal.style.display = "none";
-}
-
-/* ================= SAVE / OPEN ================= */
-function saveProject() {
-  snapshot("Manual save");
-  const blob = new Blob(
-    [JSON.stringify({version:"1.0",timeline:state.clips}, null, 2)],
-    {type:"application/json"}
-  );
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "project.cutpro";
-  a.click();
-}
-
-function openProject() {
-  openInput.click();
-}
-
-openInput.onchange = e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  file.text().then(t => {
-    const p = JSON.parse(t);
-    state.clips = p.timeline || [];
-    render();
-    autoSave();
-    snapshot("Opened project");
-  });
-};
-
-/* ================= TIMELINE ================= */
-function addClip() {
-  state.clips.push({
-    id: crypto.randomUUID(),
-    name: "Clip " + (state.clips.length + 1),
-    start: state.clips.length * 2,
-    dur: 2
-  });
-  render();
-  autoSave();
-}
-
-function render() {
-  v1.innerHTML = "";
-  state.clips.forEach(c => {
-    const el = document.createElement("div");
-    el.className = "clip";
-    el.textContent = c.name;
-    el.style.left = (c.start * 40) + "px";
-    el.style.width = (c.dur * 40) + "px";
-    v1.appendChild(el);
-  });
-}
-
-/* ================= SHORTCUT ================= */
-document.addEventListener("keydown", e => {
-  if ((e.ctrlKey||e.metaKey) && e.key === "s") {
-    e.preventDefault();
-    saveProject();
-  }
 });
-
-/* ================= STATUS ================= */
-let statusTimer;
-function setStatus(t){
-  statusText.textContent = t;
-  clearTimeout(statusTimer);
-  statusTimer = setTimeout(()=>statusText.textContent="Ready",1500);
-}
 </script>
 </body>
 </html>
+``
