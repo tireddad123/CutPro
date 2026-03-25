@@ -75,3 +75,388 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
   border-bottom:1px solid #222;
   cursor:grab;
 }
+.bin-item:hover{background:rgba(74,143,205,.15)}
+
+/* ───────── CENTER ───────── */
+#center{flex:1;display:flex;flex-direction:column}
+#viewers{flex:1;display:flex;border-bottom:2px solid #111}
+.viewer-panel{flex:1;display:flex;flex-direction:column;background:var(--panel)}
+.viewer-screen{flex:1;background:#000;position:relative}
+.viewer-label{
+  position:absolute;top:6px;left:8px;
+  font-size:9px;color:rgba(255,255,255,.4);
+  letter-spacing:1px;
+}
+
+/* ───────── TIMELINE ───────── */
+#timeline{height:220px;background:#111;display:flex;flex-direction:column}
+#timeline-toolbar{
+  height:28px;padding:0 8px;
+  display:flex;align-items:center;
+  background:linear-gradient(#2e2e2e,#242424);
+  border-bottom:1px solid #111;
+}
+#timeline-content{flex:1;display:flex}
+#track-headers{
+  width:120px;background:var(--panel2);
+  border-right:1px solid #111
+}
+.track-header{
+  height:40px;padding:0 6px;
+  display:flex;align-items:center;
+  font-size:10px;color:#aaa;
+  border-bottom:1px solid #111;
+}
+
+#tracks{flex:1;position:relative;overflow:auto}
+.timeline-track{
+  height:40px;border-bottom:1px solid #111;
+  position:relative;
+}
+
+.clip{
+  position:absolute;top:4px;bottom:4px;
+  background:linear-gradient(#3a6a9a,#2a4e74,#1e3850);
+  border-radius:3px;border:1px solid #1a3a6a;
+  font-size:9px;color:#fff;
+  padding:0 6px;display:flex;align-items:center;
+  cursor:grab;
+}
+.clip.selected{outline:2px solid var(--accent)}
+
+.fade-in,.fade-out{
+  position:absolute;top:0;bottom:0;pointer-events:none;
+}
+.fade-in{
+  left:0;
+  background:linear-gradient(to right,rgba(0,0,0,.7),transparent);
+}
+.fade-out{
+  right:0;
+  background:linear-gradient(to left,rgba(0,0,0,.7),transparent);
+}
+.fade-handle{
+  position:absolute;top:0;bottom:0;width:10px;
+  cursor:ew-resize;z-index:10;
+}
+
+#playhead{
+  position:absolute;top:0;bottom:0;width:2px;
+  background:var(--playhead);z-index:20;
+}
+#snap-guide{
+  position:absolute;top:0;bottom:0;width:2px;
+  background:var(--accent);display:none;z-index:30;
+}
+
+/* ───────── INSPECTOR ───────── */
+#inspector{
+  width:220px;background:var(--panel);
+  border-left:1px solid #111;
+  display:flex;flex-direction:column;
+}
+.inspector-section{border-bottom:1px solid #111}
+.inspector-title{
+  height:20px;padding:0 8px;
+  display:flex;align-items:center;
+  font-size:10px;text-transform:uppercase;
+  background:linear-gradient(#2e2e2e,#242424);
+}
+.inspector-body{padding:6px 8px}
+.param-row{display:flex;gap:6px;margin-bottom:6px}
+.param-label{width:60px;font-size:10px;color:#aaa}
+
+/* ───────── STATUS ───────── */
+#statusbar{
+  height:18px;padding:0 8px;
+  display:flex;align-items:center;
+  font-size:9px;color:var(--muted);
+  background:linear-gradient(#1e1e1e,#161616);
+  border-top:1px solid #111;
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+
+<!-- TOOLBAR -->
+<div id="toolbar">
+  <button class="tool-btn active" id="tool-select">A</button>
+  <button class="tool-btn" id="tool-blade">B</button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" id="btn-play">▶</button>
+</div>
+
+<div id="workspace">
+
+<!-- BROWSER -->
+<div id="browser">
+  <div class="panel-header">Browser</div>
+  <div id="bin"></div>
+  <input id="fileInput" type="file" multiple hidden>
+</div>
+
+<!-- CENTER -->
+<div id="center">
+  <div id="viewers">
+    <div class="viewer-panel">
+      <div class="panel-header">Viewer</div>
+      <div class="viewer-screen">
+        <div class="viewer-label">SOURCE</div>
+      </div>
+    </div>
+    <div class="viewer-panel">
+      <div class="panel-header">Canvas</div>
+      <div class="viewer-screen">
+        <canvas id="canvas" width="1280" height="720"></canvas>
+        <div class="viewer-label">SEQUENCE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div id="timeline">
+    <div id="timeline-toolbar">Timeline</div>
+    <div id="timeline-content">
+      <div id="track-headers">
+        <div class="track-header">V2</div>
+        <div class="track-header">V1</div>
+        <div class="track-header">A1</div>
+      </div>
+      <div id="tracks">
+        <div class="timeline-track" data-track="v2"></div>
+        <div class="timeline-track" data-track="v1"></div>
+        <div class="timeline-track" data-track="a1"></div>
+        <div id="snap-guide"></div>
+        <div id="playhead"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INSPECTOR -->
+<div id="inspector">
+  <div class="panel-header">Inspector</div>
+  <div class="inspector-section">
+    <div class="inspector-title">Motion</div>
+    <div class="inspector-body">
+      <div class="param-row">
+        <span class="param-label">Scale</span>
+        <input type="range" id="scale" min="50" max="200" value="100">
+      </div>
+      <div class="param-row">
+        <span class="param-label">Opacity</span>
+        <input type="range" id="opacity" min="0" max="100" value="100">
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div id="statusbar">Ready</div>
+
+</div>
+
+<script>
+/* ========= STATE ========= */
+const PX_PER_SEC = 20;
+const SNAP_PX = 8;
+
+const state = {
+  tool:'select',
+  assets:[],
+  timeline:[],
+  selected:null,
+  selectedClips:new Set(),
+  playhead:0,
+  playing:false
+};
+
+const ctx = canvas.getContext('2d');
+
+/* ========= UTILS ========= */
+const secToPx = s => s * PX_PER_SEC;
+const pxToSec = p => p / PX_PER_SEC;
+
+/* ========= TOOLS + KEYS ========= */
+function setTool(t){
+  state.tool=t;
+  toolSelect.classList.toggle('active',t==='select');
+  toolBlade.classList.toggle('active',t==='blade');
+}
+toolSelect.onclick=()=>setTool('select');
+toolBlade.onclick=()=>setTool('blade');
+
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();togglePlay();}
+  if(e.key==='a'||e.key==='A')setTool('select');
+  if(e.key==='b'||e.key==='B')setTool('blade');
+});
+
+/* ========= BIN ========= */
+browser.onclick=()=>fileInput.click();
+fileInput.onchange=e=>{
+  [...e.target.files].forEach(file=>{
+    const url=URL.createObjectURL(file);
+    const video=document.createElement('video');
+    video.src=url; video.muted=true;
+    const asset={id:crypto.randomUUID(),file,url,video};
+    state.assets.push(asset);
+
+    const el=document.createElement('div');
+    el.className='bin-item';
+    el.textContent=file.name;
+    el.draggable=true;
+    el.ondragstart=ev=>ev.dataTransfer.setData('id',asset.id);
+    bin.appendChild(el);
+  });
+};
+
+/* ========= SNAP ========= */
+function snapTime(raw){
+  let best=null;
+  if(Math.abs(secToPx(raw-state.playhead))<SNAP_PX)best=state.playhead;
+  state.timeline.forEach(c=>{
+    [c.start,c.start+c.dur].forEach(e=>{
+      if(Math.abs(secToPx(raw-e))<SNAP_PX)best=e;
+    });
+  });
+  snapGuide.style.display=best!=null?'block':'none';
+  if(best!=null)snapGuide.style.left=secToPx(best)+'px';
+  return best??raw;
+}
+
+/* ========= TIMELINE DROP ========= */
+document.querySelectorAll('.timeline-track').forEach(track=>{
+  track.ondragover=e=>e.preventDefault();
+  track.ondrop=e=>{
+    const asset=state.assets.find(a=>a.id===e.dataTransfer.getData('id'));
+    state.timeline.push({
+      id:crypto.randomUUID(),asset,start:pxToSec(e.offsetX),
+      dur:5,scale:1,op:1,fadeIn:0,fadeOut:0
+    });
+    renderTimeline();
+  };
+});
+
+/* ========= BLADE ========= */
+function bladeClip(clip,ev){
+  const px=ev.offsetX;
+  const cut=clip.start+pxToSec(px-secToPx(clip.start));
+  if(cut<=clip.start+0.1||cut>=clip.start+clip.dur-0.1)return;
+  const rightDur=clip.dur-(cut-clip.start);
+  clip.dur=cut-clip.start;
+  state.timeline.push({...clip,id:crypto.randomUUID(),start:cut,dur:rightDur});
+  renderTimeline();
+}
+
+/* ========= TIMELINE ========= */
+function renderTimeline(){
+  document.querySelectorAll('.clip').forEach(c=>c.remove());
+  state.timeline.forEach(c=>{
+    const el=document.createElement('div');
+    el.className='clip'+(state.selectedClips.has(c)?' selected':'');
+    el.style.left=secToPx(c.start)+'px';
+    el.style.width=secToPx(c.dur)+'px';
+    el.textContent=c.asset.file.name;
+
+    el.onclick=e=>{
+      e.stopPropagation();
+      if(state.tool==='blade'){bladeClip(c,e);return;}
+      if(e.shiftKey){
+        state.selectedClips.has(c)?state.selectedClips.delete(c):state.selectedClips.add(c);
+      }else{
+        state.selectedClips.clear();state.selectedClips.add(c);
+      }
+      state.selected=c;
+      renderTimeline();
+    };
+
+    let sx;
+    el.onmousedown=e=>{
+      if(state.tool==='blade')return;
+      sx=e.clientX;
+      document.onmousemove=ev=>{
+        c.start=snapTime(c.start+(ev.clientX-sx)/PX_PER_SEC);
+        sx=ev.clientX;
+        renderTimeline();
+      };
+      document.onmouseup=()=>{snapGuide.style.display='none';document.onmousemove=null};
+    };
+
+    makeFades(el,c);
+    document.querySelector('[data-track="v1"]').appendChild(el);
+  });
+}
+
+/* ========= FADES ========= */
+function makeFades(el,c){
+  if(c.fadeIn>0){
+    const f=document.createElement('div');
+    f.className='fade-in';
+    f.style.width=secToPx(c.fadeIn)+'px';
+    el.appendChild(f);
+  }
+  if(c.fadeOut>0){
+    const f=document.createElement('div');
+    f.className='fade-out';
+    f.style.width=secToPx(c.fadeOut)+'px';
+    el.appendChild(f);
+  }
+
+  const l=document.createElement('div');
+  l.className='fade-handle'; l.style.left='0';
+  l.onmousedown=e=>{
+    e.stopPropagation();let sx=e.clientX;
+    document.onmousemove=ev=>{
+      c.fadeIn=Math.max(0,c.fadeIn+(ev.clientX-sx)/PX_PER_SEC);
+      sx=ev.clientX;renderTimeline();
+    };
+    document.onmouseup=()=>document.onmousemove=null;
+  };
+
+  const r=document.createElement('div');
+  r.className='fade-handle'; r.style.right='0';
+  r.onmousedown=e=>{
+    e.stopPropagation();let sx=e.clientX;
+    document.onmousemove=ev=>{
+      c.fadeOut=Math.max(0,c.fadeOut-(ev.clientX-sx)/PX_PER_SEC);
+      sx=ev.clientX;renderTimeline();
+    };
+    document.onmouseup=()=>document.onmousemove=null;
+  };
+
+  el.append(l,r);
+}
+
+/* ========= CANVAS ========= */
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  state.timeline.forEach(c=>{
+    if(c.asset.video.readyState>=2){
+      ctx.globalAlpha=c.op;
+      const w=canvas.width*c.scale;
+      const h=canvas.height*c.scale;
+      ctx.drawImage(c.asset.video,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
+    }
+  });
+  ctx.globalAlpha=1;
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* ========= INSPECTOR ========= */
+scale.oninput=()=>state.selected&&(state.selected.scale=scale.value/100);
+opacity.oninput=()=>state.selected&&(state.selected.op=opacity.value/100);
+
+/* ========= PLAY ========= */
+function togglePlay(){
+  state.playing=!state.playing;
+  state.timeline.forEach(c=>state.playing?c.asset.video.play():c.asset.video.pause());
+  btnPlay.textContent=state.playing?'⏸':'▶';
+}
+</script>
+</body>
+</html>
