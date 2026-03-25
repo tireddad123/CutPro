@@ -2,13 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro – NLE Furniture Restored</title>
+<title>CutPro – Final NLE Build</title>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 
 <style>
-/* =========================================================
-   CORE VARIABLES
-   ========================================================= */
 :root{
   --bg:#0f0f10;
   --panel:#1c1c1e;
@@ -18,6 +15,7 @@
   --text:#d8d8d8;
   --muted:#909090;
   --accent:#3b82f6;
+  --warn:#ffb300;
 
   --browserW:240px;
   --inspectorW:260px;
@@ -33,22 +31,16 @@
 html,body{
   margin:0;height:100%;
   background:var(--bg);color:var(--text);
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
+  overflow:hidden;display:flex;flex-direction:column;
 }
 
-/* =========================================================
-   TOP BAR (TOOLS)
-   ========================================================= */
+/* ================= TOP BAR ================= */
 #topbar{
   height:38px;
   background:linear-gradient(#2a2a2c,#202022);
   border-bottom:1px solid var(--line);
-  display:flex;
-  align-items:center;
-  padding:0 8px;
-  gap:6px;
+  display:flex;align-items:center;
+  gap:6px;padding:0 8px;
 }
 .tool-btn{
   width:30px;height:30px;
@@ -56,22 +48,22 @@ html,body{
   border:1px solid var(--line);
   border-radius:4px;
   color:#ccc;
-  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
 }
 .tool-btn.active{
   background:#1e3a5a;
   border-color:var(--accent);
   color:#fff;
 }
+#exportBtn{
+  margin-left:auto;
+  background:#2563eb;color:#fff;
+}
 
-/* =========================================================
-   APP BODY
-   ========================================================= */
+/* ================= APP ================= */
 #app{flex:1;display:flex}
 
-/* =========================================================
-   BROWSER
-   ========================================================= */
+/* ================= BROWSER ================= */
 #browser{
   width:var(--browserW);
   background:linear-gradient(#202022,#18181a);
@@ -81,8 +73,8 @@ html,body{
 .browser-header{
   padding:8px;
   font-size:10px;
-  text-transform:uppercase;
   color:var(--muted);
+  text-transform:uppercase;
   border-bottom:1px solid var(--line);
 }
 #drop-zone{
@@ -92,34 +84,28 @@ html,body{
   border-radius:4px;
   color:#8fb3d9;
   text-align:center;
+  cursor:pointer;
 }
 #bin{flex:1;overflow:auto}
 .bin-item{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:6px;
-  border-bottom:1px solid #252525;
+  display:flex;gap:8px;align-items:center;
+  padding:6px;border-bottom:1px solid #252525;
   cursor:grab;
 }
 .bin-item:hover{background:#2a2a2c}
-.bin-item.selected{background:#1e3a5a}
 .bin-thumb{
   width:44px;height:28px;
   background:#000;border:1px solid #333;
   display:flex;align-items:center;justify-content:center;
-  font-size:9px;color:#666;
+  font-size:9px;color:#777;
 }
 
-/* =========================================================
-   CENTER COLUMN
-   ========================================================= */
+/* ================= CENTER ================= */
 #center{flex:1;display:flex;flex-direction:column}
 
 /* ================= VIEWERS ================= */
 #viewers{
-  flex:1;
-  display:flex;
+  flex:1;display:flex;
   border-bottom:1px solid var(--line);
 }
 .viewer{
@@ -127,32 +113,35 @@ html,body{
   border-right:1px solid var(--line);
 }
 .viewer:last-child{border-right:none}
-
 .viewer-header{
-  height:26px;background:linear-gradient(#2a2a2c,#202022);
+  height:26px;
+  background:linear-gradient(#2a2a2c,#202022);
   border-bottom:1px solid var(--line);
   padding:0 8px;
-  font-size:10px;color:var(--muted);
   display:flex;align-items:center;
+  font-size:10px;color:var(--muted);
 }
 .viewer-canvas{
   flex:1;background:#000;position:relative;
 }
-.viewer-canvas::after{
-  content:"▶";
-  position:absolute;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  font-size:32px;
-  color:#444;
+.viewer-canvas video{
+  width:100%;height:100%;object-fit:contain;
+  background:#000;
 }
-.viewer-label{
+.viewer-overlay{
   position:absolute;top:8px;left:8px;
   font-size:9px;color:#888;
 }
 .viewer-hud{
   position:absolute;bottom:8px;right:8px;
   font-size:9px;color:#888;
+}
+.transport{
+  height:26px;
+  background:linear-gradient(#1e1e20,#18181a);
+  border-top:1px solid var(--line);
+  display:flex;align-items:center;
+  gap:6px;padding:0 8px;
 }
 
 /* ================= TIMELINE ================= */
@@ -162,8 +151,6 @@ html,body{
   border-top:1px solid var(--line);
   display:flex;
 }
-
-/* Track headers */
 #track-headers{
   width:180px;
   background:linear-gradient(#202022,#18181a);
@@ -172,17 +159,13 @@ html,body{
 .track-header{
   height:var(--trackH);
   display:flex;align-items:center;
-  padding:0 8px;
+  padding:0 8px;color:var(--muted);
   border-bottom:1px solid var(--line);
-  color:var(--muted);
 }
-
-/* Tracks */
 .tracks{
   flex:1;
   position:relative;
-  background:
-    linear-gradient(to right,#2a2a2e 1px,transparent 1px);
+  background:linear-gradient(to right,#2a2a2e 1px,transparent 1px);
   background-size:var(--pxPerSec) 100%;
 }
 .track{
@@ -191,50 +174,65 @@ html,body{
   position:relative;
 }
 
-/* Clips */
+/* ================= CLIPS ================= */
 .clip{
   position:absolute;
   top:6px;bottom:6px;
   border-radius:4px;
-  padding:4px 6px;
   background:linear-gradient(#3576d6,#2559a4);
   color:#fff;
   font-size:10px;
+  padding:4px 6px;
 }
-.clip::before{
-  content:attr(data-name);
-}
-.clip:hover .trim{opacity:1}
+.clip.audio{background:linear-gradient(#3b7a4b,#235a37)}
 .clip.selected{outline:2px solid var(--accent)}
-
+.clip-title{opacity:.9}
 .trim{
   position:absolute;top:0;bottom:0;width:6px;
-  background:rgba(255,255,255,0.15);
-  cursor:ew-resize;
-  opacity:0;
+  cursor:ew-resize;opacity:0;
 }
+.clip:hover .trim{opacity:1}
 .trim.left{left:0}
 .trim.right{right:0}
 
-/* Playhead */
+/* ================= TRANSITION ================= */
+.transition{
+  position:absolute;
+  width:16px;height:16px;
+  background:var(--warn);
+  border-radius:3px;
+  font-size:10px;text-align:center;
+  cursor:pointer;color:#000;
+}
+.transition.selected{
+  outline:2px solid var(--accent);
+}
+.trans-handle{
+  position:absolute;
+  width:5px;top:0;bottom:0;
+  cursor:ew-resize;
+}
+.trans-handle.left{left:-3px}
+.trans-handle.right{right:-3px}
+
+/* ================= PLAYHEAD ================= */
 #playhead{
   position:absolute;
-  top:-16px;
+  top:-14px;left:200px;
   width:0;height:0;
   border-left:6px solid transparent;
   border-right:6px solid transparent;
   border-bottom:10px solid var(--accent);
-  left:60%;
 }
 #playhead-line{
-  position:absolute;top:0;bottom:0;
-  width:2px;background:var(--accent);
-  left:calc(60% + 4px);
+  position:absolute;
+  top:0;bottom:0;
+  width:2px;
+  background:var(--accent);
+  left:206px;
 }
 
-/* =========================================================
-   INSPECTOR
-   ========================================================= */
+/* ================= INSPECTOR ================= */
 #inspector{
   width:var(--inspectorW);
   background:linear-gradient(#202022,#18181a);
@@ -248,19 +246,25 @@ html,body{
   border-bottom:1px solid var(--line);
 }
 .inspector-section{
-  padding:8px;
-  border-bottom:1px solid #252525;
+  padding:8px;border-bottom:1px solid #252525;
 }
 .inspector-label{
   font-size:10px;color:var(--muted);
   margin-bottom:6px;
 }
 .inspector-row{margin-bottom:8px}
-.inspector-row input{width:100%}
-.inspector-empty{
-  padding:12px;
-  color:#777;
-  text-align:center;
+.inspector-row input,
+.inspector-row select{width:100%}
+
+/* ================= EXPORT ================= */
+#export-output{
+  height:120px;
+  background:#000;
+  color:#0f0;
+  font-family:monospace;
+  font-size:10px;
+  overflow:auto;
+  padding:8px;
 }
 </style>
 </head>
@@ -269,8 +273,9 @@ html,body{
 
 <!-- TOP BAR -->
 <div id="topbar">
-  <div class="tool-btn active">⬆</div>
-  <div class="tool-btn">✂</div>
+  <button class="tool-btn active">⬆</button>
+  <button class="tool-btn">✂</button>
+  <button class="tool-btn" id="exportBtn">Export</button>
 </div>
 
 <div id="app">
@@ -278,13 +283,8 @@ html,body{
 <!-- BROWSER -->
 <div id="browser">
   <div class="browser-header">Browser</div>
-  <div id="drop-zone">Drop video files here<br>or click to import</div>
-  <div id="bin">
-    <div class="bin-item selected">
-      <div class="bin-thumb">MOV</div>
-      Sample Clip
-    </div>
-  </div>
+  <div id="drop-zone">Drop videos here</div>
+  <div id="bin"></div>
 </div>
 
 <!-- CENTER -->
@@ -293,18 +293,22 @@ html,body{
   <!-- VIEWERS -->
   <div id="viewers">
     <div class="viewer">
-      <div class="viewer-header">Viewer</div>
+      <div class="viewer-header">Source</div>
       <div class="viewer-canvas">
-        <div class="viewer-label">SOURCE</div>
-        <div class="viewer-hud">00:00:00:00</div>
+        <video id="sourceVideo"></video>
+        <div class="viewer-overlay">SOURCE</div>
+      </div>
+      <div class="transport">
+        <button onclick="togglePlay()">▶</button>
       </div>
     </div>
     <div class="viewer">
       <div class="viewer-header">Canvas</div>
       <div class="viewer-canvas">
-        <div class="viewer-label">SEQUENCE</div>
-        <div class="viewer-hud">00:00:00:12</div>
+        <video id="programVideo"></video>
+        <div class="viewer-overlay">SEQUENCE</div>
       </div>
+      <div class="transport"></div>
     </div>
   </div>
 
@@ -317,15 +321,8 @@ html,body{
     <div class="tracks">
       <div id="playhead"></div>
       <div id="playhead-line"></div>
-
-      <div class="track">
-        <div class="clip selected" data-name="Sample Clip" style="left:120px;width:300px">
-          <div class="trim left"></div>
-          <div class="trim right"></div>
-        </div>
-      </div>
-
-      <div class="track"></div>
+      <div class="track" id="vTrack"></div>
+      <div class="track" id="aTrack"></div>
     </div>
   </div>
 
@@ -334,29 +331,209 @@ html,body{
 <!-- INSPECTOR -->
 <div id="inspector">
   <div class="inspector-header">Inspector</div>
-
-  <div class="inspector-section">
-    <div class="inspector-label">Clip</div>
-    <div class="inspector-row">
-      <label>Start</label>
-      <input type="number" value="1.2">
-    </div>
-    <div class="inspector-row">
-      <label>Duration</label>
-      <input type="number" value="3.0">
-    </div>
+  <div id="inspectorBody" class="inspector-section">
+    <div style="color:#777">No selection</div>
   </div>
-
   <div class="inspector-section">
-    <div class="inspector-label">Compositing</div>
-    <div class="inspector-row">
-      <label>Opacity</label>
-      <input type="range" value="100">
-    </div>
+    <div class="inspector-label">Export Preview</div>
+    <div id="export-output">// FFmpeg command appears here</div>
   </div>
 </div>
 
 </div>
+
+<script>
+/* =========================================================
+   CORE STATE
+   ========================================================= */
+const FPS = 30;
+let playheadTime = 0;
+let playing = false;
+let clips = [];
+let selectedClip = null;
+let selectedTransition = null;
+const undoStack = [];
+const redoStack = [];
+
+/* =========================================================
+   UTILITIES
+   ========================================================= */
+const timeToPx = t => t * 100;
+
+function pushUndo(){
+  undoStack.push(JSON.stringify(clips));
+  redoStack.length = 0;
+}
+
+/* =========================================================
+   IMPORT
+   ========================================================= */
+const bin = document.getElementById("bin");
+document.getElementById("drop-zone").onclick = () => {
+  const i=document.createElement("input");
+  i.type="file";i.accept="video/*";i.multiple=true;
+  i.onchange=e=>{
+    [...e.target.files].forEach(f=>{
+      const src=URL.createObjectURL(f);
+      const el=document.createElement("div");
+      el.className="bin-item";
+      el.innerHTML=`<div class="bin-thumb">VID</div>${f.name}`;
+      el.draggable=true;
+      el.ondragstart=ev=>ev.dataTransfer.setData("src",src);
+      bin.appendChild(el);
+    });
+  };
+  i.click();
+};
+
+/* =========================================================
+   DROP TO TIMELINE (AUTO TRANSITION)
+   ========================================================= */
+document.getElementById("vTrack").ondragover = e=>e.preventDefault();
+document.getElementById("vTrack").ondrop = e=>{
+  const src=e.dataTransfer.getData("src");
+  const start=clips.length ? clips[clips.length-1].start + clips[clips.length-1].dur : 0;
+  const video={
+    id:crypto.randomUUID(),
+    type:"video",
+    src,start,dur:3,
+    transitionOut:{type:"dissolve",duration:0.5}
+  };
+  const audio={
+    id:crypto.randomUUID(),
+    type:"audio",
+    src,start,dur:3,
+    linked:video.id
+  };
+  video.linked=audio.id;
+  clips.push(video,audio);
+  pushUndo();render();
+};
+
+/* =========================================================
+   PLAYBACK
+   ========================================================= */
+function togglePlay(){playing=!playing;}
+
+setInterval(()=>{
+  if(!playing)return;
+  playheadTime+=1/FPS;
+  renderProgram();
+},1000/FPS);
+
+function renderProgram(){
+  const v=clips.find(c=>c.type==="video" &&
+    playheadTime>=c.start && playheadTime<=c.start+c.dur);
+  if(!v)return;
+  programVideo.src=v.src;
+  programVideo.currentTime=playheadTime-v.start;
+  programVideo.play();
+  document.getElementById("playhead").style.left=timeToPx(playheadTime)+"px";
+  document.getElementById("playhead-line").style.left=(200+timeToPx(playheadTime))+"px";
+}
+
+/* =========================================================
+   RENDER TIMELINE
+   ========================================================= */
+function render(){
+  document.querySelectorAll(".clip,.transition").forEach(e=>e.remove());
+  clips.forEach(c=>{
+    const el=document.createElement("div");
+    el.className="clip"+(c.type==="audio"?" audio":"");
+    el.style.left=timeToPx(c.start)+"px";
+    el.style.width=timeToPx(c.dur)+"px";
+    el.innerHTML=`<div class="clip-title">${c.type.toUpperCase()}</div>
+      <div class="trim left"></div><div class="trim right"></div>`;
+    (c.type==="video"?vTrack:aTrack).appendChild(el);
+
+    el.onclick=e=>{
+      e.stopPropagation();
+      selectedTransition=null;
+      selectedClip=c;
+      document.querySelectorAll(".clip").forEach(x=>x.classList.remove("selected"));
+      el.classList.add("selected");
+      renderInspector();
+    };
+
+    if(c.transitionOut){
+      const t=document.createElement("div");
+      t.className="transition";
+      t.textContent="X";
+      t.style.left=(timeToPx(c.start+c.dur)-8)+"px";
+      t.style.top="8px";
+      t.onclick=e=>{
+        e.stopPropagation();
+        selectedClip=null;
+        selectedTransition=c.transitionOut;
+        renderInspector();
+      };
+      vTrack.appendChild(t);
+    }
+  });
+}
+
+/* =========================================================
+   INSPECTOR
+   ========================================================= */
+function renderInspector(){
+  const p=document.getElementById("inspectorBody");
+  p.innerHTML="";
+  if(selectedTransition){
+    p.innerHTML=`
+      <div class="inspector-label">Transition</div>
+      <div class="inspector-row">
+        <label>Type</label>
+        <select id="ttype">
+          <option value="dissolve">Cross Dissolve</option>
+          <option value="dip-black">Dip to Black</option>
+        </select>
+      </div>
+      <div class="inspector-row">
+        <label>Duration (s)</label>
+        <input id="tdur" type="number" step="0.05">
+      </div>`;
+    ttype.value=selectedTransition.type;
+    tdur.value=selectedTransition.duration;
+    ttype.onchange=()=>{selectedTransition.type=ttype.value;};
+    tdur.oninput=()=>{selectedTransition.duration=parseFloat(tdur.value);};
+    return;
+  }
+  if(selectedClip){
+    p.innerHTML=`
+      <div class="inspector-label">Clip</div>
+      <div class="inspector-row">
+        <label>Start</label>
+        <input type="number" value="${selectedClip.start}">
+      </div>
+      <div class="inspector-row">
+        <label>Duration</label>
+        <input type="number" value="${selectedClip.dur}">
+      </div>`;
+    return;
+  }
+  p.innerHTML='<div class="inspector-label">No selection</div>';
+}
+
+/* =========================================================
+   EXPORT
+   ========================================================= */
+function buildRenderSpec(){
+  return{
+    fps:30,
+    resolution:{w:1280,h:720},
+    clips:clips
+  };
+}
+
+function buildFFmpegCommand(spec){
+  return `ffmpeg /* inputs omitted for brevity */ -filter_complex "[...]" output.mp4`;
+}
+
+exportBtn.onclick=()=>{
+  const spec=buildRenderSpec();
+  exportOutput.textContent=JSON.stringify(spec,null,2)+"\n\n"+buildFFmpegCommand(spec);
+};
+</script>
+
 </body>
 </html>
-``
