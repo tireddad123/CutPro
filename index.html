@@ -1,165 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<title>Timeline Prototype</title>
+<meta charset="UTF-8" />
+<title>CutPro Timeline</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
 :root{
-  --bg:#0e0e0e;
-  --panel:#1a1a1a;
-  --panel2:#222;
-  --grid:#2b2b2b;
-  --text:#ddd;
-  --accent:#f0b400;
-  --vColor:#3a6a9a;
-  --gColor:#6b4bb6;
-  --aColor:#3d6b3d;
-  font-family: "Segoe UI", Arial, sans-serif;
+  --bg:#0f0f10;
+  --panel:#1c1c1e;
+  --panel2:#252527;
+  --grid:#2a2a2e;
+  --text:#d8d8d8;
+
+  --v2:#8b5cf6;
+  --v1:#3b82f6;
+  --a1:#22c55e;
+
+  font-family:"Lucida Grande","Helvetica Neue",Arial,sans-serif;
   font-size:11px;
 }
+
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden}
 
-#app{
+/* ───── Layout ───── */
+#app{display:flex;height:100%}
+
+/* ───── Timeline ───── */
+#timeline{
+  flex:1;
   display:flex;
-  height:100%;
+  background:linear-gradient(#1a1a1c,#121214);
 }
 
-/* ───── Track Headers ───── */
+/* Track headers */
 #track-headers{
   width:180px;
-  background:linear-gradient(#2a2a2a,#1e1e1e);
   border-right:1px solid #111;
+  background:linear-gradient(#202022,#18181a);
 }
 
 .track-header{
-  height:44px;
+  height:48px;
   display:flex;
   align-items:center;
   padding:0 8px;
-  gap:6px;
   border-bottom:1px solid #111;
+  gap:6px;
 }
 
-.track-header .label{
+.track-label{
   flex:1;
   font-weight:bold;
+  white-space:nowrap;
 }
-.track-header.v2{background:#241c36}
-.track-header.v1{background:#1b2736}
-.track-header.a1{background:#1f2b1f}
 
-.track-header button{
+.track-controls{
+  display:flex;
+  gap:4px;
+  opacity:.8;
+}
+
+.track-btn{
   width:18px;height:18px;
-  background:#333;border:none;color:#aaa;
-  border-radius:3px;cursor:pointer;
+  background:#2b2b2e;
+  border-radius:3px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:10px;
+  cursor:pointer;
 }
 
-/* ───── Timeline Body ───── */
-#timeline{
+/* Track colors */
+.v2 .track-label{color:var(--v2)}
+.v1 .track-label{color:var(--v1)}
+.a1 .track-label{color:var(--a1)}
+
+/* Timeline grid */
+#timeline-body{
   flex:1;
   position:relative;
   overflow:auto;
-  background:var(--bg)
+  background:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 60px 100%,
+    linear-gradient(#18181a,#0f0f10);
 }
 
-.timeline-row{
-  height:44px;
+/* Tracks */
+.timeline-track{
+  height:48px;
+  border-bottom:1px solid #151517;
   position:relative;
-  border-bottom:1px solid #111;
 }
 
-.timeline-grid{
-  position:absolute;
-  inset:0;
-  background-image:
-    linear-gradient(to right, var(--grid) 1px, transparent 1px);
-  background-size:48px 100%;
-  pointer-events:none;
-}
-
-/* ───── Playhead ───── */
-#playhead{
-  position:absolute;
-  top:0;bottom:0;
-  width:2px;
-  left:4px;
-  background:var(--accent);
-  z-index:10;
-}
-
-/* ───── Clips ───── */
+/* Clips */
 .clip{
   position:absolute;
   top:6px;
   bottom:6px;
   border-radius:4px;
-  padding:0 6px;
+  padding:0 8px;
   display:flex;
   align-items:center;
   font-size:10px;
   cursor:grab;
-  color:#fff;
 }
-.clip.video{background:var(--vColor)}
-.clip.graphics{background:var(--gColor)}
-.clip.audio{background:var(--aColor)}
+
+.clip.v2{background:#6d28d9}
+.clip.v1{background:#2563eb}
+.clip.a1{background:#15803d}
 </style>
 </head>
 
 <body>
 <div id="app">
 
-<!-- TRACK HEADERS -->
-<div id="track-headers">
-  <div class="track-header v2">
-    <span class="label">V2 GR</span>
-    <button>➕</button>
-    <button>🔒</button>
-  </div>
-  <div class="track-header v1">
-    <span class="label">V1</span>
-    <button>👁</button>
-    <button>🔒</button>
-  </div>
-  <div class="track-header a1">
-    <span class="label">A1</span>
-    <button>🔊</button>
-    <button>🔒</button>
-  </div>
-</div>
-
-<!-- TIMELINE -->
+<!-- ───── Timeline ───── -->
 <div id="timeline">
-  <div class="timeline-grid"></div>
-  <div id="playhead"></div>
 
-  <div class="timeline-row" data-track="v2"></div>
-  <div class="timeline-row" data-track="v1"></div>
-  <div class="timeline-row" data-track="a1"></div>
+  <!-- Track headers -->
+  <div id="track-headers">
+    <div class="track-header v2">
+      <span class="track-label">V2 Graphics</span>
+      <div class="track-controls">
+        <div class="track-btn">T+</div>
+        <div class="track-btn">👁</div>
+        <div class="track-btn">🔒</div>
+      </div>
+    </div>
+
+    <div class="track-header v1">
+      <span class="track-label">V1</span>
+      <div class="track-controls">
+        <div class="track-btn">👁</div>
+        <div class="track-btn">🔒</div>
+      </div>
+    </div>
+
+    <div class="track-header a1">
+      <span class="track-label">A1</span>
+      <div class="track-controls">
+        <div class="track-btn">🔊</div>
+        <div class="track-btn">🔒</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline body -->
+  <div id="timeline-body">
+    <div class="timeline-track" data-track="v2"></div>
+    <div class="timeline-track" data-track="v1"></div>
+    <div class="timeline-track" data-track="a1"></div>
+  </div>
+
 </div>
-
 </div>
 
 <script>
-/* Simple clip drop for demo */
-document.querySelectorAll('.timeline-row').forEach(row=>{
-  row.ondragover = e => e.preventDefault();
-  row.ondrop = e => {
+// Demo: click to add clips for testing
+document.querySelectorAll('.timeline-track').forEach((track,i)=>{
+  track.onclick = e=>{
     const clip = document.createElement('div');
-    clip.className = 'clip ' + (
-      row.dataset.track === 'a1' ? 'audio' :
-      row.dataset.track === 'v2' ? 'graphics' : 'video'
-    );
-    clip.textContent = 'Clip';
-    clip.style.left = e.offsetX + 'px';
-    clip.style.width = '140px';
-    row.appendChild(clip);
+    clip.className = 'clip ' + track.dataset.track;
+    clip.textContent = track.dataset.track.toUpperCase() + ' Clip';
+    clip.style.left = Math.floor(e.offsetX/10)*10 + 'px';
+    clip.style.width = '120px';
+    track.appendChild(clip);
   };
 });
 </script>
+
 </body>
 </html>
-``
