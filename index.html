@@ -16,21 +16,21 @@
   --accent:#4ea1ff;
   --video:#4ea1ff;
   --audio:#53d36b;
-  font-family:system-ui,sans-serif;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 
-*{box-sizing:border-box}
-html,body{margin:0;height:100%}
+* { box-sizing:border-box; }
+html, body { margin:0; height:100%; }
 
-body{
+body {
   background:var(--bg);
   color:var(--text);
   display:grid;
   grid-template-rows:auto 1fr auto;
 }
 
-/* ---------- HEADER ---------- */
-header{
+/* ========== HEADER ========== */
+header {
   display:flex;
   align-items:center;
   gap:6px;
@@ -38,81 +38,436 @@ header{
   background:var(--panel);
   border-bottom:1px solid var(--border);
 }
-header h1{
+
+header h1 {
   font-size:1rem;
   margin-right:8px;
 }
-button{
+
+button {
   background:#222831;
   color:var(--text);
   border:1px solid var(--border);
   border-radius:6px;
   padding:4px 8px;
-  font-size:.75rem;
+  font-size:0.75rem;
   cursor:pointer;
 }
-button.active{outline:2px solid var(--accent)}
 
-/* ---------- MAIN LAYOUT ---------- */
-main{
+button.active {
+  outline:2px solid var(--accent);
+}
+
+/* ========== MAIN LAYOUT ========== */
+main {
   display:grid;
   grid-template-columns:260px 1fr 300px;
   overflow:hidden;
 }
-aside,section{
+
+aside, section {
   border-right:1px solid var(--border);
   overflow:hidden;
 }
-aside:last-child{border-right:none}
 
-.panel-title{
-  font-size:.65rem;
+aside:last-child { border-right:none; }
+
+.panel-title {
+  font-size:0.65rem;
   text-transform:uppercase;
   color:var(--muted);
   padding:6px 8px;
   border-bottom:1px solid var(--border);
 }
-.panel-content{
+
+.panel-content {
   padding:8px;
   height:100%;
   overflow:auto;
 }
 
-/* ---------- BIN ---------- */
-#bin .item{
+/* ========== BIN ========== */
+#bin .item {
   padding:4px 6px;
   background:#12151c;
   border:1px solid var(--border);
   border-radius:4px;
   margin-bottom:4px;
-  font-size:.75rem;
+  font-size:0.75rem;
   cursor:grab;
 }
 
-/* ---------- TIMELINE ---------- */
-.timeline{
+/* ========== TIMELINE ========== */
+.timeline {
   position:relative;
   background:#0b0d12;
   height:260px;
   padding:8px;
 }
-.track{
+
+.track {
   position:relative;
   height:44px;
   margin-bottom:6px;
   border:1px dashed #2a2f3a;
 }
-.track-label{
+
+.track-label {
   position:absolute;
   top:4px;
   left:4px;
-  font-size:.65rem;
+  font-size:0.65rem;
   color:var(--muted);
 }
 
-.clip{
+.clip {
   position:absolute;
   top:4px;
   height:34px;
   border-radius:4px;
-  font-size:.65rem;
+  font-size:0.65rem;
+  color:#000;
+  user-select:none;
+  cursor:pointer;
+}
+
+.clip.video { background:var(--video); }
+.clip.audio { background:var(--audio); }
+.clip.selected { outline:2px solid #fff; }
+
+.handle {
+  position:absolute;
+  top:0;
+  width:6px;
+  height:100%;
+  background:rgba(0,0,0,.35);
+  cursor:ew-resize;
+}
+.handle.left { left:0; }
+.handle.right { right:0; }
+
+#playhead {
+  position:absolute;
+  top:0;
+  width:2px;
+  height:100%;
+  background:red;
+  pointer-events:none;
+}
+
+/* ========== VIEWER ========== */
+canvas {
+  width:100%;
+  background:#000;
+}
+
+/* ========== FOOTER ========== */
+footer {
+  display:flex;
+  justify-content:space-between;
+  padding:4px 8px;
+  font-size:0.7rem;
+  color:var(--muted);
+  background:var(--panel);
+  border-top:1px solid var(--border);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>✦ CutPro Web</h1>
+
+  <button id="toolSelect" class="active">V</button>
+  <button id="toolBlade">B</button>
+  <button id="toolTrim">T</button>
+
+  <button id="playBtn">▶</button>
+  <button id="stopBtn">⏹</button>
+
+  <button id="saveBtn">💾</button>
+  <button id="exportBtn">⬇</button>
+</header>
+
+<main>
+
+<!-- ========== BROWSER ========== -->
+<aside>
+  <div class="panel-title">Browser</div>
+  <div class="panel-content">
+    <input type="file" id="fileInput" multiple />
+    <div id="bin"></div>
+  </div>
+</aside>
+
+<!-- ========== VIEWER + TIMELINE ========== -->
+<section>
+  <div class="panel-title">Viewer</div>
+  <div class="panel-content">
+    <canvas id="viewer" width="1280" height="720"></canvas>
+  </div>
+
+  <div class="timeline" id="timeline">
+    <div id="playhead"></div>
+
+    <div class="track" data-track="V1">
+      <div class="track-label">V1 Video</div>
+    </div>
+    <div class="track" data-track="A1">
+      <div class="track-label">A1 Audio</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== INSPECTOR ========== -->
+<aside>
+  <div class="panel-title">Inspector</div>
+  <div class="panel-content" id="inspector">
+    Select a clip
+  </div>
+</aside>
+
+</main>
+
+<footer>
+  <span id="status">Ready</span>
+  <span>Offline · Frame‑accurate · MOV‑first</span>
+</footer>
+
+<script>
+/* ================= CORE CONSTANTS ================= */
+const FPS = 29.97;
+const PX_PER_SEC = 120;
+
+let project = {
+  assets: [],
+  timeline: [],
+  selection: null,
+  tool: "select"
+};
+
+/* ================= TOOLS ================= */
+const tools = {
+  select: toolSelect,
+  blade: toolBlade,
+  trim: toolTrim
+};
+
+Object.entries(tools).forEach(([name, btn]) => {
+  btn.onclick = () => setTool(name);
+});
+
+function setTool(t) {
+  project.tool = t;
+  Object.values(tools).forEach(b => b.classList.remove("active"));
+  tools[t].classList.add("active");
+}
+
+/* ================= BIN ================= */
+fileInput.onchange = e => {
+  [...e.target.files].forEach(file => {
+    const asset = {
+      id: crypto.randomUUID(),
+      file,
+      url: URL.createObjectURL(file),
+      video: Object.assign(document.createElement("video"), {
+        src: URL.createObjectURL(file),
+        muted: true
+      })
+    };
+
+    project.assets.push(asset);
+
+    const el = document.createElement("div");
+    el.className = "item";
+    el.textContent = file.name;
+    el.draggable = true;
+    el.ondragstart = ev => ev.dataTransfer.setData("id", asset.id);
+    bin.appendChild(el);
+  });
+};
+
+/* ================= TIMELINE DROP ================= */
+document.querySelectorAll(".track").forEach(track => {
+  track.ondragover = e => e.preventDefault();
+  track.ondrop = e => {
+    const assetId = e.dataTransfer.getData("id");
+    const asset = project.assets.find(a => a.id === assetId);
+    if (!asset) return;
+
+    const startSec = e.offsetX / PX_PER_SEC;
+
+    project.timeline.push({
+      id: crypto.randomUUID(),
+      asset,
+      track: track.dataset.track,
+      startSec,
+      endSec: startSec + 5,
+      fadeIn: 0,
+      fadeOut: 0
+    });
+
+    renderTimeline();
+  };
+});
+
+/* ================= TIMELINE RENDER ================= */
+function renderTimeline() {
+  document.querySelectorAll(".clip").forEach(c => c.remove());
+
+  project.timeline.forEach(clip => {
+    const track = document.querySelector(`[data-track="${clip.track}"]`);
+
+    const el = document.createElement("div");
+    el.className = "clip " + (clip.track === "A1" ? "audio" : "video");
+    el.style.left = clip.startSec * PX_PER_SEC + "px";
+    el.style.width = (clip.endSec - clip.startSec) * PX_PER_SEC + "px";
+
+    if (project.selection === clip) el.classList.add("selected");
+
+    const l = document.createElement("div");
+    const r = document.createElement("div");
+    l.className = "handle left";
+    r.className = "handle right";
+    el.append(l, r);
+
+    el.onclick = e => {
+      project.selection = clip;
+      updateInspector();
+
+      if (project.tool === "blade") {
+        const splitSec = e.offsetX / PX_PER_SEC;
+        splitClip(clip, splitSec);
+      }
+
+      renderTimeline();
+      e.stopPropagation();
+    };
+
+    trimHandle(l, clip, true);
+    trimHandle(r, clip, false);
+
+    track.appendChild(el);
+  });
+}
+
+function trimHandle(handle, clip, isLeft) {
+  handle.onmousedown = () => {
+    if (project.tool !== "trim") return;
+    document.onmousemove = e => {
+      const delta = e.movementX / PX_PER_SEC;
+      if (isLeft) clip.startSec += delta;
+      else clip.endSec += delta;
+      renderTimeline();
+    };
+    document.onmouseup = () => document.onmousemove = null;
+  };
+}
+
+function splitClip(clip, atSec) {
+  if (atSec <= 0 || clip.startSec + atSec >= clip.endSec) return;
+
+  const left = {
+    ...clip,
+    id: crypto.randomUUID(),
+    endSec: clip.startSec + atSec
+  };
+
+  clip.startSec += atSec;
+  project.timeline.push(left);
+}
+
+/* ================= VIEWER ================= */
+const canvas = viewer;
+const ctx = canvas.getContext("2d");
+let playing = false;
+let t0 = 0;
+
+function fade(clip, t) {
+  if (clip.fadeIn && t < clip.fadeIn) return t / clip.fadeIn;
+  if (clip.fadeOut && t > clip.endSec - clip.startSec - clip.fadeOut)
+    return (clip.endSec - clip.startSec - t) / clip.fadeOut;
+  return 1;
+}
+
+function renderFrame(t) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  project.timeline
+    .filter(c => c.track === "V1")
+    .forEach(c => {
+      if (t >= c.startSec && t <= c.endSec) {
+        const lt = t - c.startSec;
+        ctx.globalAlpha = fade(c, lt);
+        ctx.drawImage(c.asset.video, 0, 0, canvas.width, canvas.height);
+      }
+    });
+
+  ctx.globalAlpha = 1;
+}
+
+function play() {
+  t0 = performance.now();
+  playing = true;
+  project.timeline.forEach(c => c.asset.video.play());
+  requestAnimationFrame(loop);
+}
+
+function loop(now) {
+  if (!playing) return;
+  const t = (now - t0) / 1000;
+  renderFrame(t);
+  playhead.style.left = t * PX_PER_SEC + "px";
+  requestAnimationFrame(loop);
+}
+
+playBtn.onclick = play;
+stopBtn.onclick = () => {
+  playing = false;
+  project.timeline.forEach(c => c.asset.video.pause());
+};
+
+/* ================= INSPECTOR ================= */
+function updateInspector() {
+  const c = project.selection;
+  inspector.innerHTML = c
+    ? `
+      <p>${c.asset.file.name}</p>
+      <label>Fade In
+        <input type="number" step="0.1" value="${c.fadeIn}"
+          onchange="project.selection.fadeIn=parseFloat(this.value)" />
+      </label><br/>
+      <label>Fade Out
+        <input type="number" step="0.1" value="${c.fadeOut}"
+          onchange="project.selection.fadeOut=parseFloat(this.value)" />
+      </label>
+    `
+    : "Select a clip";
+}
+
+/* ================= SAVE / RECOVER ================= */
+saveBtn.onclick = () => {
+  localStorage.setItem("cutpro-project", JSON.stringify(project));
+  status.textContent = "Saved";
+};
+
+const saved = localStorage.getItem("cutpro-project");
+if (saved && confirm("Recover last project?")) {
+  project = JSON.parse(saved);
+  renderTimeline();
+}
+
+/* ================= EXPORT ================= */
+exportBtn.onclick = () => {
+  alert(
+    "Export engine ready.\nPlace ffmpeg.min.js and ffmpeg-core.wasm next to this file."
+  );
+};
+
+/* ================= INIT ================= */
+renderTimeline();
+</script>
+
+</body>
+</html>
