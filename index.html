@@ -4,379 +4,74 @@
 <meta charset="UTF-8" />
 <title>CutPro Web</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#1a1a1a" />
 
 <style>
-/* =========================================================
-   CORE VARIABLES (FCP‑style)
-   ========================================================= */
-:root {
+:root{
   --bg:#111;
   --panel:#1e1e1e;
   --panel2:#252525;
   --border:#2a2a2a;
-  --border-light:#3a3a3a;
   --text:#d8d8d8;
-  --text-muted:#8a8a8a;
+  --muted:#888;
   --accent:#4a8fcd;
   --playhead:#e8a020;
-  --radius:3px;
-
-  font-family: "Lucida Grande", "Helvetica Neue", Arial, sans-serif;
+  font-family:"Lucida Grande","Helvetica Neue",Arial,sans-serif;
   font-size:11px;
 }
 
-* { box-sizing:border-box; }
-html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--text); }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text)}
 
-/* =========================================================
-   APP LAYOUT
-   ========================================================= */
-#app {
-  display:flex;
-  flex-direction:column;
-  height:100%;
-}
+#app{display:flex;flex-direction:column;height:100%}
 
-/* =========================================================
-   TOOLBAR
-   ========================================================= */
-#toolbar {
+/* ───────── TOOLBAR ───────── */
+#toolbar{
   height:38px;
-  background: linear-gradient(to bottom, #3a3a3a, #262626);
-  border-bottom:1px solid #111;
   display:flex;
   align-items:center;
-  padding:0 8px;
   gap:6px;
-}
-
-.tool-btn {
-  height:26px;
-  min-width:26px;
   padding:0 8px;
-  background: linear-gradient(to bottom, #3e3e3e, #292929);
+  background:linear-gradient(#3a3a3a,#262626);
+  border-bottom:1px solid #111;
+}
+.tool-btn{
+  height:26px;min-width:26px;
+  background:linear-gradient(#3e3e3e,#292929);
   border:1px solid #1a1a1a;
   border-top-color:#4a4a4a;
-  border-radius:var(--radius);
+  border-radius:3px;
   color:var(--text);
   cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:4px;
 }
-
-.tool-btn.active {
-  background: linear-gradient(to bottom, #1e3a5a, #162a42);
-  border-color: var(--accent);
+.tool-btn.active{
+  background:linear-gradient(#1e3a5a,#162a42);
+  border-color:var(--accent);
 }
+.tool-sep{width:1px;height:22px;background:#444;margin:0 4px}
 
-.tool-sep {
-  width:1px;
-  height:22px;
-  background:#444;
-  margin:0 4px;
-}
+/* ───────── WORKSPACE ───────── */
+#workspace{flex:1;display:flex}
 
-/* =========================================================
-   WORKSPACE
-   ========================================================= */
-#workspace {
-  flex:1;
-  display:flex;
-  overflow:hidden;
-}
-
-/* =========================================================
-   BROWSER (LEFT)
-   ========================================================= */
-#browser {
+/* ───────── BROWSER ───────── */
+#browser{
   width:240px;
   background:var(--panel);
   border-right:1px solid #111;
-  display:flex;
-  flex-direction:column;
+  display:flex;flex-direction:column;
 }
-
-.panel-header {
+.panel-header{
   height:20px;
-  background: linear-gradient(to bottom, #333, #252525);
-  border-bottom:1px solid #111;
+  display:flex;align-items:center;
   padding:0 8px;
-  display:flex;
-  align-items:center;
-  font-size:10px;
-  font-weight:bold;
+  font-size:10px;font-weight:bold;
   text-transform:uppercase;
   color:#aaa;
+  background:linear-gradient(#333,#252525);
+  border-bottom:1px solid #111;
 }
-
-#bin {
-  flex:1;
-  overflow:auto;
-  padding:6px;
-}
-
-.bin-item {
+#bin{flex:1;overflow:auto}
+.bin-item{
   padding:4px 6px;
   border-bottom:1px solid #222;
-  cursor:pointer;
+  cursor:grab;
 }
-
-.bin-item:hover {
-  background: rgba(74,143,205,0.15);
-}
-
-/* =========================================================
-   CENTER (VIEWERS)
-   ========================================================= */
-#center {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-}
-
-#viewers {
-  flex:1;
-  display:flex;
-  border-bottom:2px solid #111;
-}
-
-.viewer-panel {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  background:var(--panel);
-  border-right:1px solid #111;
-}
-
-.viewer-panel:last-child { border-right:none; }
-
-.viewer-screen {
-  flex:1;
-  background:#000;
-  position:relative;
-}
-
-.viewer-label {
-  position:absolute;
-  top:6px;
-  left:8px;
-  font-size:9px;
-  color:rgba(255,255,255,0.4);
-  letter-spacing:1px;
-}
-
-/* =========================================================
-   TIMELINE
-   ========================================================= */
-#timeline {
-  height:220px;
-  background:#111;
-  display:flex;
-  flex-direction:column;
-}
-
-#timeline-toolbar {
-  height:28px;
-  background: linear-gradient(to bottom, #2e2e2e, #242424);
-  border-bottom:1px solid #111;
-  padding:0 8px;
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-
-#timeline-content {
-  flex:1;
-  display:flex;
-}
-
-#track-headers {
-  width:120px;
-  background:var(--panel2);
-  border-right:1px solid #111;
-}
-
-.track-header {
-  height:40px;
-  border-bottom:1px solid #111;
-  display:flex;
-  align-items:center;
-  padding:0 6px;
-  font-size:10px;
-  color:#aaa;
-}
-
-#tracks {
-  flex:1;
-  position:relative;
-  overflow:auto;
-}
-
-.timeline-track {
-  height:40px;
-  border-bottom:1px solid #111;
-  position:relative;
-}
-
-#playhead {
-  position:absolute;
-  top:0;
-  bottom:0;
-  width:2px;
-  background:var(--playhead);
-  z-index:10;
-}
-
-/* =========================================================
-   INSPECTOR (RIGHT)
-   ========================================================= */
-#inspector {
-  width:220px;
-  background:var(--panel);
-  border-left:1px solid #111;
-  display:flex;
-  flex-direction:column;
-}
-
-.inspector-section {
-  border-bottom:1px solid #111;
-}
-
-.inspector-title {
-  height:20px;
-  background: linear-gradient(to bottom,#2e2e2e,#242424);
-  padding:0 8px;
-  display:flex;
-  align-items:center;
-  font-size:10px;
-  text-transform:uppercase;
-  cursor:pointer;
-}
-
-.inspector-body {
-  padding:6px 8px;
-}
-
-.param-row {
-  display:flex;
-  align-items:center;
-  gap:6px;
-  margin-bottom:6px;
-}
-
-.param-label {
-  width:70px;
-  font-size:10px;
-  color:#aaa;
-}
-
-/* =========================================================
-   STATUS BAR
-   ========================================================= */
-#statusbar {
-  height:18px;
-  background: linear-gradient(to bottom,#1e1e1e,#161616);
-  border-top:1px solid #111;
-  padding:0 8px;
-  display:flex;
-  align-items:center;
-  font-size:9px;
-  color:#888;
-}
-</style>
-</head>
-
-<body>
-<div id="app">
-
-  <!-- TOOLBAR -->
-  <div id="toolbar">
-    <button class="tool-btn active">A</button>
-    <button class="tool-btn">B</button>
-    <button class="tool-btn">E</button>
-    <div class="tool-sep"></div>
-    <button class="tool-btn">⏮</button>
-    <button class="tool-btn">▶</button>
-    <button class="tool-btn">⏭</button>
-    <div class="tool-sep"></div>
-    <button class="tool-btn">Export</button>
-  </div>
-
-  <!-- WORKSPACE -->
-  <div id="workspace">
-
-    <!-- BROWSER -->
-    <div id="browser">
-      <div class="panel-header">Browser</div>
-      <div id="bin">
-        <div class="bin-item">Sample Clip.mov</div>
-      </div>
-    </div>
-
-    <!-- CENTER -->
-    <div id="center">
-      <div id="viewers">
-        <div class="viewer-panel">
-          <div class="panel-header">Viewer</div>
-          <div class="viewer-screen">
-            <div class="viewer-label">SOURCE</div>
-          </div>
-        </div>
-        <div class="viewer-panel">
-          <div class="panel-header">Canvas</div>
-          <div class="viewer-screen">
-            <div class="viewer-label">SEQUENCE</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TIMELINE -->
-      <div id="timeline">
-        <div id="timeline-toolbar">
-          <span>Snapping</span>
-          <span style="margin-left:auto;">00:00:00:00</span>
-        </div>
-
-        <div id="timeline-content">
-          <div id="track-headers">
-            <div class="track-header">V2 Graphics</div>
-            <div class="track-header">V1</div>
-            <div class="track-header">A1</div>
-          </div>
-
-          <div id="tracks">
-            <div class="timeline-track"></div>
-            <div class="timeline-track"></div>
-            <div class="timeline-track"></div>
-            <div id="playhead"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- INSPECTOR -->
-    <div id="inspector">
-      <div class="panel-header">Inspector</div>
-
-      <div class="inspector-section">
-        <div class="inspector-title">Motion</div>
-        <div class="inspector-body">
-          <div class="param-row">
-            <span class="param-label">Scale</span>
-            <input type="range" value="100" />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- STATUS BAR -->
-  <div id="statusbar">
-    Ready — Frame‑accurate timeline
-  </div>
-</div>
-</body>
-</html>
