@@ -1,354 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<title>CutPro – Advanced Editing Core</title>
+<meta charset="UTF-8" />
+<title>CutPro – Inspector Wired</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
-/* ================= CORE VARS ================= */
 :root{
   --bg:#0f0f10;
   --panel:#1c1c1e;
   --panel2:#242427;
+  --line:#111;
   --text:#d8d8d8;
   --muted:#9a9a9a;
-  --grid:#2a2a2e;
-  --accent:#f0b400;
+  --accent:#3b82f6;
 
   --browserW:240px;
-  --timelineH:300px;
+  --inspectorW:260px;
+  --timelineH:280px;
   --trackH:48px;
-
   --pxPerSec:100px;
 
   font-family:"Lucida Grande","Helvetica Neue",Arial,sans-serif;
   font-size:11px;
 }
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden;display:flex;flex-direction:column}
 
-/* ================= TOOLBAR ================= */
-#toolbar{
-  height:36px;
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden;
+  display:flex;flex-direction:column}
+
+/* ========== TOP TOOLBAR ========== */
+#topbar{
+  height:38px;
   background:linear-gradient(#2a2a2c,#202022);
-  border-bottom:1px solid #111;
-  padding:0 8px;
+  border-bottom:1px solid var(--line);
   display:flex;
   align-items:center;
+  padding:0 8px;
   gap:6px;
 }
 .tool-btn{
-  width:28px;height:28px;
+  width:30px;height:30px;
   background:#2b2b2e;
-  border:1px solid #111;
+  border:1px solid var(--line);
   border-radius:4px;
   color:#ccc;
   cursor:pointer;
 }
 .tool-btn.active{
   background:#1e3a5a;
-  border-color:#3b82f6;
+  border-color:var(--accent);
   color:#fff;
 }
 
-/* ================= APP ================= */
+/* ========== MAIN APP ========== */
 #app{flex:1;display:flex}
 
-/* ================= BROWSER ================= */
+/* ========== BROWSER ========== */
 #browser{
   width:var(--browserW);
   background:linear-gradient(#202022,#18181a);
-  border-right:1px solid #111;
+  border-right:1px solid var(--line);
   display:flex;
   flex-direction:column;
 }
-.browser-header{padding:8px;font-size:10px;color:var(--muted);text-transform:uppercase}
+.browser-header{
+  padding:8px;
+  font-size:10px;
+  text-transform:uppercase;
+  color:var(--muted);
+}
 #drop-zone{
-  margin:8px;padding:16px;border:2px dashed #3b6fa6;border-radius:4px;
-  text-align:center;color:#8fb3d9;cursor:pointer
+  margin:8px;
+  padding:16px;
+  border:2px dashed #3b6fa6;
+  border-radius:4px;
+  color:#8fb3d9;
+  text-align:center;
 }
 #bin{flex:1;overflow:auto}
 .bin-item{padding:6px 8px;border-bottom:1px solid #222;cursor:grab}
 
-/* ================= CENTER ================= */
+/* ========== CENTER COLUMN ========== */
 #center{flex:1;display:flex;flex-direction:column}
 
-/* ================= VIEWERS ================= */
-#viewers{flex:1;display:flex}
-.viewer{
-  flex:1;display:flex;flex-direction:column;border-right:1px solid #111
-}
+/* ========== VIEWERS ========== */
+#viewers{flex:1;display:flex;border-bottom:1px solid var(--line)}
+.viewer{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--line)}
 .viewer:last-child{border-right:none}
 .viewer-header{
   height:26px;background:linear-gradient(#2a2a2c,#202022);
-  border-bottom:1px solid #111;padding:0 8px;
-  display:flex;align-items:center;font-size:10px;color:var(--muted)
+  border-bottom:1px solid var(--line);
+  padding:0 8px;
+  display:flex;align-items:center;
+  font-size:10px;color:var(--muted)
 }
-.viewer-canvas{
-  flex:1;position:relative;background:#000
-}
-.viewer-canvas video{
-  width:100%;height:100%;object-fit:contain;background:#000
-}
-.viewer-overlay{
-  position:absolute;top:8px;left:8px;font-size:9px;color:#888
-}
+.viewer-canvas{flex:1;background:#000;position:relative}
+.viewer-label{position:absolute;top:8px;left:8px;font-size:9px;color:#888}
 
-/* ================= TRANSPORT ================= */
-.transport{
-  height:26px;background:linear-gradient(#1e1e20,#18181a);
-  border-top:1px solid #111;
-  display:flex;align-items:center;gap:6px;padding:0 8px
-}
-.transport button{width:22px;height:22px}
-
-/* ================= TIMELINE ================= */
+/* ========== TIMELINE ========== */
 #timeline{
-  height:var(--timelineH);border-top:1px solid #111;
-  display:flex;flex-direction:column
+  height:var(--timelineH);
+  background:linear-gradient(#131314,#0f0f10);
+  border-top:1px solid var(--line);
+  display:flex;
 }
-
-/* ruler */
-#ruler{height:24px;background:#151517;border-bottom:1px solid #111;cursor:pointer}
-#ruler-inner{display:flex;margin-left:180px}
-
-/* body */
-#timeline-body{flex:1;overflow:auto}
-#timeline-inner{display:flex}
-
-/* headers */
 #track-headers{
-  width:180px;background:linear-gradient(#202022,#18181a);
-  border-right:1px solid #111
+  width:180px;
+  background:linear-gradient(#202022,#18181a);
+  border-right:1px solid var(--line);
 }
 .track-header{
-  height:var(--trackH);display:flex;align-items:center;
-  padding:0 8px;border-bottom:1px solid #111
+  height:var(--trackH);
+  display:flex;align-items:center;
+  padding:0 8px;
+  border-bottom:1px solid var(--line);
 }
-
-/* tracks */
 .tracks{
-  flex:1;position:relative;
-  background:linear-gradient(to right,var(--grid) 1px,transparent 1px);
-  background-size:var(--pxPerSec) 100%
+  flex:1;
+  position:relative;
 }
-.track{height:var(--trackH);border-bottom:1px solid #151517;position:relative}
-
-/* clips */
+.track{
+  height:var(--trackH);
+  border-bottom:1px solid #1a1a1a;
+  position:relative;
+}
 .clip{
-  position:absolute;top:6px;bottom:6px;border-radius:4px;
-  background:#2563eb;color:#fff;padding:0 8px;
-  display:flex;align-items:center;font-size:10px;
-  cursor:grab
+  position:absolute;
+  top:6px;bottom:6px;
+  border-radius:4px;
+  background:#2563eb;
+  padding:0 8px;
+  display:flex;align-items:center;
+  cursor:pointer;
 }
-.clip.audio{background:#15803d}
 .clip.selected{outline:2px solid var(--accent)}
 
-.trim{
-  position:absolute;top:0;bottom:0;width:6px;cursor:ew-resize
+/* ========== INSPECTOR ========== */
+#inspector{
+  width:var(--inspectorW);
+  background:linear-gradient(#202022,#18181a);
+  border-left:1px solid var(--line);
+  display:flex;
+  flex-direction:column;
 }
-.trim.left{left:0}
-.trim.right{right:0}
-
-/* playhead */
-#playhead{
-  position:absolute;top:0;bottom:0;width:2px;
-  background:var(--accent);left:180px;pointer-events:none
+.inspector-header{
+  padding:8px;
+  font-size:10px;
+  text-transform:uppercase;
+  color:var(--muted);
+  border-bottom:1px solid var(--line);
 }
-#snap{
-  position:absolute;top:0;bottom:0;width:2px;
-  background:#4a8fcd;display:none
+.inspector-body{
+  padding:8px;
+}
+.inspector-row{
+  margin-bottom:10px;
+}
+.inspector-row label{
+  display:block;
+  font-size:10px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+.inspector-row input{
+  width:100%;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ================= TOOLBAR ================= -->
-<div id="toolbar">
-  <button class="tool-btn active" data-tool="select">⬆</button>
-  <button class="tool-btn" data-tool="blade">✂</button>
+<!-- TOPBAR -->
+<div id="topbar">
+  <button class="tool-btn active">⬆</button>
+  <button class="tool-btn">✂</button>
 </div>
 
 <div id="app">
 
-<!-- ================= BROWSER ================= -->
+<!-- BROWSER -->
 <div id="browser">
   <div class="browser-header">Browser</div>
-  <div id="drop-zone">Drop video files here<br>or click to import</div>
+  <div id="drop-zone">Drop files here</div>
   <div id="bin"></div>
-  <input type="file" id="fileInput" hidden multiple>
 </div>
 
-<!-- ================= CENTER ================= -->
+<!-- CENTER -->
 <div id="center">
-
-  <!-- VIEWERS -->
   <div id="viewers">
     <div class="viewer">
       <div class="viewer-header">Viewer</div>
-      <div class="viewer-canvas">
-        <video id="sourceVideo"></video>
-        <div class="viewer-overlay">SOURCE</div>
-      </div>
-      <div class="transport">
-        <button onclick="step(-1)">⏪</button>
-        <button onclick="togglePlay()">▶</button>
-        <button onclick="step(1)">⏩</button>
-      </div>
+      <div class="viewer-canvas"><div class="viewer-label">SOURCE</div></div>
     </div>
     <div class="viewer">
       <div class="viewer-header">Canvas</div>
-      <div class="viewer-canvas">
-        <video id="programVideo"></video>
-        <div class="viewer-overlay">SEQUENCE</div>
-      </div>
-      <div class="transport"></div>
+      <div class="viewer-canvas"><div class="viewer-label">SEQUENCE</div></div>
     </div>
   </div>
 
-  <!-- TIMELINE -->
   <div id="timeline">
-    <div id="ruler"></div>
-    <div id="timeline-body">
-      <div id="timeline-inner">
-        <div id="track-headers">
-          <div class="track-header">V1</div>
-          <div class="track-header">A1</div>
-        </div>
-        <div class="tracks">
-          <div id="playhead"></div>
-          <div id="snap"></div>
-          <div class="track" data-track="video"></div>
-          <div class="track" data-track="audio"></div>
-        </div>
-      </div>
+    <div id="track-headers">
+      <div class="track-header">V1</div>
+    </div>
+    <div class="tracks">
+      <div class="track" id="track-v1"></div>
     </div>
   </div>
-
 </div>
+
+<!-- INSPECTOR -->
+<div id="inspector">
+  <div class="inspector-header">Inspector</div>
+  <div class="inspector-body" id="inspectorBody">
+    <div style="color:#777">No selection</div>
+  </div>
+</div>
+
 </div>
 
 <script>
-/* ================= CORE STATE ================= */
-const FPS = 30;
-let pxPerSec = 100;
-let currentTool = "select";
-let playheadTime = 0;
-let playing = false;
-let clips = [];
+/* ================= STATE ================= */
+let selectedClip = null;
+const pxPerSec = 100;
 
-/* ================= TOOL SYSTEM ================= */
-document.querySelectorAll(".tool-btn").forEach(b=>{
-  b.onclick=()=>{
-    currentTool=b.dataset.tool;
-    document.querySelectorAll(".tool-btn")
-      .forEach(x=>x.classList.toggle("active",x===b));
+/* ================= TIMELINE DEMO CLIP ================= */
+const clip = {
+  id: crypto.randomUUID(),
+  name: "Example Clip",
+  start: 1,
+  dur: 3,
+  opacity: 1
+};
+
+const track = document.getElementById("track-v1");
+const clipEl = document.createElement("div");
+clipEl.className = "clip";
+clipEl.textContent = clip.name;
+clipEl.style.left = (clip.start * pxPerSec) + "px";
+clipEl.style.width = (clip.dur * pxPerSec) + "px";
+
+clipEl.onclick = () => selectClip(clip, clipEl);
+track.appendChild(clipEl);
+
+/* ================= SELECTION ================= */
+function selectClip(c, el){
+  document.querySelectorAll(".clip").forEach(x=>x.classList.remove("selected"));
+  el.classList.add("selected");
+  selectedClip = c;
+  renderInspector();
+}
+
+/* ================= INSPECTOR ================= */
+function renderInspector(){
+  const panel = document.getElementById("inspectorBody");
+  panel.innerHTML = "";
+
+  if(!selectedClip){
+    panel.innerHTML = "<div style='color:#777'>No selection</div>";
+    return;
+  }
+
+  panel.innerHTML = `
+    <div class="inspector-row">
+      <label>Name</label>
+      <input type="text" value="${selectedClip.name}" disabled>
+    </div>
+    <div class="inspector-row">
+      <label>Start (seconds)</label>
+      <input type="number" step="0.1" value="${selectedClip.start}">
+    </div>
+    <div class="inspector-row">
+      <label>Duration (seconds)</label>
+      <input type="number" step="0.1" value="${selectedClip.dur}">
+    </div>
+    <div class="inspector-row">
+      <label>Opacity</label>
+      <input type="range" min="0" max="1" step="0.01" value="${selectedClip.opacity}">
+    </div>
+  `;
+
+  const inputs = panel.querySelectorAll("input");
+  inputs[1].oninput = e=>{
+    selectedClip.start = parseFloat(e.target.value);
+    clipEl.style.left = (selectedClip.start * pxPerSec) + "px";
   };
-});
-document.addEventListener("keydown",e=>{
-  if(e.key==="a")document.querySelector('[data-tool="select"]').click();
-  if(e.key==="b")document.querySelector('[data-tool="blade"]').click();
-});
-
-/* ================= TIME UTILS ================= */
-const timeToPx=t=>t*pxPerSec;
-const pxToTime=x=>x/pxPerSec;
-
-/* ================= PLAYHEAD & PLAYBACK ================= */
-function togglePlay(){
-  playing=!playing;
-}
-function step(dir){
-  playheadTime=Math.max(0,playheadTime+(dir/FPS));
-  syncProgram();
-}
-setInterval(()=>{
-  if(!playing)return;
-  playheadTime+=1/FPS;
-  syncProgram();
-  updatePlayhead();
-},1000/FPS);
-
-/* ================= SYNC VIDEO ================= */
-function syncProgram(){
-  const vClip=clips.find(c=>c.type==="video" &&
-    playheadTime>=c.start && playheadTime<=c.start+c.dur);
-  if(!vClip)return;
-  programVideo.src=vClip.src;
-  programVideo.currentTime=playheadTime-vClip.start;
-  programVideo.play();
-}
-
-/* ================= IMPORT ================= */
-dropZone.onclick=()=>fileInput.click();
-fileInput.onchange=e=>[...e.target.files].forEach(f=>{
-  const url=URL.createObjectURL(f);
-  const binEl=document.createElement("div");
-  binEl.className="bin-item";
-  binEl.textContent=f.name;
-  binEl.draggable=true;
-  binEl.ondragstart=ev=>ev.dataTransfer.setData("src",url);
-  bin.appendChild(binEl);
-});
-
-/* ================= DROP TO TIMELINE ================= */
-document.querySelectorAll(".track").forEach(track=>{
-  track.ondragover=e=>e.preventDefault();
-  track.ondrop=e=>{
-    const src=e.dataTransfer.getData("src");
-    const start=pxToTime(e.offsetX);
-    const videoClip={id:crypto.randomUUID(),type:"video",
-      src,start,dur:3,track:document.querySelector('[data-track="video"]')};
-    const audioClip={id:crypto.randomUUID(),type:"audio",
-      src,start,dur:3,track:document.querySelector('[data-track="audio"]'),
-      linked:videoClip.id};
-    videoClip.linked=audioClip.id;
-    clips.push(videoClip,audioClip);
-    render();
+  inputs[2].oninput = e=>{
+    selectedClip.dur = parseFloat(e.target.value);
+    clipEl.style.width = (selectedClip.dur * pxPerSec) + "px";
   };
-});
-
-/* ================= RENDER ================= */
-function render(){
-  document.querySelectorAll(".clip").forEach(c=>c.remove());
-  clips.forEach(c=>{
-    const el=document.createElement("div");
-    el.className="clip"+(c.type==="audio"?" audio":"");
-    el.style.left=timeToPx(c.start)+"px";
-    el.style.width=timeToPx(c.dur)+"px";
-    el.textContent=c.type.toUpperCase();
-    el.onmousedown=e=>{
-      if(currentTool!=="select")return;
-      let sx=e.clientX;
-      document.onmousemove=ev=>{
-        const d=pxToTime(ev.clientX-sx);
-        c.start+=d;
-        if(c.linked){
-          const other=clips.find(x=>x.id===c.linked);
-          if(other)other.start+=d;
-        }
-        sx=ev.clientX; render();
-      };
-      document.onmouseup=()=>document.onmousemove=null;
-    };
-    el.onclick=e=>{
-      if(currentTool!=="blade")return;
-      const cut=c.start+pxToTime(e.offsetX);
-      if(cut<=c.start||cut>=c.start+c.dur)return;
-      const right={...c,id:crypto.randomUUID(),
-        start:cut,dur:c.start+c.dur-cut};
-      c.dur=cut-c.start;
-      clips.push(right);
-      render();
-    };
-    c.track.appendChild(el);
-  });
-  updatePlayhead();
-}
-function updatePlayhead(){
-  document.getElementById("playhead").style.left=timeToPx(playheadTime)+"px";
+  inputs[3].oninput = e=>{
+    selectedClip.opacity = parseFloat(e.target.value);
+    clipEl.style.opacity = selectedClip.opacity;
+  };
 }
 </script>
 
