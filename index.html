@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro Timeline</title>
+<title>CutPro – Correct Layout</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
@@ -35,42 +35,40 @@ html,body{
   overflow:hidden;
 }
 
-/* ================= LAYOUT ================= */
+/* ================= APP LAYOUT ================= */
 #app{
   display:flex;
   height:100%;
 }
 
-/* ================= TRACK HEADERS ================= */
-#track-headers{
-  width:180px;
+/* ================= BROWSER ================= */
+#browser{
+  width:240px;
   background:linear-gradient(#202022,#18181a);
   border-right:1px solid #111;
 }
 
-.track-header{
-  height:var(--trackH);
-  display:flex;
-  align-items:center;
-  padding:0 8px;
-  border-bottom:1px solid #111;
-}
-
-.track-label{
-  font-weight:bold;
-  flex:1;
-}
-
-.v2 .track-label{color:var(--v2)}
-.v1 .track-label{color:var(--v1)}
-.a1 .track-label{color:var(--a1)}
-
-/* ================= TIMELINE ================= */
-#timeline{
+/* ================= CENTER COLUMN ================= */
+#center{
   flex:1;
   display:flex;
   flex-direction:column;
-  overflow:hidden;
+}
+
+/* Viewers placeholder */
+#viewer{
+  flex:1;
+  background:#000;
+  border-bottom:1px solid #111;
+}
+
+/* ================= TIMELINE ================= */
+#timeline{
+  height:280px;              /* ✅ hard boundary */
+  display:flex;
+  flex-direction:column;
+  background:var(--bg);
+  border-top:1px solid #111;
 }
 
 /* ================= RULER ================= */
@@ -88,6 +86,7 @@ html,body{
   width:10000px;
 }
 
+/* Ruler ticks */
 .ruler-tick{
   height:100%;
   border-left:1px solid #333;
@@ -125,37 +124,46 @@ html,body{
   position:relative;
 }
 
-/* ================= CLIPS ================= */
-.clip{
+/* ================= TRACK HEADERS ================= */
+#track-headers{
   position:absolute;
-  top:6px;
-  bottom:6px;
-  border-radius:4px;
-  padding:0 8px;
-  display:flex;
-  align-items:center;
-  font-size:10px;
-  cursor:grab;
-  user-select:none;
+  left:0;
+  top:0;
+  width:180px;
+  background:linear-gradient(#202022,#18181a);
+  border-right:1px solid #111;
+  z-index:5;
 }
 
-.clip.v2{background:#6d28d9}
-.clip.v1{background:#2563eb}
-.clip.a1{background:#15803d}
+.track-header{
+  height:var(--trackH);
+  display:flex;
+  align-items:center;
+  padding:0 8px;
+  border-bottom:1px solid #111;
+}
 
-/* ================= PLAYHEAD & SNAP ================= */
-#playhead,#snap-line{
+.track-label{font-weight:bold}
+
+.v2 .track-label{color:var(--v2)}
+.v1 .track-label{color:var(--v1)}
+.a1 .track-label{color:var(--a1)}
+
+/* Offset timeline to account for headers */
+#timeline-inner,
+#ruler-inner{
+  margin-left:180px;
+}
+
+/* ================= PLAYHEAD ================= */
+#playhead{
   position:absolute;
   top:0;
   bottom:0;
   width:2px;
-  z-index:50;
-}
-
-#playhead{background:var(--accent)}
-#snap-line{
-  background:#4a8fcd;
-  display:none;
+  background:var(--accent);
+  left:180px;
+  z-index:10;
 }
 </style>
 </head>
@@ -163,178 +171,67 @@ html,body{
 <body>
 <div id="app">
 
-<!-- TRACK HEADERS -->
-<div id="track-headers">
-  <div class="track-header v2"><span class="track-label">V2 Graphics</span></div>
-  <div class="track-header v1"><span class="track-label">V1</span></div>
-  <div class="track-header a1"><span class="track-label">A1</span></div>
-</div>
+<!-- Browser -->
+<div id="browser"></div>
 
-<!-- TIMELINE -->
-<div id="timeline">
+<!-- Center -->
+<div id="center">
 
-  <!-- RULER -->
-  <div id="ruler">
-    <div id="ruler-inner"></div>
-  </div>
+  <div id="viewer"></div>
 
-  <!-- BODY -->
-  <div id="timeline-body">
-    <div id="timeline-inner">
+  <!-- Timeline -->
+  <div id="timeline">
 
-      <div id="snap-line"></div>
-      <div id="playhead"></div>
-
-      <div class="track" data-track="v2"></div>
-      <div class="track" data-track="v1"></div>
-      <div class="track" data-track="a1"></div>
-
+    <div id="ruler">
+      <div id="ruler-inner"></div>
     </div>
-  </div>
 
+    <div id="timeline-body">
+      <div id="timeline-inner">
+
+        <!-- Track headers -->
+        <div id="track-headers">
+          <div class="track-header v2"><span class="track-label">V2 Graphics</span></div>
+          <div class="track-header v1"><span class="track-label">V1</span></div>
+          <div class="track-header a1"><span class="track-label">A1</span></div>
+        </div>
+
+        <div id="playhead"></div>
+
+        <div class="track"></div>
+        <div class="track"></div>
+        <div class="track"></div>
+
+      </div>
+    </div>
+
+  </div>
 </div>
 </div>
 
 <script>
-/* ================= CONSTANTS ================= */
-const FPS = 30;
-const SNAP_PX = 8;
-
-/* ================= STATE ================= */
-let pxPerSec = 100;
-const clips = [];
-let playheadTime = 0;
-
-/* ================= ELEMENTS ================= */
-const timelineBody = document.getElementById("timeline-body");
-const timelineInner = document.getElementById("timeline-inner");
+/* Build ruler */
+const pxPerSec = 100;
 const rulerInner = document.getElementById("ruler-inner");
-const snapLine = document.getElementById("snap-line");
-const playhead = document.getElementById("playhead");
 
-/* ================= UTIL ================= */
-const timeToPx = t => t * pxPerSec;
-const pxToTime = x => x / pxPerSec;
+for(let i=0;i<120;i++){
+  const tick = document.createElement("div");
+  tick.className = "ruler-tick";
+  tick.style.width = pxPerSec+"px";
 
-function formatTime(sec){
-  const totalFrames = Math.floor(sec * FPS);
-  const f = totalFrames % FPS;
-  const s = Math.floor(totalFrames / FPS) % 60;
-  const m = Math.floor(totalFrames / (FPS*60));
-  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}:00:${String(f).padStart(2,"0")}`;
-}
-
-/* ================= BUILD RULER ================= */
-function buildRuler(){
-  rulerInner.innerHTML = "";
-  rulerInner.style.width = timelineInner.style.width;
-  const seconds = timelineInner.offsetWidth / pxPerSec;
-
-  for(let i=0;i<seconds;i++){
-    const tick = document.createElement("div");
-    tick.className = "ruler-tick";
-    tick.style.width = pxPerSec+"px";
-
-    if(i % 1 === 0){
-      const label = document.createElement("span");
-      label.textContent = formatTime(i);
-      tick.appendChild(label);
-    }
-
-    rulerInner.appendChild(tick);
+  if(i%5===0){
+    const s = document.createElement("span");
+    s.textContent = `00:${String(i).padStart(2,"0")}:00:00`;
+    tick.appendChild(s);
   }
+  rulerInner.appendChild(tick);
 }
-buildRuler();
 
-/* ================= SCROLL SYNC ================= */
-timelineBody.addEventListener("scroll",()=>{
-  document.getElementById("ruler").scrollLeft = timelineBody.scrollLeft;
+/* Scroll sync */
+const body = document.getElementById("timeline-body");
+body.addEventListener("scroll",()=>{
+  document.getElementById("ruler").scrollLeft = body.scrollLeft;
 });
-
-/* ================= ZOOM ================= */
-timelineBody.addEventListener("wheel",e=>{
-  if(!e.ctrlKey && !e.metaKey) return;
-  e.preventDefault();
-
-  pxPerSec = Math.max(40, Math.min(300, pxPerSec + (e.deltaY<0?10:-10)));
-  document.documentElement.style.setProperty("--pxPerSec",pxPerSec+"px");
-  timelineInner.style.backgroundSize = pxPerSec+"px 100%";
-  buildRuler();
-},{passive:false});
-
-/* ================= SNAPPING ================= */
-function snap(time){
-  let best=null;
-
-  /* grid (frames) */
-  const frame = Math.round(time*FPS)/FPS;
-  if(Math.abs(timeToPx(time-frame))<SNAP_PX) best=frame;
-
-  /* clip edges */
-  clips.forEach(c=>{
-    [c.start,c.start+c.dur].forEach(e=>{
-      if(Math.abs(timeToPx(time-e))<SNAP_PX) best=e;
-    });
-  });
-
-  /* playhead */
-  if(Math.abs(timeToPx(time-playheadTime))<SNAP_PX) best=playheadTime;
-
-  if(best!==null){
-    snapLine.style.left = timeToPx(best)+"px";
-    snapLine.style.display = "block";
-    return best;
-  }
-
-  snapLine.style.display = "none";
-  return time;
-}
-
-/* ================= ADD CLIPS ================= */
-document.querySelectorAll(".track").forEach(track=>{
-  track.onclick = e=>{
-    const clip = {
-      id:crypto.randomUUID(),
-      track:track.dataset.track,
-      start: pxToTime(e.offsetX),
-      dur:2
-    };
-    clips.push(clip);
-    render();
-  };
-});
-
-/* ================= RENDER ================= */
-function render(){
-  document.querySelectorAll(".clip").forEach(c=>c.remove());
-
-  clips.forEach(c=>{
-    const el = document.createElement("div");
-    el.className = "clip "+c.track;
-    el.textContent = c.track.toUpperCase()+" Clip";
-    el.style.left = timeToPx(c.start)+"px";
-    el.style.width = timeToPx(c.dur)+"px";
-
-    let sx;
-    el.onmousedown = e=>{
-      sx=e.clientX;
-      document.onmousemove = ev=>{
-        const dt = pxToTime(ev.clientX-sx);
-        c.start = snap(c.start+dt);
-        sx=ev.clientX;
-        render();
-      };
-      document.onmouseup = ()=>{
-        snapLine.style.display="none";
-        document.onmousemove=null;
-      };
-    };
-
-    document.querySelector(`[data-track="${c.track}"]`).appendChild(el);
-  });
-
-  playhead.style.left = timeToPx(playheadTime)+"px";
-}
 </script>
 
 </body>
