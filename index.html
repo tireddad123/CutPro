@@ -1,20 +1,17 @@
+<!-- PHASE 5: Ripple, Lift, Trim Snapping, Export UI, Audio Track -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <title>CutPro Web</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
+/* ───────── Base Vars ───────── */
 :root{
-  --bg:#111;
-  --panel:#1e1e1e;
-  --panel2:#252525;
-  --border:#2a2a2a;
-  --text:#d8d8d8;
-  --muted:#888;
-  --accent:#4a8fcd;
-  --playhead:#e8a020;
+  --bg:#111;--panel:#1e1e1e;--panel2:#252525;--border:#2a2a2a;
+  --text:#d8d8d8;--muted:#888;
+  --accent:#4a8fcd;--playhead:#e8a020;
   font-family:"Lucida Grande","Helvetica Neue",Arial,sans-serif;
   font-size:11px;
 }
@@ -23,284 +20,293 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 #app{display:flex;flex-direction:column;height:100%}
 
 /* Toolbar */
-#toolbar{
-  height:38px;display:flex;align-items:center;
-  gap:6px;padding:0 8px;
-  background:linear-gradient(#3a3a3a,#262626);
-  border-bottom:1px solid #111;
-}
-.tool-btn{
-  height:26px;min-width:26px;
+#toolbar{height:38px;display:flex;align-items:center;gap:6px;padding:0 8px;
+  background:linear-gradient(#3a3a3a,#262626);border-bottom:1px solid #111}
+.tool-btn{height:26px;min-width:26px;border-radius:3px;cursor:pointer;
   background:linear-gradient(#3e3e3e,#292929);
-  border:1px solid #1a1a1a;
-  border-top-color:#4a4a4a;
-  border-radius:3px;color:var(--text);
-  cursor:pointer;
-}
-.tool-btn.active{
-  background:linear-gradient(#1e3a5a,#162a42);
-  border-color:var(--accent);
-}
+  border:1px solid #1a1a1a;border-top-color:#4a4a4a;color:var(--text)}
+.tool-btn.active{background:linear-gradient(#1e3a5a,#162a42);border-color:var(--accent)}
+.tool-sep{width:1px;height:22px;background:#444;margin:0 4px}
 
 /* Layout */
 #workspace{flex:1;display:flex}
 
 /* Browser */
-#browser{
-  width:240px;background:var(--panel);
-  border-right:1px solid #111;
-  display:flex;flex-direction:column;
-}
-.panel-header{
-  height:20px;padding:0 8px;
-  display:flex;align-items:center;
-  font-size:10px;font-weight:bold;
-  text-transform:uppercase;color:#aaa;
+#browser{width:240px;background:var(--panel);border-right:1px solid #111}
+.panel-header{height:20px;padding:0 8px;display:flex;align-items:center;
   background:linear-gradient(#333,#252525);
-  border-bottom:1px solid #111;
-}
-#bin{flex:1;overflow:auto}
+  border-bottom:1px solid #111;font-size:10px;font-weight:bold;color:#aaa}
+#bin{overflow:auto}
 .bin-item{padding:4px 6px;border-bottom:1px solid #222;cursor:grab}
 
-/* Center */
+/* Viewers */
 #center{flex:1;display:flex;flex-direction:column}
 #viewers{flex:1;display:flex;border-bottom:2px solid #111}
-.viewer-panel{flex:1;background:var(--panel);position:relative}
-.viewer-screen{position:absolute;inset:0;background:#000}
-.viewer-label{position:absolute;top:6px;left:8px;font-size:9px;color:rgba(255,255,255,.4)}
+.viewer-panel{flex:1;position:relative;background:#000}
+.viewer-label{position:absolute;top:6px;left:8px;font-size:9px;color:#aaa}
 
 /* Timeline */
-#timeline{height:220px;background:#111;display:flex;flex-direction:column}
-#timeline-toolbar{
-  height:28px;padding:0 8px;
-  display:flex;align-items:center;
-  background:linear-gradient(#2e2e2e,#242424);
-  border-bottom:1px solid #111;
-}
+#timeline{height:240px;background:#111;display:flex;flex-direction:column}
+#timeline-toolbar{height:28px;display:flex;align-items:center;padding:0 8px;
+  background:linear-gradient(#2e2e2e,#242424);border-bottom:1px solid #111}
 #timeline-content{flex:1;display:flex}
 #track-headers{width:120px;background:var(--panel2);border-right:1px solid #111}
 .track-header{height:40px;display:flex;align-items:center;padding:0 6px;font-size:10px;color:#aaa;border-bottom:1px solid #111}
-
 #tracks{flex:1;position:relative;overflow:auto}
-.timeline-ruler{
-  height:20px;border-bottom:1px solid #222;
-  background:#1a1a1a;font-size:9px;color:#888;
-  display:flex;align-items:flex-end;
-}
+.timeline-ruler{height:20px;border-bottom:1px solid #222;background:#1a1a1a;font-size:9px;color:#888;display:flex}
 .timeline-track{height:40px;border-bottom:1px solid #111;position:relative}
 
-.clip{
-  position:absolute;top:4px;bottom:4px;
-  background:linear-gradient(#3a6a9a,#2a4e74,#1e3850);
-  border:1px solid #1a3a6a;border-radius:3px;
-  padding:0 6px;font-size:9px;color:#fff;
-  display:flex;align-items:center;cursor:grab;
-}
+.clip{position:absolute;top:4px;bottom:4px;
+  border-radius:3px;padding:0 6px;font-size:9px;
+  display:flex;align-items:center;cursor:grab}
+.clip.video{background:linear-gradient(#3a6a9a,#2a4e74,#1e3850);border:1px solid #1a3a6a}
+.clip.audio{background:linear-gradient(#3a6a3a,#2a5028,#1e3c1e);border:1px solid #1a4a1a}
+
 .clip.selected{outline:2px solid var(--accent)}
-.clip::after{
-  content:"";position:absolute;right:-6px;top:0;bottom:0;
-  width:6px;cursor:ew-resize;
-}
+.clip .edge{position:absolute;top:0;bottom:0;width:6px;cursor:ew-resize}
+.clip .edge.left{left:-3px}
+.clip .edge.right{right:-3px}
 
-#playhead{
-  position:absolute;top:0;bottom:0;
-  width:2px;background:var(--playhead);z-index:50;
-}
-
-/* Inspector */
-#inspector{
-  width:220px;background:var(--panel);
-  border-left:1px solid #111;
-}
-.inspector-section{border-bottom:1px solid #111}
-.inspector-title{
-  height:20px;padding:0 8px;
-  display:flex;align-items:center;
-  background:linear-gradient(#2e2e2e,#242424);
-  font-size:10px;text-transform:uppercase;
-}
-.inspector-body{padding:6px 8px}
-.param-row{display:flex;gap:6px;margin-bottom:6px}
-.param-label{width:60px;font-size:10px;color:#aaa}
+/* Playhead */
+#playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--playhead);z-index:50}
 
 /* Status */
-#statusbar{
-  height:18px;padding:0 8px;
-  display:flex;align-items:center;
-  background:linear-gradient(#1e1e1e,#161616);
-  border-top:1px solid #111;
-  font-size:9px;color:var(--muted);
-}
+#statusbar{height:18px;padding:0 8px;display:flex;align-items:center;
+  background:linear-gradient(#1e1e1e,#161616);border-top:1px solid #111;
+  font-size:9px;color:var(--muted)}
 
-/* Rubber band */
-#rubber{
-  position:absolute;border:1px dashed var(--accent);
-  background:rgba(74,143,205,.1);
-  pointer-events:none;display:none;z-index:999;
-}
+/* Export Modal */
+#export-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);
+  display:none;align-items:center;justify-content:center;z-index:200}
+#export-card{background:#1a1e28;border:1px solid #2a3040;border-radius:8px;width:420px;padding:14px}
+#export-card h2{margin:0 0 10px 0;font-size:14px}
+.export-row{display:flex;gap:6px;margin-bottom:8px}
+.export-row select{flex:1}
+.export-actions{text-align:right;margin-top:10px}
 </style>
 </head>
 
 <body>
 <div id="app">
 
+<!-- Toolbar -->
 <div id="toolbar">
   <button class="tool-btn active" id="tool-select">A</button>
   <button class="tool-btn" id="tool-blade">B</button>
-  <button class="tool-btn" id="btn-play">▶</button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" id="btn-undo">↩</button>
+  <button class="tool-btn" id="btn-redo">↪</button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" id="btn-export">Export</button>
 </div>
 
 <div id="workspace">
 
+<!-- Browser -->
 <div id="browser">
   <div class="panel-header">Browser</div>
   <div id="bin"></div>
-  <input type="file" id="fileInput" multiple hidden />
+  <input type="file" id="fileInput" multiple hidden>
 </div>
 
+<!-- Center -->
 <div id="center">
-  <div id="viewers">
-    <div class="viewer-panel">
-      <div class="viewer-screen"></div>
-      <div class="viewer-label">SOURCE</div>
-    </div>
-    <div class="viewer-panel">
-      <canvas id="canvas" width="1280" height="720"></canvas>
-      <div class="viewer-label">SEQUENCE</div>
-    </div>
-  </div>
 
-  <div id="timeline">
-    <div id="timeline-toolbar">Timeline</div>
-    <div id="timeline-content">
-      <div id="track-headers">
-        <div class="track-header">V1</div>
-      </div>
-      <div id="tracks">
-        <div class="timeline-ruler" id="ruler"></div>
-        <div class="timeline-track" id="track-v1"></div>
-        <div id="playhead"></div>
-        <div id="rubber"></div>
-      </div>
-    </div>
+<!-- Viewers -->
+<div id="viewers">
+  <div class="viewer-panel"><div class="viewer-label">SOURCE</div></div>
+  <div class="viewer-panel">
+    <canvas id="canvas" width="1280" height="720"></canvas>
+    <div class="viewer-label">SEQUENCE</div>
   </div>
 </div>
 
-<div id="inspector">
-  <div class="panel-header">Inspector</div>
-  <div class="inspector-section">
-    <div class="inspector-title">Motion</div>
-    <div class="inspector-body">
-      <div class="param-row">
-        <span class="param-label">Scale</span>
-        <input type="range" id="scale" min="50" max="200" value="100" />
-      </div>
+<!-- Timeline -->
+<div id="timeline">
+  <div id="timeline-toolbar">Timeline — Delete = Ripple · Shift+Delete = Lift</div>
+  <div id="timeline-content">
+    <div id="track-headers">
+      <div class="track-header">V1</div>
+      <div class="track-header">A1</div>
+    </div>
+    <div id="tracks">
+      <div class="timeline-ruler" id="ruler"></div>
+      <div class="timeline-track" id="track-v1"></div>
+      <div class="timeline-track" id="track-a1"></div>
+      <div id="playhead"></div>
     </div>
   </div>
 </div>
-
+</div>
 </div>
 
-<div id="statusbar">Phase 3 — Timeline stabilized</div>
+<div id="statusbar">Phase 5 — Ripple / Lift · Trim Snap · Export UI · Audio Track</div>
+</div>
+
+<!-- Export Modal -->
+<div id="export-modal">
+  <div id="export-card">
+    <h2>Export</h2>
+    <div class="export-row">
+      <label>Format</label>
+      <select><option>MOV</option><option>MP4</option></select>
+    </div>
+    <div class="export-row">
+      <label>Preset</label>
+      <select><option>YouTube 1080p</option><option>iPhone</option></select>
+    </div>
+    <div class="export-actions">
+      <button onclick="document.getElementById('export-modal').style.display='none'">Cancel</button>
+      <button disabled>Start Export</button>
+    </div>
+  </div>
 </div>
 
 <script>
-/* ================= BOOT ================= */
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+/* ===== Core State ===== */
+const PX=20;
+const state={clips:[],selected:new Set(),undo:[],redo:[],tool:'select'};
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
 
-/* ================= STATE ================= */
-const PX = 20;
-const state = {
-  clips: [],
-  selected: new Set(),
-  tool: "select",
-  playing: false
+/* ===== Utility ===== */
+const secToPx=s=>s*PX, pxToSec=p=>p/PX;
+const snapTime=t=>{
+  let snaps=[];
+  state.clips.forEach(c=>{
+    snaps.push(c.start,c.start+c.dur);
+  });
+  for(let s of snaps) if(Math.abs(secToPx(t-s))<8) return s;
+  return t;
 };
+const snapshot=()=>JSON.stringify(state.clips);
+const restore=s=>{state.clips=JSON.parse(s);render();}
 
-/* ================= RULER ================= */
-function drawRuler(){
-  const r=document.getElementById("ruler");
-  r.innerHTML="";
-  for(let i=0;i<60;i+=5){
-    const t=document.createElement("div");
-    t.textContent=`${i}s`;
-    t.style.width=(5*PX)+"px";
-    t.style.borderLeft="1px solid #333";
-    r.appendChild(t);
+/* ===== Undo/Redo ===== */
+function pushUndo(){state.undo.push(snapshot());state.redo.length=0;}
+btnUndo.onclick=()=>state.undo.length&&(state.redo.push(snapshot()),restore(state.undo.pop()));
+btnRedo.onclick=()=>state.redo.length&&(state.undo.push(snapshot()),restore(state.redo.pop()));
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Delete'){
+    state.selected.forEach(c=>{
+      pushUndo();
+      const idx=state.clips.indexOf(c);
+      if(idx>=0){
+        const dur=c.dur;
+        if(!e.shiftKey){
+          state.clips.splice(idx,1);
+          state.clips.forEach(cc=>cc.start>c.start&&(cc.start-=dur));
+        }else state.clips.splice(idx,1);
+      }
+    });
+    state.selected.clear();render();
   }
-}
-drawRuler();
+});
 
-/* ================= BIN ================= */
+/* ===== Tools ===== */
+toolSelect.onclick=()=>state.tool='select';
+toolBlade.onclick=()=>state.tool='blade';
+
+/* ===== Ruler ===== */
+for(let i=0;i<120;i+=5){
+  const d=document.createElement('div');
+  d.style.width=secToPx(5)+'px'; d.textContent=i+'s';
+  d.style.borderLeft='1px solid #333'; ruler.appendChild(d);
+}
+
+/* ===== Import ===== */
 fileInput.onchange=e=>{
   [...e.target.files].forEach(f=>{
-    const v=document.createElement("video");
-    v.src=URL.createObjectURL(f);
-    v.muted=true;
-    state.clips.push({id:crypto.randomUUID(),file:f,video:v,start:0,dur:5});
-    const b=document.createElement("div");
-    b.className="bin-item";
-    b.textContent=f.name;
-    b.draggable=true;
-    b.ondragstart=ev=>ev.dataTransfer.setData("id",state.clips.at(-1).id);
-    bin.appendChild(b);
+    const v=document.createElement('video');
+    v.src=URL.createObjectURL(f); v.muted=true;
+    const isAudio=f.type.startsWith('audio');
+    state.clips.push({
+      id:crypto.randomUUID(),file:f,video:v,start:0,dur:5,
+      type:isAudio?'audio':'video'
+    });
+    const el=document.createElement('div');
+    el.className='bin-item'; el.textContent=f.name; el.draggable=true;
+    el.ondragstart=ev=>ev.dataTransfer.setData('id',state.clips.at(-1).id);
+    bin.appendChild(el);
   });
 };
 
-/* ================= TIMELINE ================= */
-track-v1.ondragover=e=>e.preventDefault();
-track-v1.ondrop=e=>{
-  const clip=state.clips.find(c=>c.id===e.dataTransfer.getData("id"));
-  clip.start=e.offsetX/PX;
-  state.clips.push({...clip,id:crypto.randomUUID()});
+/* ===== Timeline Drop ===== */
+track-v1.ondragover=track-a1.ondragover=e=>e.preventDefault();
+track-v1.ondrop=track-a1.ondrop=e=>{
+  const c=state.clips.find(x=>x.id===e.dataTransfer.getData('id'));
+  if(!c)return;
+  pushUndo();
+  state.clips.push({...c,id:crypto.randomUUID(),start:pxToSec(e.offsetX)});
   render();
 };
 
+/* ===== Render Timeline ===== */
 function render(){
-  track-v1.innerHTML="";
+  track-v1.innerHTML=''; track-a1.innerHTML='';
   state.clips.forEach(c=>{
-    const el=document.createElement("div");
-    el.className="clip"+(state.selected.has(c)?" selected":"");
-    el.style.left=(c.start*PX)+"px";
-    el.style.width=(c.dur*PX)+"px";
+    const el=document.createElement('div');
+    el.className='clip '+c.type+(state.selected.has(c)?' selected':'');
+    el.style.left=secToPx(c.start)+'px';
+    el.style.width=secToPx(c.dur)+'px';
     el.textContent=c.file.name;
-    el.onclick=e=>{
-      if(state.tool==="blade"){
-        const cut=c.start+(e.offsetX/PX);
-        if(cut>c.start&&cut<c.start+c.dur){
-          const rDur=(c.start+c.dur)-cut;
-          c.dur=cut-c.start;
-          state.clips.push({...c,id:crypto.randomUUID(),start:cut,dur:rDur});
-          render();return;
-        }
-      }
-      state.selected.clear();state.selected.add(c);render();
+
+    const L=document.createElement('div');
+    const R=document.createElement('div');
+    L.className='edge left'; R.className='edge right';
+
+    L.onmousedown=e=>{pushUndo();e.stopPropagation();
+      let sx=e.clientX, s0=c.start,d0=c.dur;
+      document.onmousemove=ev=>{
+        const ns=snapTime(s0+pxToSec(ev.clientX-sx));
+        c.start=ns; c.dur=Math.max(0.3,d0-(c.start-s0)); render();
+      };
+      document.onmouseup=()=>document.onmousemove=null;
     };
-    track-v1.appendChild(el);
+
+    R.onmousedown=e=>{pushUndo();e.stopPropagation();
+      let sx=e.clientX,d0=c.dur;
+      document.onmousemove=ev=>{
+        const ne=snapTime(s0=c.start+pxToSec(ev.clientX-sx));
+        c.dur=Math.max(0.3,ne-c.start); render();
+      };
+      document.onmouseup=()=>document.onmousemove=null;
+    };
+
+    el.append(L,R);
+    el.onclick=ev=>{
+      if(state.tool==='blade'){
+        const cut=snapTime(c.start+pxToSec(ev.offsetX));
+        if(cut>c.start&&cut<c.start+c.dur){
+          pushUndo();
+          state.clips.push({...c,id:crypto.randomUUID(),start:cut,dur:(c.start+c.dur)-cut});
+          c.dur=cut-c.start;
+          render();
+        }
+        return;
+      }
+      state.selected.clear(); state.selected.add(c); render();
+    };
+
+    (c.type==='audio'?track-a1:track-v1).appendChild(el);
   });
 }
-render();
 
-/* ================= CANVAS ================= */
-function draw(){
+/* ===== Canvas ===== */
+(function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   state.selected.forEach(c=>{
-    if(c.video.readyState>=2){
+    if(c.video.readyState>=2&&c.type==='video'){
       ctx.drawImage(c.video,0,0,canvas.width,canvas.height);
     }
   });
   requestAnimationFrame(draw);
-}
-draw();
+})();
 
-/* ================= TOOLS ================= */
-toolSelect.onclick=()=>state.tool="select";
-toolBlade.onclick=()=>state.tool="blade";
-
-document.addEventListener("keydown",e=>{
-  if(e.key===" "){e.preventDefault();state.playing=!state.playing}
-});
+/* ===== Export UI ===== */
+btnExport.onclick=()=>export-modal.style.display='flex';
 </script>
 </body>
 </html>
+``
