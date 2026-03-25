@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro – Proper Layout</title>
+<title>CutPro – Locked Layout</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
@@ -10,12 +10,15 @@
   --bg:#0f0f10;
   --panel:#1c1c1e;
   --panel2:#242427;
+  --panel3:#2b2b2e;
   --text:#d8d8d8;
+  --muted:#9a9a9a;
   --grid:#2a2a2e;
   --accent:#f0b400;
 
-  --trackH:48px;
-  --pxPerSec:100px;
+  --browserW:240px;
+  --timelineH:300px;
+  --viewerHeaderH:26px;
 
   font-family:"Lucida Grande","Helvetica Neue",Arial,sans-serif;
   font-size:11px;
@@ -38,10 +41,17 @@ html,body{
 
 /* ================= BROWSER ================= */
 #browser{
-  width:240px;
+  width:var(--browserW);
   background:linear-gradient(#202022,#18181a);
   border-right:1px solid #111;
   padding:8px;
+}
+
+#browser h3{
+  margin:0 0 6px 0;
+  font-size:10px;
+  color:var(--muted);
+  text-transform:uppercase;
 }
 
 /* ================= CENTER COLUMN ================= */
@@ -57,119 +67,73 @@ html,body{
   display:flex;
   gap:1px;
   background:#000;
-  border-bottom:1px solid #111;
 }
 
-.viewer{
+/* Each viewer panel */
+.viewer-panel{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  background:#000;
+  border-right:1px solid #111;
+}
+.viewer-panel:last-child{border-right:none}
+
+/* Viewer header */
+.viewer-header{
+  height:var(--viewerHeaderH);
+  background:linear-gradient(#2a2a2c,#202022);
+  border-bottom:1px solid #111;
+  display:flex;
+  align-items:center;
+  padding:0 8px;
+  font-size:10px;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+
+/* Viewer canvas area */
+.viewer-canvas{
   flex:1;
   position:relative;
   background:#000;
 }
 
-.viewer canvas{
-  width:100%;
-  height:100%;
-  background:#000;
-}
-
-.viewer-label{
+/* Overlay label */
+.viewer-overlay{
   position:absolute;
-  top:6px;
+  top:8px;
   left:8px;
-  font-size:10px;
-  color:#aaa;
+  font-size:9px;
+  color:#888;
+  pointer-events:none;
 }
 
 /* ================= TIMELINE ================= */
 #timeline{
-  height:300px;                 /* ✅ bounded height */
+  height:var(--timelineH);
+  background:var(--bg);
+  border-top:1px solid #111;
   display:flex;
   flex-direction:column;
-  background:var(--bg);
 }
 
-/* ======== RULER ======== */
-#ruler{
+/* Timeline header (optional controls later) */
+#timeline-header{
   height:24px;
   background:linear-gradient(#1a1a1c,#151517);
   border-bottom:1px solid #111;
-  overflow:hidden;
-}
-
-#ruler-inner{
-  display:flex;
-  height:100%;
-  width:10000px;
-}
-
-.ruler-tick{
-  width:var(--pxPerSec);
-  border-left:1px solid #333;
-  position:relative;
-}
-
-.ruler-tick span{
-  position:absolute;
-  top:2px;
-  left:4px;
-  font-size:9px;
-  color:#aaa;
-}
-
-/* ======== BODY ======== */
-#timeline-body{
-  flex:1;
-  overflow:auto;
-  position:relative;
-}
-
-#timeline-inner{
-  position:relative;
-  height:calc(var(--trackH) * 3);
-  width:10000px;
-  background:
-    linear-gradient(to right, var(--grid) 1px, transparent 1px);
-  background-size:var(--pxPerSec) 100%;
-}
-
-/* ======== TRACK HEADERS ======== */
-#track-headers{
-  position:absolute;
-  left:0;
-  top:0;
-  width:180px;
-  background:linear-gradient(#202022,#18181a);
-  border-right:1px solid #111;
-  z-index:5;
-}
-
-.track-header{
-  height:var(--trackH);
   display:flex;
   align-items:center;
   padding:0 8px;
-  border-bottom:1px solid #111;
-  font-weight:bold;
+  font-size:10px;
+  color:var(--muted);
 }
 
-#timeline-inner{ margin-left:180px; }
-#ruler-inner{ margin-left:180px; }
-
-/* ======== TRACKS ======== */
-.track{
-  height:var(--trackH);
-  border-bottom:1px solid #151517;
-}
-
-/* ======== PLAYHEAD ======== */
-#playhead{
-  position:absolute;
-  top:0;
-  bottom:0;
-  width:2px;
-  background:var(--accent);
-  left:180px;
-  z-index:10;
+/* Timeline body placeholder */
+#timeline-body{
+  flex:1;
+  background:linear-gradient(#131314,#0f0f10);
 }
 </style>
 </head>
@@ -177,79 +141,43 @@ html,body{
 <body>
 <div id="app">
 
-<!-- Browser -->
+<!-- ================= BROWSER ================= -->
 <div id="browser">
-  Browser<br><br>
-  (media bin here)
+  <h3>Browser</h3>
+  <div>(media bin here)</div>
 </div>
 
-<!-- Center -->
+<!-- ================= CENTER ================= -->
 <div id="center">
 
-  <!-- Viewers -->
+  <!-- ===== VIEWERS ===== -->
   <div id="viewers">
-    <div class="viewer">
-      <canvas></canvas>
-      <div class="viewer-label">SOURCE</div>
-    </div>
-    <div class="viewer">
-      <canvas></canvas>
-      <div class="viewer-label">SEQUENCE</div>
-    </div>
-  </div>
 
-  <!-- Timeline -->
-  <div id="timeline">
-
-    <div id="ruler">
-      <div id="ruler-inner"></div>
+    <!-- SOURCE VIEWER -->
+    <div class="viewer-panel">
+      <div class="viewer-header">Viewer</div>
+      <div class="viewer-canvas">
+        <div class="viewer-overlay">SOURCE</div>
+      </div>
     </div>
 
-    <div id="timeline-body">
-      <div id="timeline-inner">
-
-        <div id="track-headers">
-          <div class="track-header">V2 Graphics</div>
-          <div class="track-header">V1</div>
-          <div class="track-header">A1</div>
-        </div>
-
-        <div id="playhead"></div>
-
-        <div class="track"></div>
-        <div class="track"></div>
-        <div class="track"></div>
+    <!-- CANVAS / PROGRAM -->
+    <div class="viewer-panel">
+      <div class="viewer-header">Canvas</div>
+      <div class="viewer-canvas">
+        <div class="viewer-overlay">SEQUENCE</div>
       </div>
     </div>
 
   </div>
-</div>
+
+  <!-- ===== TIMELINE ===== -->
+  <div id="timeline">
+    <div id="timeline-header">Timeline</div>
+    <div id="timeline-body"></div>
+  </div>
 
 </div>
-
-<script>
-/* Build ruler */
-const pxPerSec = 100;
-const rulerInner = document.getElementById("ruler-inner");
-
-for(let i=0;i<120;i++){
-  const t = document.createElement("div");
-  t.className = "ruler-tick";
-  t.style.width = pxPerSec+"px";
-  if(i % 5 === 0){
-    const s = document.createElement("span");
-    s.textContent = `00:${String(i).padStart(2,"0")}:00:00`;
-    t.appendChild(s);
-  }
-  rulerInner.appendChild(t);
-}
-
-/* Scroll sync */
-const body = document.getElementById("timeline-body");
-body.addEventListener("scroll",()=>{
-  document.getElementById("ruler").scrollLeft = body.scrollLeft;
-});
-</script>
-
+</div>
 </body>
 </html>
