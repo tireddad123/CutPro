@@ -2,39 +2,117 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro Web — Final</title>
+<title>CutPro Web</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#0f1115" />
 
 <style>
-:root{
-  --bg:#0f1115;--panel:#171a21;--border:#2a2f3a;
-  --text:#e8eaed;--muted:#9aa0a6;--accent:#4ea1ff;
-  --video:#4ea1ff;--audio:#53d36b;
+:root {
+  --bg:#0f1115;
+  --panel:#171a21;
+  --border:#2a2f3a;
+  --text:#e8eaed;
+  --muted:#9aa0a6;
+  --accent:#4ea1ff;
+  --video:#4ea1ff;
+  --audio:#53d36b;
   font-family:system-ui,sans-serif;
 }
+
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
+
 body{
-  background:var(--bg);color:var(--text);
-  display:grid;grid-template-rows:auto 1fr auto;
+  background:var(--bg);
+  color:var(--text);
+  display:grid;
+  grid-template-rows:auto 1fr auto;
 }
-header,footer{
-  background:var(--panel);
-  border:1px solid var(--border);
-}
+
+/* ---------- HEADER ---------- */
 header{
-  display:flex;align-items:center;gap:6px;
-  padding:6px 10px;border-bottom:none
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
 }
-header h1{font-size:1rem;margin-right:8px}
+header h1{
+  font-size:1rem;
+  margin-right:8px;
+}
+button{
+  background:#222831;
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:4px 8px;
+  font-size:.75rem;
+  cursor:pointer;
+}
+button.active{outline:2px solid var(--accent)}
+
+/* ---------- MAIN LAYOUT ---------- */
 main{
   display:grid;
   grid-template-columns:260px 1fr 300px;
-  overflow:hidden
+  overflow:hidden;
 }
-aside,section{border-right:1px solid var(--border);overflow:hidden}
+aside,section{
+  border-right:1px solid var(--border);
+  overflow:hidden;
+}
 aside:last-child{border-right:none}
+
 .panel-title{
-  font-size:.65rem;text-transform:uppercase;
-  color:var(--muted);padding:6px 8px;
+  font-size:.65rem;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding:6px 8px;
+  border-bottom:1px solid var(--border);
+}
+.panel-content{
+  padding:8px;
+  height:100%;
+  overflow:auto;
+}
+
+/* ---------- BIN ---------- */
+#bin .item{
+  padding:4px 6px;
+  background:#12151c;
+  border:1px solid var(--border);
+  border-radius:4px;
+  margin-bottom:4px;
+  font-size:.75rem;
+  cursor:grab;
+}
+
+/* ---------- TIMELINE ---------- */
+.timeline{
+  position:relative;
+  background:#0b0d12;
+  height:260px;
+  padding:8px;
+}
+.track{
+  position:relative;
+  height:44px;
+  margin-bottom:6px;
+  border:1px dashed #2a2f3a;
+}
+.track-label{
+  position:absolute;
+  top:4px;
+  left:4px;
+  font-size:.65rem;
+  color:var(--muted);
+}
+
+.clip{
+  position:absolute;
+  top:4px;
+  height:34px;
+  border-radius:4px;
+  font-size:.65rem;
