@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro – Locked Layout</title>
+<title>CutPro – Integrated NLE</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
+/* ================= VARIABLES ================= */
 :root{
   --bg:#0f0f10;
   --panel:#1c1c1e;
@@ -18,7 +19,8 @@
 
   --browserW:240px;
   --timelineH:300px;
-  --viewerHeaderH:26px;
+  --trackH:48px;
+  --pxPerSec:100px;
 
   font-family:"Lucida Grande","Helvetica Neue",Arial,sans-serif;
   font-size:11px;
@@ -26,8 +28,7 @@
 
 *{box-sizing:border-box}
 html,body{
-  margin:0;
-  height:100%;
+  margin:0;height:100%;
   background:var(--bg);
   color:var(--text);
   overflow:hidden;
@@ -44,17 +45,43 @@ html,body{
   width:var(--browserW);
   background:linear-gradient(#202022,#18181a);
   border-right:1px solid #111;
-  padding:8px;
+  display:flex;
+  flex-direction:column;
 }
 
-#browser h3{
-  margin:0 0 6px 0;
+.browser-header{
+  padding:8px;
   font-size:10px;
   color:var(--muted);
   text-transform:uppercase;
 }
 
-/* ================= CENTER COLUMN ================= */
+#drop-zone{
+  margin:8px;
+  padding:16px;
+  border:2px dashed #3b6fa6;
+  border-radius:4px;
+  text-align:center;
+  color:#8fb3d9;
+  cursor:pointer;
+}
+
+#drop-zone.drag{
+  background:rgba(74,143,205,.15);
+}
+
+#bin{
+  flex:1;
+  overflow:auto;
+}
+
+.bin-item{
+  padding:6px 8px;
+  border-bottom:1px solid #222;
+  cursor:grab;
+}
+
+/* ================= CENTER ================= */
 #center{
   flex:1;
   display:flex;
@@ -65,23 +92,18 @@ html,body{
 #viewers{
   flex:1;
   display:flex;
-  gap:1px;
-  background:#000;
 }
 
-/* Each viewer panel */
-.viewer-panel{
+.viewer{
   flex:1;
   display:flex;
   flex-direction:column;
-  background:#000;
   border-right:1px solid #111;
 }
-.viewer-panel:last-child{border-right:none}
+.viewer:last-child{border-right:none}
 
-/* Viewer header */
 .viewer-header{
-  height:var(--viewerHeaderH);
+  height:26px;
   background:linear-gradient(#2a2a2c,#202022);
   border-bottom:1px solid #111;
   display:flex;
@@ -89,24 +111,17 @@ html,body{
   padding:0 8px;
   font-size:10px;
   color:var(--muted);
-  text-transform:uppercase;
 }
 
-/* Viewer canvas area */
 .viewer-canvas{
   flex:1;
-  position:relative;
   background:#000;
+  position:relative;
 }
-
-/* Overlay label */
 .viewer-overlay{
   position:absolute;
-  top:8px;
-  left:8px;
-  font-size:9px;
-  color:#888;
-  pointer-events:none;
+  top:8px;left:8px;
+  font-size:9px;color:#888;
 }
 
 /* ================= TIMELINE ================= */
@@ -118,22 +133,74 @@ html,body{
   flex-direction:column;
 }
 
-/* Timeline header (optional controls later) */
-#timeline-header{
+/* Ruler */
+#ruler{
   height:24px;
-  background:linear-gradient(#1a1a1c,#151517);
   border-bottom:1px solid #111;
+}
+#ruler-inner{
+  display:flex;
+  width:5000px;
+  margin-left:180px;
+}
+.ruler-tick{
+  width:var(--pxPerSec);
+  border-left:1px solid #333;
+  font-size:9px;
+  padding-left:4px;
+  color:#aaa;
+}
+
+/* Timeline body */
+#timeline-body{
+  flex:1;
+  overflow:auto;
+}
+
+#timeline-inner{
+  display:flex;
+  position:relative;
+  width:5000px;
+}
+
+/* Track headers */
+#track-headers{
+  width:180px;
+  background:linear-gradient(#202022,#18181a);
+  border-right:1px solid #111;
+}
+.track-header{
+  height:var(--trackH);
   display:flex;
   align-items:center;
   padding:0 8px;
-  font-size:10px;
-  color:var(--muted);
+  border-bottom:1px solid #111;
 }
 
-/* Timeline body placeholder */
-#timeline-body{
+/* Tracks */
+.tracks{
   flex:1;
-  background:linear-gradient(#131314,#0f0f10);
+  position:relative;
+  background:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px);
+  background-size:var(--pxPerSec) 100%;
+}
+.track{
+  height:var(--trackH);
+  border-bottom:1px solid #151517;
+  position:relative;
+}
+
+/* Clips */
+.clip{
+  position:absolute;
+  top:6px;bottom:6px;
+  background:#2563eb;
+  padding:0 8px;
+  border-radius:4px;
+  font-size:10px;
+  display:flex;
+  align-items:center;
 }
 </style>
 </head>
@@ -143,41 +210,98 @@ html,body{
 
 <!-- ================= BROWSER ================= -->
 <div id="browser">
-  <h3>Browser</h3>
-  <div>(media bin here)</div>
+  <div class="browser-header">Browser</div>
+  <div id="drop-zone">Drop video files here<br>or click to import</div>
+  <div id="bin"></div>
+  <input type="file" id="fileInput" hidden multiple />
 </div>
 
 <!-- ================= CENTER ================= -->
 <div id="center">
 
-  <!-- ===== VIEWERS ===== -->
+  <!-- VIEWERS -->
   <div id="viewers">
-
-    <!-- SOURCE VIEWER -->
-    <div class="viewer-panel">
+    <div class="viewer">
       <div class="viewer-header">Viewer</div>
-      <div class="viewer-canvas">
-        <div class="viewer-overlay">SOURCE</div>
-      </div>
+      <div class="viewer-canvas"><div class="viewer-overlay">SOURCE</div></div>
     </div>
-
-    <!-- CANVAS / PROGRAM -->
-    <div class="viewer-panel">
+    <div class="viewer">
       <div class="viewer-header">Canvas</div>
-      <div class="viewer-canvas">
-        <div class="viewer-overlay">SEQUENCE</div>
+      <div class="viewer-canvas"><div class="viewer-overlay">SEQUENCE</div></div>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div id="timeline">
+    <div id="ruler">
+      <div id="ruler-inner">
+        <div class="ruler-tick">00:00</div>
+        <div class="ruler-tick">00:01</div>
+        <div class="ruler-tick">00:02</div>
+        <div class="ruler-tick">00:03</div>
       </div>
     </div>
 
-  </div>
-
-  <!-- ===== TIMELINE ===== -->
-  <div id="timeline">
-    <div id="timeline-header">Timeline</div>
-    <div id="timeline-body"></div>
+    <div id="timeline-body">
+      <div id="timeline-inner">
+        <div id="track-headers">
+          <div class="track-header">V2</div>
+          <div class="track-header">V1</div>
+          <div class="track-header">A1</div>
+        </div>
+        <div class="tracks">
+          <div class="track"></div>
+          <div class="track"></div>
+          <div class="track"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>
 </div>
+
+<script>
+/* ================= BROWSER IMPORT ================= */
+const dropZone = document.getElementById("drop-zone");
+const fileInput = document.getElementById("fileInput");
+const bin = document.getElementById("bin");
+
+dropZone.onclick = () => fileInput.click();
+
+dropZone.ondragover = e => {e.preventDefault(); dropZone.classList.add("drag");};
+dropZone.ondragleave = () => dropZone.classList.remove("drag");
+dropZone.ondrop = e => {
+  e.preventDefault();
+  dropZone.classList.remove("drag");
+  importFiles(e.dataTransfer.files);
+};
+fileInput.onchange = e => importFiles(e.target.files);
+
+function importFiles(files){
+  [...files].forEach(f=>{
+    const el = document.createElement("div");
+    el.className="bin-item";
+    el.textContent=f.name;
+    el.draggable=true;
+    el.ondragstart = ev => ev.dataTransfer.setData("text/plain",f.name);
+    bin.appendChild(el);
+  });
+}
+
+/* ================= TIMELINE DROP ================= */
+document.querySelectorAll(".track").forEach(track=>{
+  track.ondragover = e => e.preventDefault();
+  track.ondrop = e => {
+    const clip = document.createElement("div");
+    clip.className="clip";
+    clip.textContent=e.dataTransfer.getData("text/plain");
+    clip.style.left=e.offsetX+"px";
+    clip.style.width="160px";
+    track.appendChild(clip);
+  };
+});
+</script>
+
 </body>
 </html>
