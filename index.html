@@ -2,22 +2,26 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro – Inspector Wired</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CutPro – NLE Furniture Restored</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 
 <style>
+/* =========================================================
+   CORE VARIABLES
+   ========================================================= */
 :root{
   --bg:#0f0f10;
   --panel:#1c1c1e;
   --panel2:#242427;
+  --panel3:#2c2c2e;
   --line:#111;
   --text:#d8d8d8;
-  --muted:#9a9a9a;
+  --muted:#909090;
   --accent:#3b82f6;
 
   --browserW:240px;
   --inspectorW:260px;
-  --timelineH:280px;
+  --timelineH:300px;
   --trackH:48px;
   --pxPerSec:100px;
 
@@ -26,10 +30,17 @@
 }
 
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden;
-  display:flex;flex-direction:column}
+html,body{
+  margin:0;height:100%;
+  background:var(--bg);color:var(--text);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
 
-/* ========== TOP TOOLBAR ========== */
+/* =========================================================
+   TOP BAR (TOOLS)
+   ========================================================= */
 #topbar{
   height:38px;
   background:linear-gradient(#2a2a2c,#202022);
@@ -45,7 +56,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:h
   border:1px solid var(--line);
   border-radius:4px;
   color:#ccc;
-  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
 }
 .tool-btn.active{
   background:#1e3a5a;
@@ -53,58 +64,106 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:h
   color:#fff;
 }
 
-/* ========== MAIN APP ========== */
+/* =========================================================
+   APP BODY
+   ========================================================= */
 #app{flex:1;display:flex}
 
-/* ========== BROWSER ========== */
+/* =========================================================
+   BROWSER
+   ========================================================= */
 #browser{
   width:var(--browserW);
   background:linear-gradient(#202022,#18181a);
   border-right:1px solid var(--line);
-  display:flex;
-  flex-direction:column;
+  display:flex;flex-direction:column;
 }
 .browser-header{
   padding:8px;
   font-size:10px;
   text-transform:uppercase;
   color:var(--muted);
+  border-bottom:1px solid var(--line);
 }
 #drop-zone{
   margin:8px;
-  padding:16px;
+  padding:14px;
   border:2px dashed #3b6fa6;
   border-radius:4px;
   color:#8fb3d9;
   text-align:center;
 }
 #bin{flex:1;overflow:auto}
-.bin-item{padding:6px 8px;border-bottom:1px solid #222;cursor:grab}
+.bin-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px;
+  border-bottom:1px solid #252525;
+  cursor:grab;
+}
+.bin-item:hover{background:#2a2a2c}
+.bin-item.selected{background:#1e3a5a}
+.bin-thumb{
+  width:44px;height:28px;
+  background:#000;border:1px solid #333;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;color:#666;
+}
 
-/* ========== CENTER COLUMN ========== */
+/* =========================================================
+   CENTER COLUMN
+   ========================================================= */
 #center{flex:1;display:flex;flex-direction:column}
 
-/* ========== VIEWERS ========== */
-#viewers{flex:1;display:flex;border-bottom:1px solid var(--line)}
-.viewer{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--line)}
+/* ================= VIEWERS ================= */
+#viewers{
+  flex:1;
+  display:flex;
+  border-bottom:1px solid var(--line);
+}
+.viewer{
+  flex:1;display:flex;flex-direction:column;
+  border-right:1px solid var(--line);
+}
 .viewer:last-child{border-right:none}
+
 .viewer-header{
   height:26px;background:linear-gradient(#2a2a2c,#202022);
   border-bottom:1px solid var(--line);
   padding:0 8px;
+  font-size:10px;color:var(--muted);
   display:flex;align-items:center;
-  font-size:10px;color:var(--muted)
 }
-.viewer-canvas{flex:1;background:#000;position:relative}
-.viewer-label{position:absolute;top:8px;left:8px;font-size:9px;color:#888}
+.viewer-canvas{
+  flex:1;background:#000;position:relative;
+}
+.viewer-canvas::after{
+  content:"▶";
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-size:32px;
+  color:#444;
+}
+.viewer-label{
+  position:absolute;top:8px;left:8px;
+  font-size:9px;color:#888;
+}
+.viewer-hud{
+  position:absolute;bottom:8px;right:8px;
+  font-size:9px;color:#888;
+}
 
-/* ========== TIMELINE ========== */
+/* ================= TIMELINE ================= */
 #timeline{
   height:var(--timelineH);
   background:linear-gradient(#131314,#0f0f10);
   border-top:1px solid var(--line);
   display:flex;
 }
+
+/* Track headers */
 #track-headers{
   width:180px;
   background:linear-gradient(#202022,#18181a);
@@ -115,34 +174,71 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:h
   display:flex;align-items:center;
   padding:0 8px;
   border-bottom:1px solid var(--line);
+  color:var(--muted);
 }
+
+/* Tracks */
 .tracks{
   flex:1;
   position:relative;
+  background:
+    linear-gradient(to right,#2a2a2e 1px,transparent 1px);
+  background-size:var(--pxPerSec) 100%;
 }
 .track{
   height:var(--trackH);
   border-bottom:1px solid #1a1a1a;
   position:relative;
 }
+
+/* Clips */
 .clip{
   position:absolute;
   top:6px;bottom:6px;
   border-radius:4px;
-  background:#2563eb;
-  padding:0 8px;
-  display:flex;align-items:center;
-  cursor:pointer;
+  padding:4px 6px;
+  background:linear-gradient(#3576d6,#2559a4);
+  color:#fff;
+  font-size:10px;
 }
+.clip::before{
+  content:attr(data-name);
+}
+.clip:hover .trim{opacity:1}
 .clip.selected{outline:2px solid var(--accent)}
 
-/* ========== INSPECTOR ========== */
+.trim{
+  position:absolute;top:0;bottom:0;width:6px;
+  background:rgba(255,255,255,0.15);
+  cursor:ew-resize;
+  opacity:0;
+}
+.trim.left{left:0}
+.trim.right{right:0}
+
+/* Playhead */
+#playhead{
+  position:absolute;
+  top:-16px;
+  width:0;height:0;
+  border-left:6px solid transparent;
+  border-right:6px solid transparent;
+  border-bottom:10px solid var(--accent);
+  left:60%;
+}
+#playhead-line{
+  position:absolute;top:0;bottom:0;
+  width:2px;background:var(--accent);
+  left:calc(60% + 4px);
+}
+
+/* =========================================================
+   INSPECTOR
+   ========================================================= */
 #inspector{
   width:var(--inspectorW);
   background:linear-gradient(#202022,#18181a);
   border-left:1px solid var(--line);
-  display:flex;
-  flex-direction:column;
 }
 .inspector-header{
   padding:8px;
@@ -151,30 +247,30 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:h
   color:var(--muted);
   border-bottom:1px solid var(--line);
 }
-.inspector-body{
+.inspector-section{
   padding:8px;
+  border-bottom:1px solid #252525;
 }
-.inspector-row{
-  margin-bottom:10px;
+.inspector-label{
+  font-size:10px;color:var(--muted);
+  margin-bottom:6px;
 }
-.inspector-row label{
-  display:block;
-  font-size:10px;
-  color:var(--muted);
-  margin-bottom:4px;
-}
-.inspector-row input{
-  width:100%;
+.inspector-row{margin-bottom:8px}
+.inspector-row input{width:100%}
+.inspector-empty{
+  padding:12px;
+  color:#777;
+  text-align:center;
 }
 </style>
 </head>
 
 <body>
 
-<!-- TOPBAR -->
+<!-- TOP BAR -->
 <div id="topbar">
-  <button class="tool-btn active">⬆</button>
-  <button class="tool-btn">✂</button>
+  <div class="tool-btn active">⬆</div>
+  <div class="tool-btn">✂</div>
 </div>
 
 <div id="app">
@@ -182,119 +278,85 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:h
 <!-- BROWSER -->
 <div id="browser">
   <div class="browser-header">Browser</div>
-  <div id="drop-zone">Drop files here</div>
-  <div id="bin"></div>
+  <div id="drop-zone">Drop video files here<br>or click to import</div>
+  <div id="bin">
+    <div class="bin-item selected">
+      <div class="bin-thumb">MOV</div>
+      Sample Clip
+    </div>
+  </div>
 </div>
 
 <!-- CENTER -->
 <div id="center">
+
+  <!-- VIEWERS -->
   <div id="viewers">
     <div class="viewer">
       <div class="viewer-header">Viewer</div>
-      <div class="viewer-canvas"><div class="viewer-label">SOURCE</div></div>
+      <div class="viewer-canvas">
+        <div class="viewer-label">SOURCE</div>
+        <div class="viewer-hud">00:00:00:00</div>
+      </div>
     </div>
     <div class="viewer">
       <div class="viewer-header">Canvas</div>
-      <div class="viewer-canvas"><div class="viewer-label">SEQUENCE</div></div>
+      <div class="viewer-canvas">
+        <div class="viewer-label">SEQUENCE</div>
+        <div class="viewer-hud">00:00:00:12</div>
+      </div>
     </div>
   </div>
 
+  <!-- TIMELINE -->
   <div id="timeline">
     <div id="track-headers">
       <div class="track-header">V1</div>
+      <div class="track-header">A1</div>
     </div>
     <div class="tracks">
-      <div class="track" id="track-v1"></div>
+      <div id="playhead"></div>
+      <div id="playhead-line"></div>
+
+      <div class="track">
+        <div class="clip selected" data-name="Sample Clip" style="left:120px;width:300px">
+          <div class="trim left"></div>
+          <div class="trim right"></div>
+        </div>
+      </div>
+
+      <div class="track"></div>
     </div>
   </div>
+
 </div>
 
 <!-- INSPECTOR -->
 <div id="inspector">
   <div class="inspector-header">Inspector</div>
-  <div class="inspector-body" id="inspectorBody">
-    <div style="color:#777">No selection</div>
+
+  <div class="inspector-section">
+    <div class="inspector-label">Clip</div>
+    <div class="inspector-row">
+      <label>Start</label>
+      <input type="number" value="1.2">
+    </div>
+    <div class="inspector-row">
+      <label>Duration</label>
+      <input type="number" value="3.0">
+    </div>
+  </div>
+
+  <div class="inspector-section">
+    <div class="inspector-label">Compositing</div>
+    <div class="inspector-row">
+      <label>Opacity</label>
+      <input type="range" value="100">
+    </div>
   </div>
 </div>
 
 </div>
-
-<script>
-/* ================= STATE ================= */
-let selectedClip = null;
-const pxPerSec = 100;
-
-/* ================= TIMELINE DEMO CLIP ================= */
-const clip = {
-  id: crypto.randomUUID(),
-  name: "Example Clip",
-  start: 1,
-  dur: 3,
-  opacity: 1
-};
-
-const track = document.getElementById("track-v1");
-const clipEl = document.createElement("div");
-clipEl.className = "clip";
-clipEl.textContent = clip.name;
-clipEl.style.left = (clip.start * pxPerSec) + "px";
-clipEl.style.width = (clip.dur * pxPerSec) + "px";
-
-clipEl.onclick = () => selectClip(clip, clipEl);
-track.appendChild(clipEl);
-
-/* ================= SELECTION ================= */
-function selectClip(c, el){
-  document.querySelectorAll(".clip").forEach(x=>x.classList.remove("selected"));
-  el.classList.add("selected");
-  selectedClip = c;
-  renderInspector();
-}
-
-/* ================= INSPECTOR ================= */
-function renderInspector(){
-  const panel = document.getElementById("inspectorBody");
-  panel.innerHTML = "";
-
-  if(!selectedClip){
-    panel.innerHTML = "<div style='color:#777'>No selection</div>";
-    return;
-  }
-
-  panel.innerHTML = `
-    <div class="inspector-row">
-      <label>Name</label>
-      <input type="text" value="${selectedClip.name}" disabled>
-    </div>
-    <div class="inspector-row">
-      <label>Start (seconds)</label>
-      <input type="number" step="0.1" value="${selectedClip.start}">
-    </div>
-    <div class="inspector-row">
-      <label>Duration (seconds)</label>
-      <input type="number" step="0.1" value="${selectedClip.dur}">
-    </div>
-    <div class="inspector-row">
-      <label>Opacity</label>
-      <input type="range" min="0" max="1" step="0.01" value="${selectedClip.opacity}">
-    </div>
-  `;
-
-  const inputs = panel.querySelectorAll("input");
-  inputs[1].oninput = e=>{
-    selectedClip.start = parseFloat(e.target.value);
-    clipEl.style.left = (selectedClip.start * pxPerSec) + "px";
-  };
-  inputs[2].oninput = e=>{
-    selectedClip.dur = parseFloat(e.target.value);
-    clipEl.style.width = (selectedClip.dur * pxPerSec) + "px";
-  };
-  inputs[3].oninput = e=>{
-    selectedClip.opacity = parseFloat(e.target.value);
-    clipEl.style.opacity = selectedClip.opacity;
-  };
-}
-</script>
-
 </body>
 </html>
+``
