@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro — Viewer + Timeline (Pinned Drop Zone + Edge Drag Fix)</title>
+<title>CutPro — Viewer + Timeline (Aspect Fixes)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
@@ -11,7 +11,7 @@
   --bg:#0f0f10; --panel:#1c1c1e; --panel2:#202022; --line:#111; --text:#d8d8d8;
   --muted:#8b8b8b; --accent:#3b82f6; --warn:#fbbf24;
   --browserW:240px; --inspectorW:300px; --timelineH:260px;
-  --trackH:48px; --pxPerSec:100px;
+  --trackH:48px; --pxPerSec:100px; --rulerH:22px;
   font-family:system-ui,-apple-system,Segoe UI,sans-serif;
 }
 
@@ -68,9 +68,24 @@ body{ display:grid; grid-template-rows:42px 1fr var(--timelineH); }
 #viewers{ flex:1; display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:6px; border-bottom:2px solid #0a0a0a; min-height:0; background:#0b0b0c }
 .viewer-panel{ display:grid; grid-template-rows:24px 1fr 56px; background:var(--panel); border:1px solid #111; min-height:0 }
 .viewer-panel .panel-header{ background:linear-gradient(#2a2a2c,#202022); border-bottom:1px solid #0c0c0d; padding:0 8px; font-size:11px; color:#8a8a8a; display:flex; align-items:center }
-.viewer-screen{ background:#000; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; aspect-ratio:16/9; min-height:0 }
+
+/* Viewer screen boxes: by default 16:9; we override style.aspectRatio dynamically */
+.viewer-screen{
+  background:#000; position:relative; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  aspect-ratio:16/9; min-height:0;
+}
+
+/* Source video element: contain the media, no distortion */
 .viewer-screen video{ max-width:100%; max-height:100%; display:block; object-fit:contain }
-#programCanvas{ max-width:100%; max-height:100%; display:block }
+
+/* Program canvas + overlays anchored and stacked */
+#programCanvas{
+  max-width:100%; max-height:100%; display:block;
+}
+#text-overlay-canvas{
+  position:absolute; inset:0; width:100%; height:100%; pointer-events:none; display:none; /* reserved */
+}
 .safe-zones{position:absolute;inset:0;pointer-events:none;display:none}
 .safe-zones.show{display:block}
 .safe-zones::before,.safe-zones::after{content:'';position:absolute;border:1px solid rgba(255,255,255,0.28)}
@@ -98,16 +113,30 @@ body{ display:grid; grid-template-rows:42px 1fr var(--timelineH); }
 #timeline{ display:grid; grid-template-rows:30px 1fr; background:linear-gradient(#131314,#0f0f10); border-top:1px solid var(--line) }
 #timeline .controls{ display:flex; align-items:center; gap:10px; padding:0 8px; font-size:11px; color:#bbb; border-bottom:1px solid #141414; background:#1a1a1c }
 #timeline .body{ display:grid; grid-template-columns:180px 1fr; overflow:hidden; min-height:0 }
-#track-headers{ background:linear-gradient(#202022,#18181a); border-right:1px solid var(--line); overflow:auto }
+
+/* Left column: spacer = ruler height so labels align */
+#track-headers{
+  background:linear-gradient(#202022,#18181a);
+  border-right:1px solid var(--line);
+  overflow:auto; position:relative;
+}
+#track-headers .ruler-spacer{
+  height:var(--rulerH);
+  border-bottom:1px solid #0f0f10;
+  background:linear-gradient(#202022,#18181a);
+  position:sticky; top:0; z-index:2;
+}
 .track-header{ height:var(--trackH); display:flex; align-items:center; gap:6px; padding:0 8px; color:var(--muted); border-bottom:1px solid var(--line) }
+
+/* Right column (tracks) */
 .tracks{
   position:relative; overflow:auto; min-height:0;
-  --rulerH:22px; padding-top:var(--rulerH);
+  padding-top:var(--rulerH);
   background:
     linear-gradient(#141414 1px, transparent 1px) top left/100% var(--trackH),
     linear-gradient(to right, #2a2a2e 1px, transparent 1px) top left/var(--pxPerSec) 100%;
 }
-.timeline-ruler{ position:sticky; top:0; height:22px; z-index:3; border-bottom:1px solid #0f0f10 }
+.timeline-ruler{ position:sticky; top:0; height:var(--rulerH); z-index:3; border-bottom:1px solid #0f0f10; background:#1e1e1e }
 #ruler-canvas{ display:block; width:100%; height:100% }
 
 .timeline-track{ height:var(--trackH); border-bottom:1px solid #191919; position:relative; }
@@ -303,6 +332,7 @@ html, body { overscroll-behavior: none; }
 
   <div class="body">
     <div id="track-headers">
+      <div class="ruler-spacer"></div>
       <div class="track-header">V2</div>
       <div class="track-header">V1</div>
       <div class="track-header">A1</div>
@@ -333,7 +363,13 @@ html, body { overscroll-behavior: none; }
   const fmt = s => { const h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=Math.floor(s%60),f=Math.floor((s%1)*30); return [h,m,sec,f].map(n=>String(n).padStart(2,'0')).join(':'); };
 
   function showIfReady(){ if (vid && vid.src && vid.readyState>=1){ ph.style.display='none'; vid.style.display='block'; } }
-  vid?.addEventListener('loadedmetadata', showIfReady);
+  vid?.addEventListener('loadedmetadata', ()=>{
+    showIfReady();
+    // NEW: Source viewer auto-aspect to the clip
+    const w = vid.videoWidth || 0, h = vid.videoHeight || 0;
+    const screen = document.getElementById('viewer-screen-src');
+    if (screen && w>0 && h>0) screen.style.aspectRatio = `${w} / ${h}`;
+  });
   vid?.addEventListener('loadeddata', showIfReady);
 
   play?.addEventListener('click',()=>{
@@ -444,7 +480,8 @@ function drawRuler(){
   const plane  = document.getElementById('timeline-tracks');
   if (!canvas || !plane) return;
   const W = plane.scrollWidth || plane.clientWidth || 1200;
-  const H = 20; canvas.width = W; canvas.height = H;
+  const H = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--rulerH')) || 22;
+  canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   ctx.fillStyle='#1e1e1e'; ctx.fillRect(0,0,W,H);
   const pps = tl.zoom*10;
@@ -542,7 +579,7 @@ async function renderCanvasFrame(){
     ctx.globalAlpha = 1;
   }
 
-  // Safe zones
+  // Safe zones line up with the viewer box; canvas fills that box.
   const safe = document.getElementById('safe-cvs');
   if (safe) safe.classList.toggle('show', !!tl.showSafe);
 }
@@ -624,7 +661,6 @@ function renderTimeline(){
       <div class="clip-handle right"></div>
     `;
 
-    // Linked-group selection paint
     if (tl.linkedSelection && tl.selectedId){
       const sel = tl.timeline.find(t=>t.id===tl.selectedId);
       if (sel && sel.linkGroup && entry.linkGroup === sel.linkGroup){
@@ -632,7 +668,6 @@ function renderTimeline(){
       }
     }
 
-    // select
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       tl.selectedId = entry.id;
@@ -641,7 +676,7 @@ function renderTimeline(){
       showInspectorFor(entry);
     });
 
-    // move drag
+    // move
     let dragStartX, starts;
     el.addEventListener('mousedown',(e)=>{
       if (e.target.classList.contains('clip-handle')) return;
@@ -951,7 +986,6 @@ function togglePlay(){
   const drop = document.getElementById('drop-zone');
   const bin  = document.getElementById('bin');
 
-  // Factor the file import routine so both click-picker and OS drop reuse it
   function importFilesFromFileList(fileList){
     [...fileList].forEach(f=>{
       const url = URL.createObjectURL(f);
@@ -961,16 +995,13 @@ function togglePlay(){
       el.className='bin-item'; el.dataset.clipId=id; el.draggable=true;
       el.innerHTML = `<div class="bin-thumb">${f.type.startsWith('audio')?'🎵':'🎬'}</div>${f.name}`;
 
-      // Normalize dragstart so Edge treats it as an internal drag, not a link
       el.ondragstart = ev => {
         ev.stopPropagation();
         ev.dataTransfer.effectAllowed = 'copy';
-        // Provide a generic payload Edge recognizes; our drop handlers read 'clipId'
         ev.dataTransfer.setData('text/plain', id);
         ev.dataTransfer.setData('clipId', id);
       };
 
-      // Double-click opens in Source Viewer (not timeline)
       el.addEventListener('dblclick', ()=> openInViewer(id));
       bin.appendChild(el);
 
@@ -994,8 +1025,7 @@ function togglePlay(){
     input.click();
   };
 
-  // ****************** PAGE-WIDE DRAG GUARDS (Edge-safe) ******************
-  // Prevent the browser from navigating / opening the file when dropped anywhere
+  // Page-wide drag guards (prevent browser navigation)
   window.addEventListener('dragover', (e)=>{ e.preventDefault(); }, {passive:false});
   window.addEventListener('drop',     (e)=>{
     e.preventDefault();
@@ -1003,7 +1033,7 @@ function togglePlay(){
     if (files && files.length) importFilesFromFileList(files);
   }, {passive:false});
 
-  // Track drop targets (V2, V1, A1)
+  // Track drop targets
   ['track-v2','track-v1','track-a1'].forEach(id=>{
     const lane = document.getElementById(id);
     if(!lane) return;
@@ -1011,7 +1041,6 @@ function togglePlay(){
     lane.addEventListener('dragleave', ()=>{ lane.style.background=''; });
     lane.addEventListener('drop', e=>{
       e.preventDefault(); lane.style.background='';
-      // Accept either our custom 'clipId' or the plain text fallback
       const clipId = e.dataTransfer.getData('clipId') || e.dataTransfer.getData('text/plain');
       const track  = lane.dataset.track;
       if (clipId && track) addToTimeline(clipId, track);
