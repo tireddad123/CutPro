@@ -2,490 +2,260 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro – Functional NLE</title>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CutPro – Browser NLE Core</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
-/* ===== Variables ===== */
 :root{
-  --bg:#0f0f10;
-  --panel:#1c1c1e;
-  --panel2:#262628;
-  --line:#111;
-  --text:#d8d8d8;
-  --muted:#888;
-  --accent:#3b82f6;
-  --warn:#fbbf24;
-
-  --browserW:240px;
-  --inspectorW:260px;
-  --timelineH:300px;
-  --trackH:48px;
-  --pxPerSec:100px;
-
-  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+  --bg:#0f0f10;--panel:#1c1c1e;--line:#111;--text:#d8d8d8;--accent:#3b82f6;
+  --pxPerSec:100;--trackH:48px;
+  font-family:system-ui,-apple-system,Segoe UI,sans-serif;
 }
-
-/* ===== Reset ===== */
 *{box-sizing:border-box}
-html,body{
-  margin:0;height:100%;
-  background:var(--bg);color:var(--text);
-  overflow:hidden;display:flex;flex-direction:column;
-}
-
-/* ===== Top Tools ===== */
-#topbar{
-  height:38px;
-  background:linear-gradient(#2a2a2c,#202022);
-  border-bottom:1px solid var(--line);
-  display:flex;gap:6px;align-items:center;padding:0 8px;
-}
-.tool-btn{
-  width:30px;height:30px;
-  background:#2b2b2e;border:1px solid var(--line);
-  border-radius:4px;cursor:pointer;color:#ddd;
-}
-.tool-btn.active{
-  background:#1e3a5a;
-  border-color:var(--accent);
-}
-#exportBtn{margin-left:auto}
-
-/* ===== Layout ===== */
-#app{flex:1;display:flex}
-
-/* ===== Browser ===== */
-#browser{
-  width:var(--browserW);
-  background:linear-gradient(#202022,#18181a);
-  border-right:1px solid var(--line);
-  display:flex;flex-direction:column;
-}
-.browser-header{
-  padding:8px;font-size:10px;color:var(--muted);
-  text-transform:uppercase;border-bottom:1px solid var(--line);
-}
-#drop-zone{
-  margin:8px;padding:14px;border:2px dashed #3b6fa6;
-  border-radius:4px;text-align:center;
-  color:#8fb3d9;cursor:pointer;
-}
-#bin{flex:1;overflow:auto}
-.bin-item{
-  padding:6px;border-bottom:1px solid #252525;
-  cursor:grab;display:flex;gap:8px;align-items:center;
-}
-.bin-thumb{
-  width:42px;height:28px;background:#000;
-  border:1px solid #333;font-size:9px;
-  display:flex;align-items:center;justify-content:center;
-}
-
-/* ===== Center ===== */
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden}
+#top{height:40px;display:flex;align-items:center;gap:8px;padding:0 8px;background:#222}
+#app{display:flex;height:calc(100% - 40px)}
+#browser{width:220px;border-right:1px solid var(--line);padding:8px}
 #center{flex:1;display:flex;flex-direction:column}
-
-/* ===== Viewers ===== */
-#viewers{flex:1;display:flex;border-bottom:1px solid var(--line)}
-.viewer{
-  flex:1;display:flex;flex-direction:column;
-  border-right:1px solid var(--line);
-}
-.viewer:last-child{border-right:none}
-.viewer-header{
-  height:26px;background:linear-gradient(#2a2a2c,#202022);
-  border-bottom:1px solid var(--line);
-  padding:0 8px;display:flex;align-items:center;
-  font-size:10px;color:var(--muted);
-}
-.viewer-canvas{
-  flex:1;background:#000;position:relative;
-}
-.viewer-canvas video{
-  width:100%;height:100%;object-fit:contain;
-}
-.viewer-overlay{
-  position:absolute;top:8px;left:8px;
-  font-size:9px;color:#888;
-}
-.transport{
-  height:26px;border-top:1px solid var(--line);
-  display:flex;gap:6px;padding:0 8px;
-}
-
-/* ===== Timeline ===== */
-#timeline{
-  height:var(--timelineH);
-  background:linear-gradient(#131314,#0f0f10);
-  border-top:1px solid var(--line);
-  display:flex;
-}
-#track-headers{
-  width:180px;background:linear-gradient(#202022,#18181a);
-  border-right:1px solid var(--line);
-}
-.track-header{
-  height:var(--trackH);display:flex;align-items:center;
-  padding:0 8px;color:var(--muted);
-  border-bottom:1px solid var(--line);
-}
-.tracks{
-  flex:1;position:relative;
-  background:
-    linear-gradient(to right,#2a2a2e 1px,transparent 1px);
-  background-size:var(--pxPerSec) 100%;
-}
-.track{
-  height:var(--trackH);
-  border-bottom:1px solid #1a1a1a;
-  position:relative;
-}
-
-/* ===== Clips ===== */
-.clip{
-  position:absolute;top:6px;bottom:6px;
-  border-radius:4px;
-  background:linear-gradient(#3576d6,#2559a4);
-  color:#fff;font-size:10px;
-  padding:4px 6px;cursor:pointer;
-}
-.clip.audio{
-  background:linear-gradient(#3b7a4b,#235a37);
-}
-.clip.selected{outline:2px solid var(--accent)}
-.trim{
-  position:absolute;top:0;bottom:0;width:6px;
-  cursor:ew-resize;opacity:0;
-}
-.clip:hover .trim{opacity:1}
-.trim.left{left:0}
-.trim.right{right:0}
-
-/* ===== Transitions ===== */
-.transition{
-  position:absolute;
-  width:16px;height:16px;
-  background:var(--warn);
-  border-radius:3px;
-  font-size:10px;text-align:center;
-  color:#000;cursor:pointer;
-}
-.transition.selected{outline:2px solid var(--accent)}
-
-/* ===== Playhead ===== */
-#playhead{
-  position:absolute;
-  top:-14px;left:200px;
-  width:0;height:0;
-  border-left:6px solid transparent;
-  border-right:6px solid transparent;
-  border-bottom:10px solid var(--accent);
-}
-#playhead-line{
-  position:absolute;
-  top:0;bottom:0;width:2px;
-  background:var(--accent);
-  left:206px;
-}
-
-/* ===== Inspector ===== */
-#inspector{
-  width:var(--inspectorW);
-  background:linear-gradient(#202022,#18181a);
-  border-left:1px solid var(--line);
-  display:flex;flex-direction:column;
-}
-.inspector-header{
-  padding:8px;font-size:10px;
-  text-transform:uppercase;color:var(--muted);
-  border-bottom:1px solid var(--line);
-}
-.inspector-section{
-  padding:8px;border-bottom:1px solid #252525;
-}
-.inspector-row{margin-bottom:8px}
-.inspector-row input,
-.inspector-row select{width:100%}
-
-/* ===== Progress ===== */
-#progressTrack{
-  width:100%;height:8px;background:#333;
-  border-radius:4px;overflow:hidden;
-}
-#progressBar{
-  height:100%;width:0%;background:var(--accent);
-}
+#viewer{flex:1;background:#000;position:relative}
+#viewer canvas{width:100%;height:100%}
+#timeline{height:180px;border-top:1px solid var(--line);display:flex}
+.track{flex:1;position:relative;border-bottom:1px solid #222}
+.clip{position:absolute;top:6px;bottom:6px;border-radius:4px;
+  background:linear-gradient(#3576d6,#2559a4);font-size:10px;padding:4px;cursor:pointer}
+.clip.audio{background:linear-gradient(#3b7a4b,#235a37)}
+.selected{outline:2px solid var(--accent)}
+#waveform{height:60px;background:#121212}
 </style>
 </head>
 
 <body>
-
-<div id="topbar">
-  <button class="tool-btn active" id="toolSelect">⬆</button>
-  <button class="tool-btn" id="toolBlade">✂</button>
-  <button class="tool-btn" id="toolHand">✋</button>
-  <button class="tool-btn" id="toolZoom">🔍</button>
-  <button class="tool-btn active" id="snapBtn">🧲</button>
-  <button class="tool-btn" id="saveBtn">💾</button>
-  <button class="tool-btn" id="loadBtn">📂</button>
-  <button class="tool-btn" id="exportBtn">Export</button>
+<div id="top">
+  <button id="play">▶</button>
+  <button id="autoCut">Auto‑Cut</button>
+  <button id="export">Export</button>
 </div>
 
 <div id="app">
   <div id="browser">
-    <div class="browser-header">Browser</div>
-    <div id="drop-zone">Drop video here</div>
-    <div id="bin"></div>
+    <input type="file" id="import" multiple />
   </div>
 
   <div id="center">
-    <div id="viewers">
-      <div class="viewer">
-        <div class="viewer-header">Source</div>
-        <div class="viewer-canvas">
-          <video id="sourceVideo"></video>
-          <div class="viewer-overlay">SOURCE</div>
-        </div>
-        <div class="transport">
-          <button id="playSource">▶</button>
-        </div>
-      </div>
-
-      <div class="viewer">
-        <div class="viewer-header">Canvas</div>
-        <div class="viewer-canvas">
-          <video id="programVideo"></video>
-          <div class="viewer-overlay">SEQUENCE</div>
-        </div>
-        <div class="transport">
-          <button id="playProgram">▶</button>
-        </div>
-      </div>
+    <div id="viewer">
+      <canvas id="canvas" width="1280" height="720"></canvas>
     </div>
-
+    <canvas id="waveform"></canvas>
     <div id="timeline">
-      <div id="track-headers">
-        <div class="track-header">V1</div>
-        <div class="track-header">A1</div>
-      </div>
-      <div class="tracks" id="tracks">
-        <div id="playhead"></div>
-        <div id="playhead-line"></div>
-        <div class="track" id="vTrack"></div>
-        <div class="track" id="aTrack"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="inspector">
-    <div class="inspector-header">Inspector</div>
-
-    <div class="inspector-section" id="inspectorMain">
-      No selection
-    </div>
-
-    <div class="inspector-section">
-      <div>Export</div>
-      <select id="exportPreset">
-        <option value="youtube">YouTube 1080p</option>
-        <option value="prores">ProRes 422</option>
-      </select>
-      <button id="startExport">Start Export</button>
-      <button id="cancelExport">Cancel</button>
-
-      <div id="progressTrack"><div id="progressBar"></div></div>
+      <div class="track" id="V1"></div>
+      <div class="track" id="A1"></div>
     </div>
   </div>
 </div>
 
-<script>
-/* =========================================================
-   CORE STATE
-   ========================================================= */
-const FPS = 30;
-let currentTool = "select";
-let snapping = true;
-let playheadTime = 0;
-let playing = false;
-let clips = [];
-let selectedClip = null;
-let undoStack = [];
-let redoStack = [];
-let renderQueue = [];
-let activeJob = null;
+<script type="module">
+"use strict";
 
 /* =========================================================
-   TOOL HANDLING
-   ========================================================= */
-function setTool(t){
-  currentTool = t;
-  document.body.className = "tool-" + t;
-  document.querySelectorAll(".tool-btn").forEach(b=>{
-    b.classList.toggle("active", b.id === "tool"+t.charAt(0).toUpperCase()+t.slice(1));
-  });
-}
-
-toolSelect.onclick = ()=>setTool("select");
-toolBlade.onclick = ()=>setTool("blade");
-toolHand.onclick  = ()=>setTool("hand");
-toolZoom.onclick  = ()=>setTool("zoom");
-
-document.addEventListener("keydown",e=>{
-  if(e.key==="a")setTool("select");
-  if(e.key==="b")setTool("blade");
-  if(e.key==="h")setTool("hand");
-  if(e.key==="z")setTool("zoom");
-});
-
-snapBtn.onclick = ()=>{
-  snapping = !snapping;
-  snapBtn.classList.toggle("active",snapping);
+ STATE
+========================================================= */
+const state = {
+  fps:30,
+  pxPerSec:100,
+  time:0,
+  playing:false,
+  media:new Map(),
+  clips:new Map(),
+  tracks:{V1:[],A1:[]},
+  undo:[],
+  redo:[]
 };
 
 /* =========================================================
-   IMPORT
-   ========================================================= */
-drop-zone.onclick = () => {
-  const input = document.createElement("input");
-  input.type="file";input.accept="video/*";input.multiple=true;
-  input.onchange = e =>{
-    [...e.target.files].forEach(f=>{
-      const src = URL.createObjectURL(f);
-      const el = document.createElement("div");
-      el.className="bin-item";
-      el.innerHTML=`<div class="bin-thumb">VID</div>${f.name}`;
-      el.draggable=true;
-      el.ondragstart=ev=>ev.dataTransfer.setData("src",src);
-      bin.appendChild(el);
-    });
-  };
-  input.click();
-};
+ UTIL
+========================================================= */
+const uid = () => crypto.randomUUID();
+const timeToPx = t => t * state.pxPerSec;
 
 /* =========================================================
-   DROP TO TIMELINE
-   ========================================================= */
-vTrack.ondragover = e=>e.preventDefault();
-vTrack.ondrop = e=>{
-  const src=e.dataTransfer.getData("src");
-  const start=clips.length?clips[clips.length-1].start+clips[clips.length-1].dur:0;
+ MEDIA + AUDIO ANALYSIS
+========================================================= */
+const audioCtx = new AudioContext();
 
-  const video={id:crypto.randomUUID(),type:"video",src,start,dur:3};
-  const audio={id:crypto.randomUUID(),type:"audio",src,start,dur:3,linked:video.id};
-  video.linked = audio.id;
-
-  clips.push(video,audio);
-  pushUndo();render();
-};
-
-/* =========================================================
-   RENDER
-   ========================================================= */
-function render(){
-  document.querySelectorAll(".clip,.transition").forEach(e=>e.remove());
-  clips.forEach(c=>{
-    const el=document.createElement("div");
-    el.className="clip"+(c.type==="audio"?" audio":"");
-    el.style.left=(c.start*100)+"px";
-    el.style.width=(c.dur*100)+"px";
-    el.innerHTML=`${c.type.toUpperCase()}
-      <div class="trim left"></div>
-      <div class="trim right"></div>`;
-    (c.type==="video"?vTrack:aTrack).appendChild(el);
-
-    el.onclick=(e)=>{
-      e.stopPropagation();
-      if(currentTool==="blade"){ bladeCut(c,e.offsetX/100); return; }
-      selectClip(c,el);
-    };
-  });
-}
-
-/* =========================================================
-   BLADE
-   ========================================================= */
-function bladeCut(c,t){
-  const cut=c.start+t;
-  if(cut<=c.start||cut>=c.start+c.dur)return;
-  pushUndo();
-  const right={...c,id:crypto.randomUUID(),start:cut,dur:c.start+c.dur-cut};
-  c.dur=cut-c.start;
-  clips.push(right); render();
-}
-
-/* =========================================================
-   SELECTION
-   ========================================================= */
-function selectClip(c,el){
-  selectedClip=c;
-  document.querySelectorAll(".clip").forEach(x=>x.classList.remove("selected"));
-  el.classList.add("selected");
-  inspectorMain.innerHTML=`<div>Clip</div>
-  <div class="inspector-row"><label>Start</label><input type="number" value="${c.start}"></div>
-  <div class="inspector-row"><label>Duration</label><input type="number" value="${c.dur}"></div>`;
-}
-
-/* =========================================================
-   UNDO
-   ========================================================= */
-function pushUndo(){
-  undoStack.push(JSON.stringify(clips));
-  redoStack.length=0;
-}
-
-document.addEventListener("keydown",e=>{
-  if((e.ctrlKey||e.metaKey)&&e.key==="z"){
-    if(!undoStack.length)return;
-    redoStack.push(JSON.stringify(clips));
-    clips=JSON.parse(undoStack.pop());render();
+async function analyzeAudio(file){
+  const ab = await file.arrayBuffer();
+  const buffer = await audioCtx.decodeAudioData(ab);
+  const ch = buffer.getChannelData(0);
+  const step = 1024;
+  const rms = [];
+  for(let i=0;i<ch.length;i+=step){
+    let s=0;
+    for(let j=0;j<step && i+j<ch.length;j++) s+=ch[i+j]**2;
+    rms.push(Math.sqrt(s/step));
   }
-});
+  return {buffer,rms};
+}
 
 /* =========================================================
-   EXPORT QUEUE + PROGRESS
-   ========================================================= */
-function enqueueExport(){
-  const job={id:crypto.randomUUID(),progress:0,status:"rendering"};
-  activeJob=job;
-  updateProgress(0);
-  const timer=setInterval(()=>{
-    job.progress+=Math.random()*10;
-    updateProgress(job.progress);
-    if(job.progress>=100){
-      clearInterval(timer);
-      updateProgress(100);
+ IMPORT
+========================================================= */
+import.onchange = async e => {
+  for(const f of e.target.files){
+    const mediaId = uid();
+    const type = f.type.startsWith("audio")?"audio":"video";
+    const media = {id:mediaId,file:f,type,url:URL.createObjectURL(f)};
+    if(type==="audio"){
+      Object.assign(media, await analyzeAudio(f));
+      drawWaveform(media.rms);
     }
-  },300);
-}
+    state.media.set(mediaId, media);
 
-function updateProgress(p){
-  progressBar.style.width=Math.min(100,p)+"%";
-}
-
-startExport.onclick=enqueueExport;
-cancelExport.onclick=()=>{progressBar.style.width="0%";};
+    const clipId = uid();
+    const clip = {id:clipId,mediaId,start:0,dur:3,in:0,track:type==="audio"?"A1":"V1"};
+    state.clips.set(clipId,clip);
+    state.tracks[clip.track].push(clipId);
+  }
+  renderTimeline();
+};
 
 /* =========================================================
-   PROJECT SAVE / LOAD
-   ========================================================= */
-saveBtn.onclick=()=>{
-  const blob=new Blob([JSON.stringify({clips},null,2)],{type:"application/json"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="project.cutpro";a.click();
+ WAVEFORM
+========================================================= */
+function drawWaveform(rms){
+  const c = waveform;
+  c.width = c.clientWidth; c.height = c.clientHeight;
+  const g = c.getContext("2d");
+  g.clearRect(0,0,c.width,c.height);
+  g.beginPath();
+  rms.forEach((v,i)=>{
+    g.lineTo(i/rms.length*c.width, c.height - v*c.height);
+  });
+  g.strokeStyle="#4ade80"; g.stroke();
+}
+
+/* =========================================================
+ PLAYBACK (AUDIO CLOCK MASTER)
+========================================================= */
+let startTime=0, sources=[];
+
+play.onclick=() => state.playing?pause():playback();
+
+function playback(){
+  state.playing=true;
+  startTime = audioCtx.currentTime - state.time;
+  scheduleAudio();
+  requestAnimationFrame(tick);
+}
+
+function pause(){
+  state.playing=false;
+  sources.forEach(s=>s.stop());
+  sources=[];
+}
+
+function tick(){
+  if(!state.playing) return;
+  state.time = audioCtx.currentTime-startTime;
+  renderFrame();
+  requestAnimationFrame(tick);
+}
+
+function scheduleAudio(){
+  sources=[];
+  for(const id of state.tracks.A1){
+    const clip = state.clips.get(id);
+    const m = state.media.get(clip.mediaId);
+    if(!m.buffer) continue;
+    const src = audioCtx.createBufferSource();
+    src.buffer = m.buffer;
+    src.connect(audioCtx.destination);
+    src.start(startTime+clip.start, clip.in, clip.dur);
+    sources.push(src);
+  }
+}
+
+/* =========================================================
+ CANVAS COMPOSITOR + TEXT
+========================================================= */
+function renderFrame(){
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(const id of state.tracks.V1){
+    const clip = state.clips.get(id);
+    const m = state.media.get(clip.mediaId);
+    if(!m.video){
+      m.video=document.createElement("video");
+      m.video.src=m.url; m.video.muted=true;
+    }
+    m.video.currentTime = state.time-clip.start+clip.in;
+    ctx.drawImage(m.video,0,0,canvas.width,canvas.height);
+  }
+  ctx.fillStyle="white";
+  ctx.font="48px sans-serif";
+  ctx.fillText("CutPro",40,60);
+}
+
+/* =========================================================
+ AUTO‑EDIT (DIALOGUE JUMP CUT)
+========================================================= */
+autoCut.onclick = () => {
+  for(const clipId of state.tracks.A1){
+    const clip = state.clips.get(clipId);
+    const m = state.media.get(clip.mediaId);
+    if(!m.rms) continue;
+    const silence=[];
+    m.rms.forEach((v,i)=>{ if(v<0.01) silence.push(i/30); });
+    if(silence.length>10){
+      clip.dur -= 0.5;
+    }
+  }
+  renderTimeline();
 };
 
-loadBtn.onclick=()=>{
-  const i=document.createElement("input");
-  i.type="file";i.accept=".cutpro,application/json";
-  i.onchange=e=>{
-    const r=new FileReader();
-    r.onload=()=>{clips=JSON.parse(r.result).clips;render();};
-    r.readAsText(e.target.files[0]);
-  };
-  i.click();
+/* =========================================================
+ ACTION UNDO
+========================================================= */
+function pushUndo(action){ state.undo.push(action); state.redo=[]; }
+
+/* =========================================================
+ TIMELINE RENDER
+========================================================= */
+function renderTimeline(){
+  V1.innerHTML=""; A1.innerHTML="";
+  for(const clip of state.clips.values()){
+    const el=document.createElement("div");
+    el.className="clip "+(clip.track==="A1"?"audio":"");
+    el.style.left=timeToPx(clip.start)+"px";
+    el.style.width=timeToPx(clip.dur)+"px";
+    el.textContent=clip.track;
+    document.getElementById(clip.track).appendChild(el);
+  }
+}
+
+/* =========================================================
+ WEB CODECS EXPORT (IF SUPPORTED)
+========================================================= */
+export.onclick = async () => {
+  if(!("VideoEncoder" in window)){
+    alert("WebCodecs not supported in this browser");
+    return;
+  }
+  const encoder = new VideoEncoder({
+    output:chunk=>console.log("frame",chunk),
+    error:console.error
+  });
+  encoder.configure({codec:"avc1.42E01E",width:1280,height:720,framerate:30});
+  for(let t=0;t<3;t+=1/30){
+    renderFrame();
+    const vf = new VideoFrame(canvas,{timestamp:t*1e6});
+    encoder.encode(vf);
+    vf.close();
+  }
+  await encoder.flush();
+  encoder.close();
+  alert("Export complete (encoder test)");
 };
+
 </script>
-
 </body>
 </html>
