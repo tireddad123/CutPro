@@ -2,492 +2,769 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro – Functional NLE (Layout‑Corrected)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CutPro – Browser NLE (Program Canvas + Donor Timeline)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
-/* ===================== CSS VARIABLES ===================== */
+/* ===================== VARIABLES ===================== */
 :root{
-  --bg:#0f0f10;
-  --panel:#1c1c1e;
-  --panel2:#202022;
-  --line:#111;
-  --text:#d8d8d8;
-  --muted:#8b8b8b;
-  --accent:#3b82f6;
-  --warn:#fbbf24;
-
-  --browserW:240px;
-  --inspectorW:300px;
-  --timelineH:260px;
-  --trackH:48px;
-  --pxPerSec:100px;      /* your JS uses pxPerSec=100; keep parity */
-  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+  --bg:#0f0f10; --panel:#1c1c1e; --panel2:#202022; --line:#111; --text:#d8d8d8;
+  --muted:#8b8b8b; --accent:#3b82f6; --warn:#fbbf24;
+  --browserW:240px; --inspectorW:300px; --timelineH:260px;
+  --trackH:48px; --pxPerSec:100px; font-family:system-ui,-apple-system,Segoe UI,sans-serif;
 }
 
 /* ===================== RESET ===================== */
 *{box-sizing:border-box}
-html,body{
-  margin:0;height:100%;
-  background:var(--bg);color:var(--text);
-  overflow:hidden;
-}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden}
 
 /* ===================== ROOT GRID ===================== */
-/* ┌──────── Topbar (fixed) ───────┐
-   ├──────── Workspace (grid) ─────┤
-   └──────── Timeline (fixed) ─────┘ */
-body{
-  display:grid;
-  grid-template-rows: 42px 1fr var(--timelineH);
-}
+body{ display:grid; grid-template-rows:42px 1fr var(--timelineH); }
 
-/* ===================== TOP BAR (single, unified) ===================== */
+/* ===================== TOP BAR ===================== */
 #topbar{
-  display:grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items:center;
-  gap:8px;
-  padding:0 10px;
-  background:linear-gradient(#2a2a2c,#202022);
-  border-bottom:1px solid var(--line);
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; padding:0 10px;
+  background:linear-gradient(#2a2a2c,#202022); border-bottom:1px solid var(--line);
 }
-#topbar .left, #topbar .right{display:flex;gap:6px;align-items:center}
-#topbar .center{justify-self:center;font-variant-numeric:tabular-nums;color:#9ee66e}
-.tool-btn{
-  height:28px;min-width:28px;padding:0 10px;
-  background:#2b2b2e;border:1px solid #000; color:#ddd;
-  border-radius:4px;cursor:pointer
-}
-.tool-btn.active{ background:#1e3a5a; border-color:#0b274e }
+#topbar .left,#topbar .right{display:flex;gap:6px;align-items:center}
+#topbar .center{justify-self:center;font-variant-numeric:tabular-nums;color:#00dd00;font-weight:600}
+.tool-btn{height:28px;min-width:28px;padding:0 8px;background:#2b2b2e;border:1px solid #000;color:#ddd;border-radius:4px;cursor:pointer}
+.tool-btn.active{background:#1e3a5a;border-color:#0b274e}
 
 /* ===================== WORKSPACE GRID ===================== */
-/* ┌──── Browser (fixed) ┬──────── Viewers (1fr) ┬──── Inspector (fixed) ────┐ */
-#app{
-  display:grid;
-  grid-template-columns: var(--browserW) 1fr var(--inspectorW);
-  overflow:hidden;
-}
+#app{ display:grid; grid-template-columns:var(--browserW) 1fr var(--inspectorW); overflow:hidden }
 
 /* ===================== BROWSER ===================== */
-#browser{
-  background:linear-gradient(#202022,#18181a);
-  border-right:1px solid var(--line);
-  display:flex;flex-direction:column;min-width:0; /* allow scroll */
-}
-.browser-header{
-  padding:8px 10px;font-size:11px;color:var(--muted);
-  text-transform:uppercase;border-bottom:1px solid var(--line);
-}
-#drop-zone{
-  margin:10px;padding:14px;border:2px dashed #3b6fa6;
-  border-radius:4px;color:#8fb3d9;text-align:center;cursor:pointer;
-}
-#bin{flex:1;overflow:auto;padding:0 8px}
-.bin-item{
-  padding:6px;border-bottom:1px solid #252525;
-  cursor:grab;display:flex;gap:8px;align-items:center;
-}
-.bin-thumb{
-  width:42px;height:28px;background:#000;border:1px solid #333;font-size:9px;
-  display:flex;align-items:center;justify-content:center;color:#bbb;
-}
+#browser{ background:linear-gradient(#202022,#18181a); border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-width:0 }
+.browser-header{ padding:8px 10px; font-size:11px; color:var(--muted); text-transform:uppercase; border-bottom:1px solid var(--line) }
+#drop-zone{ margin:10px;padding:14px;border:2px dashed #3b6fa6;border-radius:4px;color:#8fb3d9;text-align:center;cursor:pointer }
+#bin{ flex:1; overflow:auto; padding:0 8px }
+.bin-item{ padding:6px;border-bottom:1px solid #252525;cursor:grab;display:flex;gap:8px;align-items:center }
+.bin-thumb{ width:42px;height:28px;background:#000;border:1px solid #333;font-size:9px;color:#bbb;display:flex;align-items:center;justify-content:center }
 
-/* ===================== CENTER (VIEWERS stacked vertically inside col) ===================== */
-#center{
-  display:flex;flex-direction:column;overflow:hidden;min-width:0;
-}
+/* ===================== CENTER (VIEWERS) ===================== */
+#center{ display:flex;flex-direction:column;overflow:hidden;min-width:0 }
 
-/* ===================== DUAL VIEWERS ===================== */
-/* Two viewers side-by-side, each: header / 16:9 surface / transport */
-#viewers{
-  flex:1;
-  display:grid;grid-template-columns: 1fr 1fr;gap:6px;padding:6px;
-  border-bottom:1px solid var(--line);min-height:0; /* keep inside */
-}
-.viewer{
-  display:grid;grid-template-rows: 24px 1fr 28px;
-  border:1px solid #0b0b0c;background:#000;min-height:0;
-}
-.viewer-header{
-  background:linear-gradient(#2a2a2c,#202022);
-  border-bottom:1px solid #0c0c0d;
-  padding:0 8px;display:flex;align-items:center;font-size:11px;color:var(--muted);
-}
-.viewer-canvas{
-  background:#000;display:grid;place-items:center;min-height:0;
-}
-.viewer-canvas video{
-  width:100%;height:100%;object-fit:contain; /* locks AR visually */
-}
-.viewer-overlay{
-  position:absolute;top:8px;left:8px;font-size:10px;color:#888;
-}
-.transport{
-  display:flex;align-items:center;gap:6px;padding:0 8px;
-  background:#1c1c1e;border-top:1px solid #0c0c0d;
-}
+/* ===== Dual viewers (ported look) ===== */
+#viewers{ flex:1; display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:6px; border-bottom:2px solid #0a0a0a; min-height:0; background:#0b0b0c }
+.viewer-panel{ display:grid; grid-template-rows:24px 1fr 56px; background:var(--panel); border:1px solid #111; min-height:0 }
+.viewer-panel .panel-header{ background:linear-gradient(#2a2a2c,#202022); border-bottom:1px solid #0c0c0d; padding:0 8px; font-size:11px; color:#8a8a8a; display:flex; align-items:center }
+.viewer-screen{ background:#000; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; aspect-ratio:16/9; min-height:0 }
+.viewer-screen video{ max-width:100%; max-height:100%; display:block; object-fit:contain }
+#programCanvas{ max-width:100%; max-height:100%; display:block }
+.safe-zones{position:absolute;inset:0;pointer-events:none;display:none}
+.safe-zones.show{display:block}
+.viewer-label-tip{position:absolute;top:6px;left:8px;display:flex;gap:5px;pointer-events:none}
+.viewer-label-badge{font-size:9px;color:rgba(255,255,255,.45);letter-spacing:1px;text-transform:uppercase;background:rgba(0,0,0,.4);border-radius:3px;padding:1px 5px}
+.viewer-label-desc{font-size:9px;color:rgba(255,255,255,.22)}
+.viewer-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#333;pointer-events:none}
+.viewer-placeholder svg{opacity:.3}
+.viewer-placeholder span{font-size:10px;letter-spacing:1px}
 
-/* ===================== TIMELINE (authoritative bottom row) ===================== */
-/* Header row for controls + body with two columns: track headers | tracks plane */
-#timeline{
-  display:grid;grid-template-rows: 30px 1fr;
-  background:linear-gradient(#131314,#0f0f10);
-  border-top:1px solid var(--line);
-}
-#timeline .controls{
-  display:flex;align-items:center;gap:10px;padding:0 8px;font-size:11px;color:#bbb;
-  border-bottom:1px solid #141414;background:#1a1a1c;
-}
-#timeline .body{
-  display:grid;grid-template-columns: 180px 1fr;overflow:hidden;min-height:0;
-}
-#track-headers{
-  background:linear-gradient(#202022,#18181a);
-  border-right:1px solid var(--line);overflow:auto;
-}
-.track-header{
-  height:var(--trackH);display:flex;align-items:center;gap:6px;
-  padding:0 8px;color:var(--muted);border-bottom:1px solid var(--line);
-}
+/* Transport + scrub */
+.viewer-controls{ background:linear-gradient(#282828,#1e1e1e); border-top:1px solid #0a0a0a; display:flex; flex-direction:column; gap:4px; padding:4px 6px }
+.vc-scrub{height:8px;background:#111;border:1px solid #000;border-radius:2px;position:relative;overflow:hidden;cursor:pointer}
+.vc-scrub-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(to right,#2e6fa8,#4a8fcd);width:0%}
+.vc-scrub-head{position:absolute;top:-2px;bottom:-2px;width:3px;background:#e8a020;margin-left:-1px;border-radius:1px}
+.vc-buttons{display:flex;align-items:center;gap:4px}
+.vc-btn{ width:22px;height:22px;background:linear-gradient(#3e3e3e,#2a2a2a);border:1px solid #1a1a1a;border-top-color:#4a4a4a;color:#d8d8d8;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px }
+.vc-btn.play-btn{ width:28px;background:linear-gradient(#2a5080,#1e3a5a);border-color:#2e6fa8 }
+.vc-tc{ margin-left:auto;background:#0a0a0a;border:1px solid #000;border-radius:2px;padding:2px 6px;font-family:'Courier New',monospace;font-size:11px;color:#00cc44;letter-spacing:1px }
+
+/* ===================== TIMELINE ===================== */
+#timeline{ display:grid; grid-template-rows:30px 1fr; background:linear-gradient(#131314,#0f0f10); border-top:1px solid var(--line) }
+#timeline .controls{ display:flex; align-items:center; gap:10px; padding:0 8px; font-size:11px; color:#bbb; border-bottom:1px solid #141414; background:#1a1a1c }
+#timeline .body{ display:grid; grid-template-columns:180px 1fr; overflow:hidden; min-height:0 }
+#track-headers{ background:linear-gradient(#202022,#18181a); border-right:1px solid var(--line); overflow:auto }
+.track-header{ height:var(--trackH); display:flex; align-items:center; gap:6px; padding:0 8px; color:var(--muted); border-bottom:1px solid var(--line) }
 .tracks{
-  position:relative;overflow:auto;background:
-    linear-gradient(#111 1px,transparent 1px) top left/100% var(--trackH),
-    linear-gradient(to right,#2a2a2e 1px,transparent 1px) top left/var(--pxPerSec) 100%;
+  position:relative; overflow:auto; min-height:0;
+  --rulerH:22px; padding-top:var(--rulerH);
+  background:
+    linear-gradient(#141414 1px, transparent 1px) top left/100% var(--trackH),
+    linear-gradient(to right, #2a2a2e 1px, transparent 1px) top left/var(--pxPerSec) 100%;
 }
-.track{
-  height:var(--trackH);border-bottom:1px solid #1a1a1a;position:relative;
-}
+.timeline-ruler{ position:sticky; top:0; height:22px; z-index:3; border-bottom:1px solid #0f0f10 }
+#ruler-canvas{ display:block; width:100%; height:100% }
 
-/* ===================== CLIPS ===================== */
+.timeline-track{ height:var(--trackH); border-bottom:1px solid #191919; position:relative; }
 .clip{
-  position:absolute;top:6px;bottom:6px;border-radius:4px;
-  background:linear-gradient(#3576d6,#2559a4);color:#fff;font-size:10px;
-  padding:4px 6px;cursor:pointer;display:flex;align-items:center;
+  position:absolute; top:3px; bottom:3px; border-radius:4px;
+  background:linear-gradient(#3576d6,#2559a4); color:#fff; font-size:10px;
+  padding:0 6px; cursor:grab; display:flex; align-items:center; user-select:none;
+  border:1px solid rgba(0,0,0,0.5); box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 3px rgba(0,0,0,0.4)
 }
-.clip.audio{ background:linear-gradient(#3b7a4b,#235a37); }
-.clip.selected{ outline:2px solid var(--accent); }
-.trim{ position:absolute;top:0;bottom:0;width:6px;cursor:ew-resize;opacity:0; }
-.clip:hover .trim{ opacity:1 }
-.trim.left{ left:0 } .trim.right{ right:0 }
+.clip.audio-clip{ background:linear-gradient(#3b7a4b,#235a37) }
+.clip.selected{ outline:2px solid var(--accent) }
+.clip-handle{ position:absolute; top:0; bottom:0; width:6px; background:rgba(255,255,255,.14); cursor:ew-resize; }
+.clip-handle.left{ left:0; border-radius:4px 0 0 4px }
+.clip-handle.right{ right:0; border-radius:0 4px 4px 0 }
 
-/* ===================== PLAYHEAD ===================== */
-#playhead{ position:absolute; top:-14px; left:200px; width:0; height:0;
-  border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:10px solid var(--accent); }
-#playhead-line{ position:absolute; top:0; bottom:0; width:2px; background:var(--accent); left:206px; }
+/* Playhead + snap guide */
+#playhead-line{ position:absolute; top:0; bottom:0; width:2px; background:#3b82f6; pointer-events:none; z-index:4; left:0 }
+#snap-guide{ position:absolute; top:0; bottom:0; width:2px; background:#ffcc00; pointer-events:none; z-index:5; display:none }
 
-/* ===================== INSPECTOR ===================== */
-#inspector{
-  background:linear-gradient(#202022,#18181a);
-  border-left:1px solid var(--line);display:flex;flex-direction:column;min-width:0;
-}
-.inspector-header{
-  padding:8px 10px;font-size:11px;text-transform:uppercase;color:var(--muted);
-  border-bottom:1px solid var(--line);
-}
-.inspector-section{ padding:10px;border-bottom:1px solid #252525; }
-.inspector-row{ margin-bottom:8px }
-.inspector-row label{ display:block;font-size:10px;color:#999;margin-bottom:4px }
-.inspector-row input, .inspector-row select{ width:100%; background:#111; color:#ddd; border:1px solid #333; }
-
-/* ===================== BUTTON REUSE ===================== */
-button{ color:#ddd }
+/* Tool cursors for timeline plane */
+body.tool-select .tracks{ cursor:default }
+body.tool-blade  .tracks{ cursor:crosshair }
+body.tool-hand   .tracks{ cursor:grab }
+body.tool-hand   .tracks:active{ cursor:grabbing }
+body.tool-zoom   .tracks{ cursor:zoom-in }
 </style>
 </head>
 
 <body>
 
-<!-- =============== TOP BAR (single unified) =============== -->
+<!-- ===================== TOP BAR ===================== -->
 <div id="topbar">
   <div class="left">
-    <!-- Keep your tool IDs to avoid breaking JS -->
-    <button class="tool-btn active" id="toolSelect">⬆</button>
-    <button class="tool-btn" id="toolBlade">✂</button>
-    <button class="tool-btn" id="toolHand">✋</button>
-    <button class="tool-btn" id="toolZoom">🔍</button>
-
-    <button class="tool-btn active" id="snapBtn">🧲</button>
-
+    <button class="tool-btn active" id="toolSelect" title="Selection (A)">⬆</button>
+    <button class="tool-btn" id="toolBlade" title="Blade (B)">✂</button>
+    <button class="tool-btn" id="toolHand"  title="Hand (H)">✋</button>
+    <button class="tool-btn" id="toolZoom"  title="Zoom (Z)">🔍</button>
+    <button class="tool-btn active" id="snapBtn" title="Toggle snapping">🧲</button>
     <button class="tool-btn" id="saveBtn">💾</button>
     <button class="tool-btn" id="loadBtn">📂</button>
   </div>
-
   <div class="center">00:00:00:00</div>
-
   <div class="right">
     <button class="tool-btn" id="exportBtn">Export</button>
   </div>
 </div>
 
-<!-- =============== WORKSPACE (Browser | Viewers | Inspector) =============== -->
+<!-- ===================== WORKSPACE ===================== -->
 <div id="app">
-  <!-- Browser -->
+  <!-- BROWSER -->
   <aside id="browser">
     <div class="browser-header">Browser</div>
     <div id="drop-zone">Drop video here</div>
     <div id="bin"></div>
   </aside>
 
-  <!-- Center: Dual Viewers stacked in a grid -->
+  <!-- CENTER: Dual Viewers -->
   <main id="center">
     <div id="viewers">
-      <!-- Source viewer -->
-      <section class="viewer">
-        <div class="viewer-header">Viewer · Source clip preview</div>
-        <div class="viewer-canvas" style="position:relative">
-          <video id="sourceVideo"></video>
-          <div class="viewer-overlay">VIEWER</div>
+      <!-- SOURCE VIEWER -->
+      <section class="viewer-panel" id="viewer-source">
+        <div class="panel-header">Viewer · Source clip preview</div>
+        <div class="viewer-screen" id="viewer-screen-src">
+          <div class="viewer-placeholder" id="vp-src">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <rect x="4" y="10" width="40" height="28" rx="3" stroke="#555" stroke-width="2"/>
+              <path d="M20 18l10 6-10 6V18z" fill="#555"/>
+            </svg>
+            <span>VIEWER</span>
+          </div>
+          <video id="sourceVideo" style="display:none"></video>
+          <div class="safe-zones" id="safe-src"></div>
+          <div class="viewer-label-tip">
+            <span class="viewer-label-badge">VIEWER</span>
+            <span class="viewer-label-desc">Source clip preview</span>
+          </div>
         </div>
-        <div class="transport">
-          <button id="playSource">▶</button>
+        <div class="viewer-controls">
+          <div class="vc-scrub" id="src-scrub">
+            <div class="vc-scrub-fill" id="src-fill"></div>
+            <div class="vc-scrub-head" id="src-head"></div>
+          </div>
+          <div class="vc-buttons">
+            <button class="vc-btn" id="src-go-start">⏮</button>
+            <button class="vc-btn" id="src-step-back">◀</button>
+            <button class="vc-btn play-btn" id="playSource">▶</button>
+            <button class="vc-btn" id="src-step-fwd">▶</button>
+            <button class="vc-btn" id="src-go-end">⏭</button>
+            <button class="vc-btn" id="src-mark-in"  title="Mark In"  style="font-size:10px">I</button>
+            <button class="vc-btn" id="src-mark-out" title="Mark Out" style="font-size:10px">O</button>
+            <div class="vc-tc" id="src-tc">00:00:00:00</div>
+          </div>
         </div>
       </section>
 
-      <!-- Program/Canvas viewer -->
-      <section class="viewer">
-        <div class="viewer-header">Canvas · Sequence output</div>
-        <div class="viewer-canvas" style="position:relative">
-          <video id="programVideo"></video>
-          <div class="viewer-overlay">CANVAS</div>
+      <!-- PROGRAM / CANVAS VIEWER -->
+      <section class="viewer-panel" id="viewer-canvas">
+        <div class="panel-header">Canvas · Sequence output</div>
+        <div class="viewer-screen" id="viewer-screen-cvs">
+          <div class="viewer-placeholder" id="vp-cvs">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <rect x="4" y="10" width="40" height="28" rx="3" stroke="#555" stroke-width="2"/>
+              <line x1="4" y1="22" x2="44" y2="22" stroke="#555" stroke-width="1"/>
+              <line x1="18" y1="10" x2="18" y2="38" stroke="#555" stroke-width="1" stroke-dasharray="3 3"/>
+            </svg>
+            <span>CANVAS</span>
+          </div>
+          <canvas id="programCanvas" style="display:none"></canvas>
+          <canvas id="text-overlay-canvas"></canvas>
+          <div class="safe-zones" id="safe-cvs"></div>
+          <div class="viewer-label-tip">
+            <span class="viewer-label-badge">CANVAS</span>
+            <span class="viewer-label-desc">Sequence output</span>
+          </div>
         </div>
-        <div class="transport">
-          <button id="playProgram">▶</button>
+        <div class="viewer-controls">
+          <div class="vc-scrub" id="cvs-scrub">
+            <div class="vc-scrub-fill" id="cvs-fill"></div>
+            <div class="vc-scrub-head" id="cvs-head"></div>
+          </div>
+          <div class="vc-buttons">
+            <button class="vc-btn" id="cvs-go-start">⏮</button>
+            <button class="vc-btn" id="cvs-step-back">◀</button>
+            <button class="vc-btn play-btn" id="playProgram">▶</button>
+            <button class="vc-btn" id="cvs-step-fwd">▶</button>
+            <button class="vc-btn" id="cvs-go-end">⏭</button>
+            <button class="vc-btn" id="cvs-fullscreen" style="margin-left:auto">⛶</button>
+            <div class="vc-tc" id="cvs-tc">00:00:00:00</div>
+          </div>
         </div>
       </section>
     </div>
   </main>
 
-  <!-- Inspector -->
+  <!-- INSPECTOR (kept minimal for export controls) -->
   <aside id="inspector">
-    <div class="inspector-header">Inspector</div>
-
-    <div class="inspector-section" id="inspectorMain">
+    <div class="browser-header">Inspector</div>
+    <div class="inspector-section" id="inspectorMain" style="padding:10px;border-top:1px solid #252525">
       No selection
     </div>
-
-    <div class="inspector-section">
-      <div class="inspector-row" style="margin-bottom:6px;font-size:11px;color:#aaa">Export</div>
-      <div class="inspector-row">
-        <select id="exportPreset">
-          <option value="youtube">YouTube 1080p</option>
-          <option value="prores">ProRes 422</option>
-        </select>
-      </div>
-      <div class="inspector-row" style="display:flex;gap:6px">
+    <div class="inspector-section" style="padding:10px;border-top:1px solid #252525">
+      <div style="font-size:11px;color:#aaa;margin-bottom:6px">Export</div>
+      <select id="exportPreset" style="width:100%;height:28px;background:#111;color:#ddd;border:1px solid #333;border-radius:4px">
+        <option value="youtube">YouTube 1080p</option>
+        <option value="prores">ProRes 422</option>
+      </select>
+      <div style="display:flex;gap:6px;margin-top:8px">
         <button id="startExport">Start Export</button>
         <button id="cancelExport">Cancel</button>
       </div>
-      <div class="inspector-row">
-        <div id="progressTrack" style="width:100%;height:8px;background:#333;border-radius:4px;overflow:hidden">
-          <div id="progressBar" style="height:100%;width:0%;background:var(--accent)"></div>
-        </div>
+      <div id="progressTrack" style="width:100%;height:8px;background:#333;border-radius:4px;overflow:hidden;margin-top:6px">
+        <div id="progressBar" style="height:100%;width:0%;background:var(--accent)"></div>
       </div>
     </div>
   </aside>
 </div>
 
-<!-- =============== TIMELINE (authoritative bottom row) =============== -->
+<!-- ===================== TIMELINE ===================== -->
 <div id="timeline">
   <div class="controls">
     <span>Snapping</span>
     <span>Linked</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+      <span style="font-size:11px;color:#bbb">Zoom</span>
+      <input id="tl-zoom-slider" type="range" min="1" max="10" step="0.1" value="3"
+        style="width:120px;-webkit-appearance:none;height:3px;background:#333;border-radius:2px;outline:none;">
+    </div>
   </div>
 
   <div class="body">
     <div id="track-headers">
+      <div class="track-header">V2</div>
       <div class="track-header">V1</div>
       <div class="track-header">A1</div>
     </div>
 
-    <div class="tracks" id="tracks">
-      <!-- Playhead -->
-      <div id="playhead"></div>
+    <div class="tracks" id="timeline-tracks">
+      <div class="timeline-ruler"><canvas id="ruler-canvas"></canvas></div>
+      <div class="timeline-track" id="track-v2" data-track="v2"></div>
+      <div class="timeline-track" id="track-v1" data-track="v1"></div>
+      <div class="timeline-track" id="track-a1" data-track="a1"></div>
       <div id="playhead-line"></div>
-
-      <!-- Visual track lanes (same IDs your JS uses) -->
-      <div class="track" id="vTrack"></div>
-      <div class="track" id="aTrack"></div>
+      <div id="snap-guide"></div>
     </div>
   </div>
 </div>
 
-<!-- =============== YOUR ORIGINAL JS (kept), with a single-line fix explained below =============== -->
 <script>
 /* =========================================================
-   CORE STATE
+   SOURCE VIEWER (left monitor): tiny shim
 ========================================================= */
-const FPS = 30;
-let currentTool = "select";
-let snapping = true;
-let playheadTime = 0;
-let playing = false;
-let clips = [];
-let selectedClip = null;
-let undoStack = [];
-let redoStack = [];
-let renderQueue = [];
-let activeJob = null;
+(function(){
+  const vid  = document.getElementById('sourceVideo');
+  const ph   = document.getElementById('vp-src');
+  const play = document.getElementById('playSource');
+  const scrub= document.getElementById('src-scrub');
+  const fill = document.getElementById('src-fill');
+  const head = document.getElementById('src-head');
+  const tcEl = document.getElementById('src-tc');
 
-/* =========================================================
-   TOOL HANDLING
-========================================================= */
-function setTool(t){
-  currentTool = t;
-  document.body.className = "tool-" + t;
-  document.querySelectorAll(".tool-btn").forEach(b=>{
-    b.classList.toggle("active", b.id === "tool"+t.charAt(0).toUpperCase()+t.slice(1));
+  const fmt = s => { const h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=Math.floor(s%60),f=Math.floor((s%1)*30); return [h,m,sec,f].map(n=>String(n).padStart(2,'0')).join(':'); };
+
+  function showIfReady(){ if (vid && vid.src && vid.readyState>=1){ ph.style.display='none'; vid.style.display='block'; } }
+  vid?.addEventListener('loadedmetadata', showIfReady);
+  vid?.addEventListener('loadeddata', showIfReady);
+
+  play?.addEventListener('click',()=>{
+    if (!vid?.src) return;
+    if (vid.paused){ vid.play(); play.textContent='⏸'; } else { vid.pause(); play.textContent='▶'; }
   });
-}
-toolSelect.onclick = ()=>setTool("select");
-toolBlade.onclick = ()=>setTool("blade");
-toolHand.onclick = ()=>setTool("hand");
-toolZoom.onclick = ()=>setTool("zoom");
-document.addEventListener("keydown",e=>{
-  if(e.key==="a")setTool("select");
-  if(e.key==="b")setTool("blade");
-  if(e.key==="h")setTool("hand");
-  if(e.key==="z")setTool("zoom");
-});
-snapBtn.onclick = ()=>{
-  snapping = !snapping;
-  snapBtn.classList.toggle("active",snapping);
-};
 
-/* =========================================================
-   IMPORT   (** ONE-LINE FIX BELOW **)
-========================================================= */
-/* ORIGINAL BROKEN LINE:
-   drop-zone.onclick = () => { ... }
-   This parses as (drop - zone).onclick and throws at runtime, preventing *all* subsequent JS.
-   We fix it here by selecting the element explicitly. */
-document.getElementById("drop-zone").onclick = () => {
-  const input = document.createElement("input");
-  input.type="file";input.accept="video/*";input.multiple=true;
-  input.onchange = e =>{
-    [...e.target.files].forEach(f=>{
-      const src = URL.createObjectURL(f);
-      const el = document.createElement("div");
-      el.className="bin-item";
-      el.innerHTML=`<div class="bin-thumb">VID</div>${f.name}`;
-      el.draggable=true;
-      el.ondragstart=ev=>ev.dataTransfer.setData("src",src);
-      bin.appendChild(el);
-    });
-  };
-  input.click();
-};
-
-/* =========================================================
-   DROP TO TIMELINE
-========================================================= */
-vTrack.ondragover = e=>e.preventDefault();
-vTrack.ondrop = e=>{
-  const src=e.dataTransfer.getData("src");
-  const start=clips.length?clips[clips.length-1].start+clips[clips.length-1].dur:0;
-  const video={id:crypto.randomUUID(),type:"video",src,start,dur:3};
-  const audio={id:crypto.randomUUID(),type:"audio",src,start,dur:3,linked:video.id};
-  video.linked = audio.id;
-  clips.push(video,audio);
-  pushUndo();render();
-};
-
-/* =========================================================
-   RENDER
-========================================================= */
-function render(){
-  document.querySelectorAll(".clip,.transition").forEach(e=>e.remove());
-  clips.forEach(c=>{
-    const el=document.createElement("div");
-    el.className="clip"+(c.type==="audio"?" audio":"");
-    el.style.left=(c.start*100)+"px";
-    el.style.width=(c.dur*100)+"px";
-    el.innerHTML=`${c.type.toUpperCase()}
-      <div class="trim left"></div>
-      <div class="trim right"></div>`;
-    (c.type==="video"?vTrack:aTrack).appendChild(el);
-    el.onclick=(e)=>{
-      e.stopPropagation();
-      if(currentTool==="blade"){ bladeCut(c,e.offsetX/100); return; }
-      selectClip(c,el);
-    };
+  vid?.addEventListener('timeupdate', ()=>{
+    if (!vid.duration) return;
+    const pct = (vid.currentTime/vid.duration)*100;
+    fill.style.width = pct+'%'; head.style.left = pct+'%'; tcEl.textContent = fmt(vid.currentTime);
   });
+
+  scrub?.addEventListener('click',(e)=>{
+    if (!vid?.duration) return;
+    const r=scrub.getBoundingClientRect(); const pct=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));
+    vid.currentTime = pct*vid.duration;
+  });
+
+  document.getElementById('src-go-start')?.addEventListener('click',()=>{ if (vid.src) vid.currentTime = 0; });
+  document.getElementById('src-go-end')  ?.addEventListener('click',()=>{ if (vid.src) vid.currentTime = vid.duration; });
+  document.getElementById('src-step-back')?.addEventListener('click',()=>{ if (vid.src) vid.currentTime = Math.max(0, vid.currentTime - 1/30); });
+  document.getElementById('src-step-fwd') ?.addEventListener('click',()=>{ if (vid.src) vid.currentTime = Math.min(vid.duration, vid.currentTime + 1/30); });
+})();
+</script>
+
+<script>
+/* =========================================================
+   DONOR-COMPATIBLE TIMELINE + PROGRAM CANVAS
+   - state/ids/time-math mirror the donor file so further features drop in
+   - adds: clip resize handles, blade split, snap-to (edges + beats)
+   (See donor: ids like #timeline-tracks, #ruler-canvas, track-v1/v2/a1; px<->sec helpers; renderTimeline; drawRuler; playhead loop)
+   Reference: donor index you shared.  
+========================================================= */
+
+/* ---------- State ---------- */
+const TRACK_ORDER = ['v2','v1','a1']; // V2 graphics, V1 video, A1 audio  
+const tl = {
+  clips: [],             // {id,name,url,duration,type:'video'|'audio', beatMarkers?[]}
+  timeline: [],          // {id,clipId,track,start,duration,inPoint,outPoint,fadeIn,fadeOut}
+  selectedId: null,
+  playhead: 0,
+  zoom: 3,               // pixels per second scale: px = sec * zoom * 10  
+  seqDuration: 60,
+  playing: false,
+  snapping: true,
+  snapPx: 10,
+  tool: 'select',        // 'select'|'blade'|'hand'|'zoom'
+  _raf: null
+};
+
+/* ---------- Helpers ---------- */
+function formatTC(sec){ const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=Math.floor(sec%60),f=Math.floor((sec%1)*30); return [h,m,s,f].map(n=>String(n).padStart(2,'0')).join(':'); }
+function pxToSec(px){ return px / (tl.zoom * 10); }           // donor mapping  
+function secToPx(sec){ return sec * tl.zoom * 10; }           // donor mapping  
+
+/* ---------- Timecode + Playhead ---------- */
+function updateTimecodes(){
+  const tc = formatTC(tl.playhead);
+  const mid = document.querySelector('#topbar .center'); if (mid) mid.textContent = tc;
+  const cvsTC = document.getElementById('cvs-tc'); if (cvsTC) cvsTC.textContent = tc;
+}
+function updatePlayhead(){
+  const px = secToPx(tl.playhead);
+  document.getElementById('playhead-line').style.left = px + 'px';
+  const pct = tl.seqDuration>0 ? (tl.playhead/tl.seqDuration)*100 : 0;
+  const f = document.getElementById('cvs-fill'), h = document.getElementById('cvs-head');
+  if (f) f.style.width = pct+'%'; if (h) h.style.left = pct+'%';
+  updateTimecodes();
+  renderCanvasFrame();
 }
 
-/* =========================================================
-   BLADE
-========================================================= */
-function bladeCut(c,t){
-  const cut=c.start+t;
-  if(cut<=c.start || cut>=c.start+c.dur)return;
-  pushUndo();
-  const right={...c,id:crypto.randomUUID(),start:cut,dur:c.start+c.dur-cut};
-  c.dur=cut-c.start;
-  clips.push(right); render();
-}
-
-/* =========================================================
-   SELECTION
-========================================================= */
-function selectClip(c,el){
-  selectedClip=c;
-  document.querySelectorAll(".clip").forEach(x=>x.classList.remove("selected"));
-  el.classList.add("selected");
-  inspectorMain.innerHTML=`<div>Clip</div>
-    <div class="inspector-row"><label>Start</label><input type="number" value="${c.start}"></div>
-    <div class="inspector-row"><label>Duration</label><input type="number" value="${c.dur}"></div>`;
-}
-
-/* =========================================================
-   UNDO
-========================================================= */
-function pushUndo(){
-  undoStack.push(JSON.stringify(clips));
-  redoStack.length=0;
-}
-document.addEventListener("keydown",e=>{
-  if((e.ctrlKey||e.metaKey)&&e.key==="z"){
-    if(!undoStack.length)return;
-    redoStack.push(JSON.stringify(clips));
-    clips=JSON.parse(undoStack.pop());render();
+/* ---------- Ruler ---------- */
+function drawRuler(){
+  const canvas = document.getElementById('ruler-canvas');
+  const plane  = document.getElementById('timeline-tracks');
+  if (!canvas || !plane) return;
+  const W = plane.scrollWidth || plane.clientWidth || 1200;
+  const H = 20; canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle='#1e1e1e'; ctx.fillRect(0,0,W,H);
+  const pps = tl.zoom*10;
+  const totalSec = pxToSec(W);
+  const step = pps>=100?1:pps>=50?2:pps>=20?5:10;
+  ctx.strokeStyle='#555'; ctx.fillStyle='#8a8a8a'; ctx.font='9px system-ui, sans-serif';
+  for (let t=0; t<=totalSec+step; t+=step){
+    const x=Math.round(t*pps);
+    ctx.beginPath(); ctx.moveTo(x,10); ctx.lineTo(x,H); ctx.stroke();
+    if (t%(step*2)===0) ctx.fillText(formatTC(t), x+2, 10);
   }
-});
-
-/* =========================================================
-   EXPORT QUEUE + PROGRESS
-========================================================= */
-function enqueueExport(){
-  const job={id:crypto.randomUUID(),progress:0,status:"rendering"};
-  activeJob=job; updateProgress(0);
-  const timer=setInterval(()=>{
-    job.progress+=Math.random()*10;
-    updateProgress(job.progress);
-    if(job.progress>=100){ clearInterval(timer); updateProgress(100); }
-  },300);
+  // minor
+  const minor=step/4; ctx.strokeStyle='#333';
+  for (let t=0; t<=totalSec; t+=minor){
+    if (t%step===0) continue;
+    const x=Math.round(t*pps);
+    ctx.beginPath(); ctx.moveTo(x,15); ctx.lineTo(x,H); ctx.stroke();
+  }
 }
-function updateProgress(p){ progressBar.style.width=Math.min(100,p)+"%"; }
-startExport.onclick=enqueueExport;
-cancelExport.onclick=()=>{progressBar.style.width="0%";};
+
+/* ---------- Video element cache for Program Canvas ---------- */
+const videoEls = new Map(); // clipId -> <video>
+async function ensureVideoEl(clip){
+  if (clip.type!=='video') return null;
+  if (videoEls.has(clip.id)) return videoEls.get(clip.id);
+  const v=document.createElement('video');
+  v.src=clip.url; v.muted=true; v.preload='auto'; v.playsInline=true;
+  await new Promise(res=>{ const done=()=>{v.removeEventListener('loadeddata',done);v.removeEventListener('error',done);res();};
+    v.addEventListener('loadeddata',done,{once:true}); v.addEventListener('error',done,{once:true});});
+  videoEls.set(clip.id,v); return v;
+}
+
+/* ---------- Program Canvas renderer ---------- */
+async function renderCanvasFrame(){
+  const screen = document.getElementById('viewer-screen-cvs');
+  const canvas = document.getElementById('programCanvas');
+  if (!screen || !canvas) return;
+  const W=Math.max(1,screen.clientWidth||1280), H=Math.max(1,screen.clientHeight||720);
+  if (canvas.width!==W || canvas.height!==H){ canvas.width=W; canvas.height=H; }
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const ph = document.getElementById('vp-cvs'); if (ph) ph.style.display='none'; canvas.style.display='block';
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+
+  const t = tl.playhead;
+
+  // draw visible video clips in deterministic order (track order then start)  
+  const visible = tl.timeline
+    .filter(e=>{ const c=tl.clips.find(x=>x.id===e.clipId); return c&&c.type==='video'&&(t>=e.start && t<=e.start+e.duration); })
+    .sort((a,b)=> (TRACK_ORDER.indexOf(a.track)-TRACK_ORDER.indexOf(b.track)) || (a.start-b.start));
+
+  for (const entry of visible){
+    const clip = tl.clips.find(c=>c.id===entry.clipId);
+    const v = await ensureVideoEl(clip); if (!v || !isFinite(v.duration)) continue;
+    const mediaT = Math.min(v.duration, Math.max(0, t - entry.start + (entry.inPoint||0)));
+    if (Math.abs(v.currentTime - mediaT) > 0.12){ try{ v.currentTime = mediaT; }catch{} }
+    if (tl.playing && v.paused){ try{ await v.play(); }catch{} }
+    if (!tl.playing && !v.paused){ try{ v.pause(); }catch{} }
+
+    // fades
+    let alpha=1, elapsed=t-entry.start, remaining=entry.start+entry.duration-t;
+    if (entry.fadeIn>0  && elapsed   < entry.fadeIn)  alpha = Math.min(alpha, elapsed/entry.fadeIn);
+    if (entry.fadeOut>0 && remaining < entry.fadeOut) alpha = Math.min(alpha, remaining/entry.fadeOut);
+
+    ctx.globalAlpha=Math.max(0,Math.min(1,alpha));
+    ctx.drawImage(v,0,0,W,H);
+    ctx.globalAlpha=1;
+  }
+}
+
+/* ---------- Snap system (edges + beats) ---------- */
+function getSnapPoints(excludeEntryId){
+  const points = [];
+  // clip edges across all tracks
+  tl.timeline.forEach(e=>{
+    if (e.id===excludeEntryId) return;
+    points.push(e.start); points.push(e.start + e.duration);
+  });
+  // beat markers (if any): translate clip-local beats to timeline times  
+  tl.timeline.forEach(e=>{
+    const clip = tl.clips.find(c=>c.id===e.clipId);
+    if (!clip || !clip.beatMarkers || !clip.beatMarkers.length) return;
+    clip.beatMarkers.forEach(bt=>{
+      const abs = e.start + bt;
+      if (abs > e.start && abs < e.start + e.duration) points.push(abs);
+    });
+  });
+  return points.sort((a,b)=>a-b);
+}
+function snapTime(rawSec, excludeEntryId){
+  if (!tl.snapping) return { time: rawSec, snapped:false, type:null };
+  const snapLine = document.getElementById('snap-guide');
+  const px = secToPx(rawSec);
+  const pts = getSnapPoints(excludeEntryId);
+  let best = {time:rawSec,dist:tl.snapPx+1,type:null};
+  pts.forEach(t=>{
+    const d = Math.abs(secToPx(t) - px);
+    if (d < best.dist) best = {time:t, dist:d, type:'edge|beat'};
+  });
+  if (best.dist <= tl.snapPx){
+    if (snapLine){ snapLine.style.left = secToPx(best.time)+'px'; snapLine.style.display='block'; }
+    return { time: best.time, snapped:true, type:best.type };
+  }
+  if (snapLine) snapLine.style.display='none';
+  return { time: rawSec, snapped:false, type:null };
+}
+
+/* ---------- Timeline rendering (DOM) ---------- */
+function renderTimeline(){
+  ['track-v2','track-v1','track-a1'].forEach(id=>{ const el=document.getElementById(id); if (el) el.innerHTML=''; });
+
+  tl.timeline.forEach(entry=>{
+    const lane = document.getElementById('track-' + entry.track);
+    const clip = tl.clips.find(c=>c.id===entry.clipId);
+    if (!lane || !clip) return;
+
+    const el = document.createElement('div');
+    el.className = 'clip ' + (clip.type==='audio'?'audio-clip':'video-clip') + (entry.id===tl.selectedId?' selected':'');
+    el.dataset.id = entry.id;
+    el.style.left  = secToPx(entry.start)   + 'px';
+    el.style.width = secToPx(entry.duration)+ 'px';
+    el.innerHTML = `
+      <div class="clip-handle left"></div>
+      <div style="position:relative;z-index:1">${clip.name|| (clip.type==='audio'?'Audio':'Video')}</div>
+      <div class="clip-handle right"></div>
+    `;
+
+    // select
+    el.addEventListener('click',(e)=>{ e.stopPropagation(); tl.selectedId=entry.id; renderTimeline(); renderCanvasFrame(); });
+
+    // move drag
+    let dragStartX, startStartSec;
+    el.addEventListener('mousedown',(e)=>{
+      if (e.target.classList.contains('clip-handle')) return;  // resize takes over
+      if (tl.tool==='blade'){ bladeAtPointer(entry, e); return; }
+      if (e.button!==0) return;
+      dragStartX = e.clientX;
+      startStartSec = entry.start;
+      const onMove = (ev)=>{
+        const dx = ev.clientX - dragStartX;
+        const raw = Math.max(0, startStartSec + pxToSec(dx));
+        const sn  = snapTime(raw, entry.id);
+        entry.start = sn.time;
+        el.style.left = secToPx(entry.start)+'px';
+        tl.seqDuration = Math.max(tl.seqDuration, entry.start + entry.duration + 5);
+        renderCanvasFrame();
+      };
+      const onUp = ()=>{
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.getElementById('snap-guide').style.display='none';
+        drawRuler();
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    // resize handles
+    const hLeft  = el.querySelector('.clip-handle.left');
+    const hRight = el.querySelector('.clip-handle.right');
+
+    hRight.addEventListener('mousedown',(e)=>{
+      e.stopPropagation(); e.preventDefault();
+      const startX = e.clientX; const startDur = entry.duration;
+      const onMove = (ev)=>{
+        const dx = ev.clientX - startX;
+        const rawEnd = entry.start + Math.max(0.25, startDur + pxToSec(dx));
+        const sn = snapTime(rawEnd, entry.id);
+        entry.duration = Math.max(0.25, sn.time - entry.start);
+        el.style.width = secToPx(entry.duration)+'px';
+        tl.seqDuration = Math.max(tl.seqDuration, entry.start + entry.duration + 5);
+        renderCanvasFrame();
+      };
+      const onUp = ()=>{
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.getElementById('snap-guide').style.display='none';
+        drawRuler();
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    hLeft.addEventListener('mousedown',(e)=>{
+      e.stopPropagation(); e.preventDefault();
+      const startX = e.clientX; const startStart = entry.start; const startDur = entry.duration;
+      const onMove = (ev)=>{
+        const dx  = ev.clientX - startX;
+        const raw = Math.max(0, startStart + pxToSec(dx));
+        const sn  = snapTime(raw, entry.id);
+        const delta = sn.time - startStart;
+        entry.start = sn.time;
+        entry.duration = Math.max(0.25, startDur - delta);
+        el.style.left  = secToPx(entry.start)+'px';
+        el.style.width = secToPx(entry.duration)+'px';
+        renderCanvasFrame();
+      };
+      const onUp = ()=>{
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.getElementById('snap-guide').style.display='none';
+        drawRuler();
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    lane.appendChild(el);
+  });
+
+  drawRuler();
+  updatePlayhead();
+}
+
+/* ---------- Blade tool ---------- */
+function bladeAtPointer(entry, e){
+  const trackEl = document.getElementById('track-' + entry.track);
+  const rect = trackEl.getBoundingClientRect();
+  const px = e.clientX - rect.left + document.getElementById('timeline-tracks').scrollLeft;
+  const cut = pxToSec(px);
+  bladeClip(entry, cut);
+}
+function bladeClip(entry, cutTime){
+  // only if inside the clip (with a small guard)
+  if (cutTime <= entry.start + 0.1 || cutTime >= entry.start + entry.duration - 0.1) return;
+  const dur1 = cutTime - entry.start;
+  const dur2 = entry.duration - dur1;
+  const start2 = cutTime;
+  entry.duration = dur1;
+  tl.timeline.push({ ...entry, id: crypto.randomUUID(), start: start2, duration: dur2 });
+  renderTimeline();
+}
+
+/* ---------- Add to timeline ---------- */
+function addToTimeline(clipId, track){
+  const clip = tl.clips.find(c=>c.id===clipId);
+  if (!clip) return;
+  const siblings = tl.timeline.filter(t=>t.track===track);
+  const start = siblings.length ? Math.max(...siblings.map(t=>t.start+t.duration)) : 0;
+  const dur   = Math.max(0.5, Math.min(clip.duration||3, 10));   // donor clamps initial length  
+  tl.timeline.push({ id:crypto.randomUUID(), clipId, track, start, duration:dur, inPoint:0, outPoint:dur, fadeIn:0, fadeOut:0 });
+  tl.seqDuration = Math.max(tl.seqDuration, start + dur + 5);
+  renderTimeline();
+}
+
+/* ---------- Play/Pause ---------- */
+function togglePlay(){
+  tl.playing = !tl.playing;
+  ['btn-play','cvs-play','playProgram'].forEach(id=>{ const b=document.getElementById(id); if (b) b.textContent = tl.playing? '⏸':'▶'; });
+  if (tl.playing){
+    const tick = () => {
+      tl.playhead += 1/30;
+      if (tl.playhead >= tl.seqDuration) tl.playhead = 0;
+      updatePlayhead();
+      if (tl.playing) tl._raf = requestAnimationFrame(tick);
+    };
+    cancelAnimationFrame(tl._raf); tl._raf = requestAnimationFrame(tick);
+  }else{
+    cancelAnimationFrame(tl._raf); tl._raf=null; updatePlayhead();
+  }
+}
+
+/* ---------- Wire UI ---------- */
+(function wireUI(){
+  const plane = document.getElementById('timeline-tracks');
+  const ruler = document.getElementById('ruler-canvas');
+  const zoomS = document.getElementById('tl-zoom-slider');
+
+  // Set tool class on body
+  function setTool(t){
+    tl.tool = t;
+    document.body.className = 'tool-' + t;
+    ['toolSelect','toolBlade','toolHand','toolZoom'].forEach(id=>{
+      const b=document.getElementById(id);
+      if (b) b.classList.toggle('active', (id==='tool'+ t.charAt(0).toUpperCase()+t.slice(1)));
+    });
+  }
+  document.getElementById('toolSelect')?.addEventListener('click',()=>setTool('select'));
+  document.getElementById('toolBlade') ?.addEventListener('click',()=>setTool('blade'));
+  document.getElementById('toolHand')  ?.addEventListener('click',()=>setTool('hand'));
+  document.getElementById('toolZoom')  ?.addEventListener('click',()=>setTool('zoom'));
+  setTool('select');
+
+  document.getElementById('snapBtn')?.addEventListener('click',()=>{
+    tl.snapping = !tl.snapping;
+    document.getElementById('snapBtn').classList.toggle('active', tl.snapping);
+    document.getElementById('snap-guide').style.display='none';
+  });
+
+  // play buttons
+  document.getElementById('playProgram')?.addEventListener('click',togglePlay);
+  document.getElementById('cvs-play')   ?.addEventListener('click',togglePlay);
+
+  // click empty space to set playhead
+  plane?.addEventListener('click',(e)=>{
+    if (e.target.closest('.clip')) return;
+    const r = plane.getBoundingClientRect();
+    const x = e.clientX - r.left + plane.scrollLeft;
+    tl.playhead = Math.max(0, pxToSec(x));
+    updatePlayhead();
+  });
+  ruler?.addEventListener('click',(e)=>{
+    const r = ruler.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    tl.playhead = Math.max(0, pxToSec(x));
+    updatePlayhead();
+  });
+
+  // zoom
+  zoomS?.addEventListener('input', (e)=>{ tl.zoom = parseFloat(e.target.value)||3; renderTimeline(); });
+
+  // keyboard shortcuts
+  document.addEventListener('keydown',(e)=>{
+    if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+    if (e.key===' ') { e.preventDefault(); togglePlay(); }
+    if (e.key==='a'||e.key==='A') setTool('select');
+    if (e.key==='b'||e.key==='B') setTool('blade');
+    if (e.key==='h'||e.key==='H') setTool('hand');
+    if (e.key==='z'||e.key==='Z') setTool('zoom');
+    if (e.key==='ArrowLeft'){ tl.playhead = Math.max(0, tl.playhead - 1/30); updatePlayhead(); }
+    if (e.key==='ArrowRight'){ tl.playhead = Math.min(tl.seqDuration, tl.playhead + 1/30); updatePlayhead(); }
+    if ((e.key==='Delete'||e.key==='Backspace') && tl.selectedId){
+      tl.timeline = tl.timeline.filter(t=>t.id!==tl.selectedId);
+      tl.selectedId = null; renderTimeline();
+    }
+  });
+
+  // fullscreen program
+  document.getElementById('cvs-fullscreen')?.addEventListener('click',()=>{
+    const box = document.getElementById('viewer-screen-cvs');
+    if (!document.fullscreenElement) box?.requestFullscreen?.(); else document.exitFullscreen?.();
+  });
+
+  renderTimeline();
+})();
 
 /* =========================================================
-   PROJECT SAVE / LOAD
+   BIN IMPORT → Donor timeline bridge
+   - creates bin items (draggable) and registers tl.clips
+   - drop to tracks uses addToTimeline(...)
 ========================================================= */
-saveBtn.onclick=()=>{
-  const blob=new Blob([JSON.stringify({clips},null,2)],{type:"application/json"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="project.cutpro";a.click();
-};
-loadBtn.onclick=()=>{
-  const i=document.createElement("input");
-  i.type="file";i.accept=".cutpro,application/json";
-  i.onchange=e=>{
-    const r=new FileReader();
-    r.onload=()=>{clips=JSON.parse(r.result).clips;render();};
-    r.readAsText(e.target.files[0]);
+(function(){
+  const drop = document.getElementById('drop-zone');
+  const bin  = document.getElementById('bin');
+
+  // fix the hyphenated id access (must use getElementById) – this line is critical
+  drop.onclick = ()=>{
+    const input = document.createElement('input');
+    input.type='file'; input.accept='video/*,audio/*'; input.multiple=true;
+    input.onchange = e => {
+      [...e.target.files].forEach(f=>{
+        const url = URL.createObjectURL(f);
+        const id  = crypto.randomUUID();
+
+        // Bin item
+        const el = document.createElement('div');
+        el.className='bin-item'; el.dataset.clipId=id; el.draggable=true;
+        el.innerHTML = `<div class="bin-thumb">${f.type.startsWith('audio')?'🎵':'🎬'}</div>${f.name}`;
+        el.ondragstart = ev => ev.dataTransfer.setData('clipId', id);
+        el.addEventListener('dblclick', ()=> addToTimeline(id,'v1'));
+        bin.appendChild(el);
+
+        // Register clip for timeline/compositor
+        const type = f.type.startsWith('audio') ? 'audio' : 'video';
+        const clip = { id, name:f.name, url, duration:0, type };
+        tl.clips.push(clip);
+
+        // probe duration (async)
+        const probe = document.createElement(type==='audio'?'audio':'video');
+        probe.src = url;
+        probe.addEventListener('loadedmetadata', ()=>{
+          clip.duration = isFinite(probe.duration) ? probe.duration : 3;
+          // Optional: basic beat markers for audio (stub; can be enhanced later)
+          if (type==='audio'){ clip.beatMarkers = []; }
+        }, {once:true});
+      });
+    };
+    input.click();
   };
-  i.click();
-};
+
+  // Track drop targets
+  ['track-v2','track-v1','track-a1'].forEach(id=>{
+    const lane = document.getElementById(id);
+    if(!lane) return;
+    lane.addEventListener('dragover', e=>{ e.preventDefault(); lane.style.background='rgba(74,143,205,0.10)'; });
+    lane.addEventListener('dragleave', ()=>{ lane.style.background=''; });
+    lane.addEventListener('drop', e=>{
+      e.preventDefault(); lane.style.background='';
+      const clipId = e.dataTransfer.getData('clipId');
+      const track  = lane.dataset.track;
+      if (clipId && track) addToTimeline(clipId, track);
+    });
+  });
+})();
 </script>
 
 </body>
 </html>
+``
