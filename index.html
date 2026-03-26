@@ -1,426 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<title>CutPro – Browser NLE</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-<style>
-/* ===================== VARIABLES ===================== */
-:root{
-  --bg:#0f0f10;
-  --panel:#1c1c1e;
-  --panel2:#202022;
-  --line:#111;
-  --text:#d8d8d8;
-  --muted:#888;
-  --accent:#3b82f6;
-  --warn:#fbbf24;
-
-  --browserW:240px;
-  --inspectorW:280px;
-  --timelineH:220px;
-  --trackH:48px;
-  --pxPerSec:100;
-  font-family:system-ui,-apple-system,Segoe UI,sans-serif;
-}
-
-/* ===================== RESET ===================== */
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden}
-
-/* ===================== ROOT GRID ===================== */
-body{
-  display:grid;
-  grid-template-rows:40px 1fr var(--timelineH);
-}
-
-/* ===================== TOP BAR ===================== */
-#top{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:0 8px;
-  background:linear-gradient(#2a2a2c,#202022);
-  border-bottom:1px solid var(--line);
-}
-
-#workspaceBar button,
-#top button{
-  font-size:12px;
-  background:#2b2b2e;
-  border:1px solid #111;
-  color:#ddd;
-  padding:4px 8px;
-  cursor:pointer;
-}
-
-/* ===================== APP GRID ===================== */
-#app{
-  display:grid;
-  grid-template-columns:var(--browserW) 6px 1fr 6px var(--inspectorW);
-  overflow:hidden;
-}
-
-.gutter{
-  cursor:col-resize;
-}
-.gutter:hover{background:rgba(255,255,255,0.08)}
-
-/* ===================== BROWSER ===================== */
-#browser{
-  background:linear-gradient(#202022,#18181a);
-  border-right:1px solid var(--line);
-  padding:8px;
-  overflow:auto;
-}
-
-/* ===================== CENTER ===================== */
-#center{
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-}
-
-/* ===================== VIEWER ===================== */
-#viewer{
-  flex:1;
-  background:#000;
-  position:relative;
-  border-bottom:1px solid var(--line);
-}
-#viewer canvas{width:100%;height:100%;display:block}
-
-/* ===================== WAVEFORM ===================== */
-#waveform{
-  height:60px;
-  background:#121212;
-  border-bottom:1px solid var(--line);
-}
-
-/* ===================== TIMELINE ===================== */
-#timeline{
-  position:relative;
-  background:linear-gradient(#131314,#0f0f10);
-  border-top:1px solid var(--line);
-}
-
-.track{
-  height:var(--trackH);
-  position:relative;
-  border-bottom:1px solid #1a1a1a;
-}
-
-.clip{
-  position:absolute;
-  top:6px;
-  bottom:6px;
-  border-radius:4px;
-  background:linear-gradient(#3576d6,#2559a4);
-  font-size:10px;
-  padding:4px;
-  cursor:pointer;
-}
-
-.clip.audio{
-  background:linear-gradient(#3b7a4b,#235a37);
-}
-
-.selected{outline:2px solid var(--accent)}
-
-/* ===================== GUIDES & MARKERS ===================== */
-#timelineOverlay{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-}
-
-.guide-line{
-  position:absolute;
-  inset:0 auto 0 auto;
-  width:2px;
-  background:rgba(59,130,246,0.7);
-  pointer-events:auto;
-}
-
-.marker{
-  position:absolute;
-  bottom:0;
-  transform:translateX(-50%);
-  font-size:10px;
-  padding:2px 6px;
-  border-radius:3px;
-}
-
-/* ===================== INSPECTOR ===================== */
-#inspector{
-  background:linear-gradient(#202022,#18181a);
-  border-left:1px solid var(--line);
-  display:flex;
-  flex-direction:column;
-  overflow:auto;
-}
-
-.inspector-header{
-  padding:8px;
-  font-size:11px;
-  text-transform:uppercase;
-  color:var(--muted);
-  border-bottom:1px solid var(--line);
-}
-
-.inspector-section{
-  padding:10px;
-  border-bottom:1px solid #222;
-}
-
-.inspector-row{margin-bottom:8px}
-.inspector-row label{display:block;font-size:10px;color:#999;margin-bottom:4px}
-.inspector-row input{width:100%}
-
-/* ===================== MOBILE ===================== */
-@media (max-width:900px){
-  #app{
-    grid-template-columns:200px 6px 1fr 0 0;
-  }
-  #inspector{
-    position:fixed;
-    right:0;
-    top:40px;
-    bottom:0;
-    width:85%;
-    transform:translateX(100%);
-    transition:transform 0.3s ease;
-    z-index:10;
-  }
-  #inspector.open{transform:translateX(0)}
-}
-</style>
-</head>
-
 <body>
 
-<!-- ===================== TOP ===================== -->
-<div id="top">
-  <button id="playBtn">▶</button>
-  <button id="autoCutBtn">Auto‑Cut</button>
-  <button id="exportBtn">Export</button>
-
-  <div id="workspaceBar">
-    <button onclick="applyWorkspace('edit')">Edit</button>
-    <button onclick="applyWorkspace('color')">Color</button>
-    <button onclick="applyWorkspace('audio')">Audio</button>
-  </div>
-
-  <button id="toggleInspector">Inspector</button>
-</div>
-
-<!-- ===================== APP ===================== -->
-<div id="app">
-  <div id="browser">
-    <input type="file" id="importInput" multiple />
-  </div>
-
-  <div class="gutter"></div>
-
-  <div id="center">
-    <div id="viewer">
-      <canvas id="canvas" width="1280" height="720"></canvas>
+  <!-- Unified Top Bar -->
+  <div id="topbar">
+    <div class="top-left">
+      <button>Auto‑Cut</button>
+      <button>Export</button>
     </div>
-    <canvas id="waveform"></canvas>
-  </div>
-
-  <div class="gutter"></div>
-
-  <div id="inspector">
-    <div class="inspector-header">Inspector</div>
-    <div id="inspectorContent" class="inspector-section">
-      No selection
-    </div>
-    <div class="inspector-section">
-      <div class="inspector-header">Shortcuts</div>
-      <div id="shortcutList"></div>
+    <div class="top-center">00:00:00:00</div>
+    <div class="top-right">
+      <button>Clean</button>
+      <button>Render</button>
     </div>
   </div>
-</div>
 
-<!-- ===================== TIMELINE ===================== -->
-<div id="timeline">
-  <div class="track" id="V1"></div>
-  <div class="track" id="A1"></div>
-  <div id="timelineOverlay"></div>
-</div>
+  <!-- Workspace -->
+  <div id="workspace">
 
-<script type="module">
-"use strict";
+    <!-- Browser -->
+    <aside id="browser">
+      <div class="panel-header">Browser</div>
+      <div class="panel-body">
+        <input type="file" multiple />
+        <div class="drop-hint">Drop media here</div>
+      </div>
+    </aside>
 
-/* ======================================================
- STATE
-====================================================== */
-const state = {
-  fps:30,
-  pxPerSec:100,
-  time:0,
-  playing:false,
-  media:new Map(),
-  clips:new Map(),
-  tracks:{V1:[],A1:[]},
-  guides:[],
-  markers:[]
-};
+    <!-- Viewers -->
+    <main id="viewers">
 
-/* ======================================================
- UTILS
-====================================================== */
-const uid = () => crypto.randomUUID();
-const timeToPx = t => t * state.pxPerSec;
-const pxToTime = px => px / state.pxPerSec;
+      <!-- Source Viewer -->
+      <section class="viewer">
+        <div class="viewer-header">Viewer</div>
+        <div class="viewer-surface">
+          <canvas id="sourceCanvas"></canvas>
+        </div>
+        <div class="viewer-transport">▶ ⏸ ⏹</div>
+      </section>
 
-/* ======================================================
- WORKSPACES
-====================================================== */
-const workspaces = {
-  edit:{
-    layout:"240px 6px 1fr 6px 280px",
-    timelineH:220
-  },
-  color:{
-    layout:"240px 6px 1fr 6px 360px",
-    timelineH:160
-  },
-  audio:{
-    layout:"200px 6px 1fr 6px 320px",
-    timelineH:280
-  }
-};
+      <!-- Program Viewer -->
+      <section class="viewer">
+        <div class="viewer-header">Canvas</div>
+        <div class="viewer-surface">
+          <canvas id="programCanvas"></canvas>
+        </div>
+        <div class="viewer-transport">▶ ⏸ ⏹</div>
+      </section>
 
-window.applyWorkspace = id => {
-  const ws = workspaces[id];
-  app.style.gridTemplateColumns = ws.layout;
-  document.documentElement.style.setProperty("--timelineH", ws.timelineH+"px");
-  localStorage.setItem("cutpro-workspace",id);
-};
+    </main>
 
-applyWorkspace(localStorage.getItem("cutpro-workspace")||"edit");
+    <!-- Inspector -->
+    <aside id="inspector">
+      <div class="panel-header">Inspector</div>
+      <div class="panel-body">
+        <!-- Inspector content injected by JS -->
+      </div>
+    </aside>
 
-/* ======================================================
- GUIDES & MARKERS
-====================================================== */
-function renderGuidesMarkers(){
-  timelineOverlay.innerHTML="";
-  state.guides.forEach(g=>{
-    const el=document.createElement("div");
-    el.className="guide-line";
-    el.style.left=timeToPx(g.time)+"px";
-    el.onmousedown=e=>{
-      document.onmousemove=ev=>{
-        g.time=pxToTime(ev.offsetX);
-        renderGuidesMarkers();
-      };
-      document.onmouseup=()=>document.onmousemove=null;
-    };
-    timelineOverlay.appendChild(el);
-  });
+  </div>
 
-  state.markers.forEach(m=>{
-    const el=document.createElement("div");
-    el.className="marker";
-    el.style.left=timeToPx(m.time)+"px";
-    el.style.background=m.color;
-    el.textContent=m.label;
-    timelineOverlay.appendChild(el);
-  });
-}
+  <!-- Timeline -->
+  <div id="timeline">
 
-/* ======================================================
- COMMANDS + SHORTCUTS
-====================================================== */
-const commands = {
-  playPause:{
-    label:"Play / Pause",
-    default:"Space",
-    run:()=>togglePlay()
-  },
-  addGuide:{
-    label:"Add Guide",
-    default:"G",
-    run:()=>{state.guides.push({id:uid(),time:state.time});renderGuidesMarkers();}
-  },
-  addMarker:{
-    label:"Add Marker",
-    default:"M",
-    run:()=>{state.markers.push({id:uid(),time:state.time,label:"Marker",color:"#fbbf24"});renderGuidesMarkers();}
-  }
-};
+    <div id="timeline-header">
+      <span>Snapping</span>
+      <span>Linked</span>
+    </div>
 
-let keymap={};
+    <div id="timeline-body">
+      <div id="track-headers">
+        <div>V2</div>
+        <div>V1</div>
+        <div>A1</div>
+      </div>
 
-function loadKeymap(){
-  keymap=JSON.parse(localStorage.getItem("cutpro-keymap")||"{}");
-  for(const id in commands)
-    if(!keymap[id]) keymap[id]=commands[id].default;
-}
-loadKeymap();
+      <div id="tracks">
+        <!-- Clips / playhead rendered here -->
+      </div>
+    </div>
 
-document.addEventListener("keydown",e=>{
-  if(["INPUT","TEXTAREA"].includes(e.target.tagName))return;
-  const combo = formatKey(e);
-  for(const id in keymap){
-    if(keymap[id]===combo){
-      e.preventDefault();
-      commands[id].run();
-      break;
-    }
-  }
-});
+  </div>
 
-function formatKey(e){
-  return [
-    e.ctrlKey?"Ctrl":"",
-    e.shiftKey?"Shift":"",
-    e.altKey?"Alt":"",
-    e.code.replace("Key","")
-  ].filter(Boolean).join("+");
-}
-
-function renderShortcutEditor(){
-  shortcutList.innerHTML="";
-  for(const id in commands){
-    const row=document.createElement("div");
-    const btn=document.createElement("button");
-    btn.textContent=keymap[id];
-    btn.onclick=()=>{
-      btn.textContent="Press...";
-      const h=ev=>{
-        ev.preventDefault();
-        keymap[id]=formatKey(ev);
-        localStorage.setItem("cutpro-keymap",JSON.stringify(keymap));
-        renderShortcutEditor();
-        document.removeEventListener("keydown",h);
-      };
-      document.addEventListener("keydown",h);
-    };
-    row.textContent=commands[id].label+": ";
-    row.appendChild(btn);
-    shortcutList.appendChild(row);
-  }
-}
-renderShortcutEditor();
-
-/* ======================================================
- BASIC PLAYBACK (STUB)
-====================================================== */
-function togglePlay(){
-  state.playing=!state.playing;
-  playBtn.textContent=state.playing?"⏸":"▶";
-}
-
-/* ======================================================
- MOBILE INSPECTOR
-====================================================== */
-toggleInspector.onclick=()=>inspector.classList.toggle("open");
-
-</script>
 </body>
-</html>
 ``
