@@ -2,63 +2,261 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro – Browser NLE Core</title>
+<title>CutPro – Browser NLE</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
+/* ===================== VARIABLES ===================== */
 :root{
-  --bg:#0f0f10;--panel:#1c1c1e;--line:#111;--text:#d8d8d8;--accent:#3b82f6;
-  --pxPerSec:100;--trackH:48px;
+  --bg:#0f0f10;
+  --panel:#1c1c1e;
+  --panel2:#202022;
+  --line:#111;
+  --text:#d8d8d8;
+  --muted:#888;
+  --accent:#3b82f6;
+  --warn:#fbbf24;
+
+  --browserW:240px;
+  --inspectorW:280px;
+  --timelineH:220px;
+  --trackH:48px;
+  --pxPerSec:100;
   font-family:system-ui,-apple-system,Segoe UI,sans-serif;
 }
+
+/* ===================== RESET ===================== */
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden}
-#top{height:40px;display:flex;align-items:center;gap:8px;padding:0 8px;background:#222}
-#app{display:flex;height:calc(100% - 40px)}
-#browser{width:220px;border-right:1px solid var(--line);padding:8px}
-#center{flex:1;display:flex;flex-direction:column}
-#viewer{flex:1;background:#000;position:relative}
-#viewer canvas{width:100%;height:100%}
-#timeline{height:180px;border-top:1px solid var(--line);display:flex}
-.track{flex:1;position:relative;border-bottom:1px solid #222}
-.clip{position:absolute;top:6px;bottom:6px;border-radius:4px;
-  background:linear-gradient(#3576d6,#2559a4);font-size:10px;padding:4px;cursor:pointer}
-.clip.audio{background:linear-gradient(#3b7a4b,#235a37)}
+
+/* ===================== ROOT GRID ===================== */
+body{
+  display:grid;
+  grid-template-rows:40px 1fr var(--timelineH);
+}
+
+/* ===================== TOP BAR ===================== */
+#top{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 8px;
+  background:linear-gradient(#2a2a2c,#202022);
+  border-bottom:1px solid var(--line);
+}
+
+#workspaceBar button,
+#top button{
+  font-size:12px;
+  background:#2b2b2e;
+  border:1px solid #111;
+  color:#ddd;
+  padding:4px 8px;
+  cursor:pointer;
+}
+
+/* ===================== APP GRID ===================== */
+#app{
+  display:grid;
+  grid-template-columns:var(--browserW) 6px 1fr 6px var(--inspectorW);
+  overflow:hidden;
+}
+
+.gutter{
+  cursor:col-resize;
+}
+.gutter:hover{background:rgba(255,255,255,0.08)}
+
+/* ===================== BROWSER ===================== */
+#browser{
+  background:linear-gradient(#202022,#18181a);
+  border-right:1px solid var(--line);
+  padding:8px;
+  overflow:auto;
+}
+
+/* ===================== CENTER ===================== */
+#center{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* ===================== VIEWER ===================== */
+#viewer{
+  flex:1;
+  background:#000;
+  position:relative;
+  border-bottom:1px solid var(--line);
+}
+#viewer canvas{width:100%;height:100%;display:block}
+
+/* ===================== WAVEFORM ===================== */
+#waveform{
+  height:60px;
+  background:#121212;
+  border-bottom:1px solid var(--line);
+}
+
+/* ===================== TIMELINE ===================== */
+#timeline{
+  position:relative;
+  background:linear-gradient(#131314,#0f0f10);
+  border-top:1px solid var(--line);
+}
+
+.track{
+  height:var(--trackH);
+  position:relative;
+  border-bottom:1px solid #1a1a1a;
+}
+
+.clip{
+  position:absolute;
+  top:6px;
+  bottom:6px;
+  border-radius:4px;
+  background:linear-gradient(#3576d6,#2559a4);
+  font-size:10px;
+  padding:4px;
+  cursor:pointer;
+}
+
+.clip.audio{
+  background:linear-gradient(#3b7a4b,#235a37);
+}
+
 .selected{outline:2px solid var(--accent)}
-#waveform{height:60px;background:#121212}
+
+/* ===================== GUIDES & MARKERS ===================== */
+#timelineOverlay{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+
+.guide-line{
+  position:absolute;
+  inset:0 auto 0 auto;
+  width:2px;
+  background:rgba(59,130,246,0.7);
+  pointer-events:auto;
+}
+
+.marker{
+  position:absolute;
+  bottom:0;
+  transform:translateX(-50%);
+  font-size:10px;
+  padding:2px 6px;
+  border-radius:3px;
+}
+
+/* ===================== INSPECTOR ===================== */
+#inspector{
+  background:linear-gradient(#202022,#18181a);
+  border-left:1px solid var(--line);
+  display:flex;
+  flex-direction:column;
+  overflow:auto;
+}
+
+.inspector-header{
+  padding:8px;
+  font-size:11px;
+  text-transform:uppercase;
+  color:var(--muted);
+  border-bottom:1px solid var(--line);
+}
+
+.inspector-section{
+  padding:10px;
+  border-bottom:1px solid #222;
+}
+
+.inspector-row{margin-bottom:8px}
+.inspector-row label{display:block;font-size:10px;color:#999;margin-bottom:4px}
+.inspector-row input{width:100%}
+
+/* ===================== MOBILE ===================== */
+@media (max-width:900px){
+  #app{
+    grid-template-columns:200px 6px 1fr 0 0;
+  }
+  #inspector{
+    position:fixed;
+    right:0;
+    top:40px;
+    bottom:0;
+    width:85%;
+    transform:translateX(100%);
+    transition:transform 0.3s ease;
+    z-index:10;
+  }
+  #inspector.open{transform:translateX(0)}
+}
 </style>
 </head>
 
 <body>
+
+<!-- ===================== TOP ===================== -->
 <div id="top">
-  <button id="play">▶</button>
-  <button id="autoCut">Auto‑Cut</button>
-  <button id="export">Export</button>
+  <button id="playBtn">▶</button>
+  <button id="autoCutBtn">Auto‑Cut</button>
+  <button id="exportBtn">Export</button>
+
+  <div id="workspaceBar">
+    <button onclick="applyWorkspace('edit')">Edit</button>
+    <button onclick="applyWorkspace('color')">Color</button>
+    <button onclick="applyWorkspace('audio')">Audio</button>
+  </div>
+
+  <button id="toggleInspector">Inspector</button>
 </div>
 
+<!-- ===================== APP ===================== -->
 <div id="app">
   <div id="browser">
-    <input type="file" id="import" multiple />
+    <input type="file" id="importInput" multiple />
   </div>
+
+  <div class="gutter"></div>
 
   <div id="center">
     <div id="viewer">
       <canvas id="canvas" width="1280" height="720"></canvas>
     </div>
     <canvas id="waveform"></canvas>
-    <div id="timeline">
-      <div class="track" id="V1"></div>
-      <div class="track" id="A1"></div>
+  </div>
+
+  <div class="gutter"></div>
+
+  <div id="inspector">
+    <div class="inspector-header">Inspector</div>
+    <div id="inspectorContent" class="inspector-section">
+      No selection
+    </div>
+    <div class="inspector-section">
+      <div class="inspector-header">Shortcuts</div>
+      <div id="shortcutList"></div>
     </div>
   </div>
+</div>
+
+<!-- ===================== TIMELINE ===================== -->
+<div id="timeline">
+  <div class="track" id="V1"></div>
+  <div class="track" id="A1"></div>
+  <div id="timelineOverlay"></div>
 </div>
 
 <script type="module">
 "use strict";
 
-/* =========================================================
+/* ======================================================
  STATE
-========================================================= */
+====================================================== */
 const state = {
   fps:30,
   pxPerSec:100,
@@ -67,195 +265,162 @@ const state = {
   media:new Map(),
   clips:new Map(),
   tracks:{V1:[],A1:[]},
-  undo:[],
-  redo:[]
+  guides:[],
+  markers:[]
 };
 
-/* =========================================================
- UTIL
-========================================================= */
+/* ======================================================
+ UTILS
+====================================================== */
 const uid = () => crypto.randomUUID();
 const timeToPx = t => t * state.pxPerSec;
+const pxToTime = px => px / state.pxPerSec;
 
-/* =========================================================
- MEDIA + AUDIO ANALYSIS
-========================================================= */
-const audioCtx = new AudioContext();
-
-async function analyzeAudio(file){
-  const ab = await file.arrayBuffer();
-  const buffer = await audioCtx.decodeAudioData(ab);
-  const ch = buffer.getChannelData(0);
-  const step = 1024;
-  const rms = [];
-  for(let i=0;i<ch.length;i+=step){
-    let s=0;
-    for(let j=0;j<step && i+j<ch.length;j++) s+=ch[i+j]**2;
-    rms.push(Math.sqrt(s/step));
+/* ======================================================
+ WORKSPACES
+====================================================== */
+const workspaces = {
+  edit:{
+    layout:"240px 6px 1fr 6px 280px",
+    timelineH:220
+  },
+  color:{
+    layout:"240px 6px 1fr 6px 360px",
+    timelineH:160
+  },
+  audio:{
+    layout:"200px 6px 1fr 6px 320px",
+    timelineH:280
   }
-  return {buffer,rms};
-}
-
-/* =========================================================
- IMPORT
-========================================================= */
-import.onchange = async e => {
-  for(const f of e.target.files){
-    const mediaId = uid();
-    const type = f.type.startsWith("audio")?"audio":"video";
-    const media = {id:mediaId,file:f,type,url:URL.createObjectURL(f)};
-    if(type==="audio"){
-      Object.assign(media, await analyzeAudio(f));
-      drawWaveform(media.rms);
-    }
-    state.media.set(mediaId, media);
-
-    const clipId = uid();
-    const clip = {id:clipId,mediaId,start:0,dur:3,in:0,track:type==="audio"?"A1":"V1"};
-    state.clips.set(clipId,clip);
-    state.tracks[clip.track].push(clipId);
-  }
-  renderTimeline();
 };
 
-/* =========================================================
- WAVEFORM
-========================================================= */
-function drawWaveform(rms){
-  const c = waveform;
-  c.width = c.clientWidth; c.height = c.clientHeight;
-  const g = c.getContext("2d");
-  g.clearRect(0,0,c.width,c.height);
-  g.beginPath();
-  rms.forEach((v,i)=>{
-    g.lineTo(i/rms.length*c.width, c.height - v*c.height);
-  });
-  g.strokeStyle="#4ade80"; g.stroke();
-}
-
-/* =========================================================
- PLAYBACK (AUDIO CLOCK MASTER)
-========================================================= */
-let startTime=0, sources=[];
-
-play.onclick=() => state.playing?pause():playback();
-
-function playback(){
-  state.playing=true;
-  startTime = audioCtx.currentTime - state.time;
-  scheduleAudio();
-  requestAnimationFrame(tick);
-}
-
-function pause(){
-  state.playing=false;
-  sources.forEach(s=>s.stop());
-  sources=[];
-}
-
-function tick(){
-  if(!state.playing) return;
-  state.time = audioCtx.currentTime-startTime;
-  renderFrame();
-  requestAnimationFrame(tick);
-}
-
-function scheduleAudio(){
-  sources=[];
-  for(const id of state.tracks.A1){
-    const clip = state.clips.get(id);
-    const m = state.media.get(clip.mediaId);
-    if(!m.buffer) continue;
-    const src = audioCtx.createBufferSource();
-    src.buffer = m.buffer;
-    src.connect(audioCtx.destination);
-    src.start(startTime+clip.start, clip.in, clip.dur);
-    sources.push(src);
-  }
-}
-
-/* =========================================================
- CANVAS COMPOSITOR + TEXT
-========================================================= */
-function renderFrame(){
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  for(const id of state.tracks.V1){
-    const clip = state.clips.get(id);
-    const m = state.media.get(clip.mediaId);
-    if(!m.video){
-      m.video=document.createElement("video");
-      m.video.src=m.url; m.video.muted=true;
-    }
-    m.video.currentTime = state.time-clip.start+clip.in;
-    ctx.drawImage(m.video,0,0,canvas.width,canvas.height);
-  }
-  ctx.fillStyle="white";
-  ctx.font="48px sans-serif";
-  ctx.fillText("CutPro",40,60);
-}
-
-/* =========================================================
- AUTO‑EDIT (DIALOGUE JUMP CUT)
-========================================================= */
-autoCut.onclick = () => {
-  for(const clipId of state.tracks.A1){
-    const clip = state.clips.get(clipId);
-    const m = state.media.get(clip.mediaId);
-    if(!m.rms) continue;
-    const silence=[];
-    m.rms.forEach((v,i)=>{ if(v<0.01) silence.push(i/30); });
-    if(silence.length>10){
-      clip.dur -= 0.5;
-    }
-  }
-  renderTimeline();
+window.applyWorkspace = id => {
+  const ws = workspaces[id];
+  app.style.gridTemplateColumns = ws.layout;
+  document.documentElement.style.setProperty("--timelineH", ws.timelineH+"px");
+  localStorage.setItem("cutpro-workspace",id);
 };
 
-/* =========================================================
- ACTION UNDO
-========================================================= */
-function pushUndo(action){ state.undo.push(action); state.redo=[]; }
+applyWorkspace(localStorage.getItem("cutpro-workspace")||"edit");
 
-/* =========================================================
- TIMELINE RENDER
-========================================================= */
-function renderTimeline(){
-  V1.innerHTML=""; A1.innerHTML="";
-  for(const clip of state.clips.values()){
+/* ======================================================
+ GUIDES & MARKERS
+====================================================== */
+function renderGuidesMarkers(){
+  timelineOverlay.innerHTML="";
+  state.guides.forEach(g=>{
     const el=document.createElement("div");
-    el.className="clip "+(clip.track==="A1"?"audio":"");
-    el.style.left=timeToPx(clip.start)+"px";
-    el.style.width=timeToPx(clip.dur)+"px";
-    el.textContent=clip.track;
-    document.getElementById(clip.track).appendChild(el);
-  }
+    el.className="guide-line";
+    el.style.left=timeToPx(g.time)+"px";
+    el.onmousedown=e=>{
+      document.onmousemove=ev=>{
+        g.time=pxToTime(ev.offsetX);
+        renderGuidesMarkers();
+      };
+      document.onmouseup=()=>document.onmousemove=null;
+    };
+    timelineOverlay.appendChild(el);
+  });
+
+  state.markers.forEach(m=>{
+    const el=document.createElement("div");
+    el.className="marker";
+    el.style.left=timeToPx(m.time)+"px";
+    el.style.background=m.color;
+    el.textContent=m.label;
+    timelineOverlay.appendChild(el);
+  });
 }
 
-/* =========================================================
- WEB CODECS EXPORT (IF SUPPORTED)
-========================================================= */
-export.onclick = async () => {
-  if(!("VideoEncoder" in window)){
-    alert("WebCodecs not supported in this browser");
-    return;
+/* ======================================================
+ COMMANDS + SHORTCUTS
+====================================================== */
+const commands = {
+  playPause:{
+    label:"Play / Pause",
+    default:"Space",
+    run:()=>togglePlay()
+  },
+  addGuide:{
+    label:"Add Guide",
+    default:"G",
+    run:()=>{state.guides.push({id:uid(),time:state.time});renderGuidesMarkers();}
+  },
+  addMarker:{
+    label:"Add Marker",
+    default:"M",
+    run:()=>{state.markers.push({id:uid(),time:state.time,label:"Marker",color:"#fbbf24"});renderGuidesMarkers();}
   }
-  const encoder = new VideoEncoder({
-    output:chunk=>console.log("frame",chunk),
-    error:console.error
-  });
-  encoder.configure({codec:"avc1.42E01E",width:1280,height:720,framerate:30});
-  for(let t=0;t<3;t+=1/30){
-    renderFrame();
-    const vf = new VideoFrame(canvas,{timestamp:t*1e6});
-    encoder.encode(vf);
-    vf.close();
-  }
-  await encoder.flush();
-  encoder.close();
-  alert("Export complete (encoder test)");
 };
+
+let keymap={};
+
+function loadKeymap(){
+  keymap=JSON.parse(localStorage.getItem("cutpro-keymap")||"{}");
+  for(const id in commands)
+    if(!keymap[id]) keymap[id]=commands[id].default;
+}
+loadKeymap();
+
+document.addEventListener("keydown",e=>{
+  if(["INPUT","TEXTAREA"].includes(e.target.tagName))return;
+  const combo = formatKey(e);
+  for(const id in keymap){
+    if(keymap[id]===combo){
+      e.preventDefault();
+      commands[id].run();
+      break;
+    }
+  }
+});
+
+function formatKey(e){
+  return [
+    e.ctrlKey?"Ctrl":"",
+    e.shiftKey?"Shift":"",
+    e.altKey?"Alt":"",
+    e.code.replace("Key","")
+  ].filter(Boolean).join("+");
+}
+
+function renderShortcutEditor(){
+  shortcutList.innerHTML="";
+  for(const id in commands){
+    const row=document.createElement("div");
+    const btn=document.createElement("button");
+    btn.textContent=keymap[id];
+    btn.onclick=()=>{
+      btn.textContent="Press...";
+      const h=ev=>{
+        ev.preventDefault();
+        keymap[id]=formatKey(ev);
+        localStorage.setItem("cutpro-keymap",JSON.stringify(keymap));
+        renderShortcutEditor();
+        document.removeEventListener("keydown",h);
+      };
+      document.addEventListener("keydown",h);
+    };
+    row.textContent=commands[id].label+": ";
+    row.appendChild(btn);
+    shortcutList.appendChild(row);
+  }
+}
+renderShortcutEditor();
+
+/* ======================================================
+ BASIC PLAYBACK (STUB)
+====================================================== */
+function togglePlay(){
+  state.playing=!state.playing;
+  playBtn.textContent=state.playing?"⏸":"▶";
+}
+
+/* ======================================================
+ MOBILE INSPECTOR
+====================================================== */
+toggleInspector.onclick=()=>inspector.classList.toggle("open");
 
 </script>
 </body>
 </html>
+``
