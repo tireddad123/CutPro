@@ -4,210 +4,397 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+<title>Web NLE Editor</title>
+
 <style>
-/* ===================== VARIABLES ===================== */
+/* =========================================================
+   VARIABLES (variables.css)
+   ========================================================= */
 :root{
-  --bg:#0f0f10; --panel:#1c1c1e; --panel2:#202022; --line:#111; --text:#d8d8d8;
-  --muted:#8b8b8b; --accent:#3b82f6; --warn:#fbbf24;
-  --browserW:240px; --inspectorW:300px; --timelineH:260px;
-  --trackH:48px; --pxPerSec:100px; --rulerH:22px;
+  --bg:#0f0f10;
+  --panel:#1c1c1e;
+  --panel2:#202022;
+  --line:#111;
+  --text:#d8d8d8;
+  --muted:#8b8b8b;
+  --accent:#3b82f6;
+
+  --browserW:240px;
+  --inspectorW:300px;
+  --timelineH:260px;
+
+  --trackH:48px;
+  --pxPerSec:100px;
+  --rulerH:22px;
+
   font-family:system-ui,-apple-system,Segoe UI,sans-serif;
 }
-/* ===================== RESET ===================== */
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden}
 
-/* ===================== ROOT GRID ===================== */
-body{display:grid;grid-template-rows:42px 1fr var(--timelineH);}
+/* =========================================================
+   RESET (reset.css)
+   ========================================================= */
+*{ box-sizing:border-box; }
 
-/* ===================== TOP BAR ===================== */
+html, body{
+  margin:0;
+  height:100%;
+  background:var(--bg);
+  color:var(--text);
+  overflow:hidden;
+
+  /* ⚠️ Critical for momentum scroll suppression */
+  overscroll-behavior:none;
+}
+
+/* =========================================================
+   STRUCTURAL LAYOUT (layout.css – DO NOT STYLE)
+   ========================================================= */
+body{
+  display:grid;
+  grid-template-rows:42px 1fr var(--timelineH);
+}
+
+/* ⚠️ CRITICAL FLEX / GRID SAFETY */
+#app,#viewers,#center,#browser,#inspector,#timeline .body{
+  min-height:0;
+  min-width:0;
+}
+
+#app{
+  display:grid;
+  grid-template-columns:var(--browserW) 1fr var(--inspectorW);
+}
+
+#center{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+#viewers{
+  flex:1;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+  padding:6px;
+}
+
+/* ⚠️ minmax required to prevent viewer stealing height */
+.viewer-panel{
+  display:grid;
+  grid-template-rows:24px minmax(0,1fr) 56px;
+  min-height:0;
+  overflow:hidden;
+}
+
+.viewer-screen{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+  aspect-ratio:16 / 9;
+  min-height:0;
+  overflow:hidden;
+}
+
+#timeline{
+  display:grid;
+  grid-template-rows:30px 1fr;
+}
+
+#timeline .body{
+  display:grid;
+  grid-template-columns:180px 1fr;
+  overflow:hidden;
+}
+
+.tracks{
+  position:relative;
+  overflow:auto;
+  min-height:0;
+  padding-top:var(--rulerH);
+}
+
+/* =========================================================
+   COMPONENTS (components.css)
+   ========================================================= */
+/* Top Bar */
 #topbar{
-  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
-  gap:8px;padding:0 10px;
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:8px;
+  padding:0 10px;
   background:linear-gradient(#2a2a2c,#202022);
   border-bottom:1px solid var(--line);
 }
-#topbar .left,#topbar .right{display:flex;gap:6px;align-items:center}
-#topbar .center{justify-self:center;font-variant-numeric:tabular-nums;color:#00dd00;font-weight:600}
-.tool-btn{height:28px;min-width:28px;padding:0 8px;background:#2b2b2e;border:1px solid #000;color:#ddd;border-radius:4px;cursor:pointer}
-.tool-btn.active{background:#1e3a5a;border-color:#0b274e}
 
-/* ===================== MAIN GRID ===================== */
-#app{display:grid;grid-template-columns:var(--browserW) 1fr var(--inspectorW);overflow:hidden}
+#topbar .left,#topbar .right{
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
 
-/* ===================== BROWSER ===================== */
+#topbar .center{
+  justify-self:center;
+  font-family:monospace;
+  color:#00dd00;
+  font-weight:600;
+}
+
+.tool-btn{
+  height:28px;
+  min-width:28px;
+  padding:0 8px;
+  background:#2b2b2e;
+  border:1px solid #000;
+  color:#ddd;
+  border-radius:4px;
+  cursor:pointer;
+}
+
+.tool-btn.active{
+  background:#1e3a5a;
+  border-color:#0b274e;
+}
+
+/* Browser */
 #browser{
+  display:flex;
+  flex-direction:column;
+  border-right:1px solid var(--line);
+  background:linear-gradient(#202022,#18181a);
+}
+
+.browser-header{
+  padding:8px 10px;
+  font-size:11px;
+  text-transform:uppercase;
+  color:var(--muted);
+  border-bottom:1px solid var(--line);
+}
+
+#bin{
+  flex:1;
+  overflow:auto;
+  padding:0 8px;
+}
+
+#drop-zone{
+  margin:10px;
+  padding:14px;
+  border:2px dashed #3b6fa6;
+  border-radius:6px;
+  text-align:center;
+  color:#8fb3d9;
+}
+
+/* Viewer visuals */
+.viewer-panel{
+  background:var(--panel);
+  border:1px solid #111;
+}
+
+.panel-header{
+  padding:0 8px;
+  font-size:11px;
+  color:var(--muted);
+  display:flex;
+  align-items:center;
+  border-bottom:1px solid #0c0c0d;
+}
+
+.viewer-screen video,
+.viewer-screen canvas{
+  max-width:100%;
+  max-height:100%;
+  display:block;
+}
+
+/* Timeline */
+#timeline{
+  background:linear-gradient(#131314,#0f0f10);
+  border-top:1px solid var(--line);
+}
+
+#timeline .controls{
+  display:flex;
+  align-items:center;
+  padding:0 8px;
+  gap:6px;
+  font-size:11px;
+  border-bottom:1px solid #141414;
+}
+
+#track-headers{
   background:linear-gradient(#202022,#18181a);
   border-right:1px solid var(--line);
-  display:flex;flex-direction:column;overflow:hidden;
 }
-.browser-header{padding:8px 10px;font-size:11px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--line)}
-#bin{flex:1;overflow:auto;padding:0 8px}
-#drop-zone{
-  position:sticky;bottom:0;margin:10px;padding:14px;
-  border:2px dashed #3b6fa6;border-radius:6px;
-  color:#8fb3d9;text-align:center;cursor:pointer;
+
+.track-header{
+  height:var(--trackH);
+  display:flex;
+  align-items:center;
+  padding:0 8px;
+  color:var(--muted);
+  font-size:11px;
+  border-bottom:1px solid var(--line);
 }
-.bin-item{padding:6px;border-bottom:1px solid #252525;cursor:grab;display:flex;gap:8px;align-items:center}
-.bin-thumb{width:42px;height:28px;background:#000;border:1px solid #333;font-size:9px;color:#bbb;display:flex;align-items:center;justify-content:center}
 
-/* ===================== VIEWERS ===================== */
-#center{display:flex;flex-direction:column;overflow:hidden}
-#viewers{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px;background:#0b0b0c}
-.viewer-panel{display:grid;grid-template-rows:24px 1fr 56px;background:var(--panel);border:1px solid #111;overflow:hidden}
-.panel-header{padding:0 8px;font-size:11px;color:#8a8a8a;display:flex;align-items:center;border-bottom:1px solid #0c0c0d}
-.viewer-screen{background:#000;display:flex;align-items:center;justify-content:center;position:relative;aspect-ratio:16/9}
-.viewer-screen video, canvas{max-width:100%;max-height:100%}
+.tracks{
+  background:
+    linear-gradient(#141414 1px, transparent 1px)
+      top left/100% var(--trackH),
+    linear-gradient(to right, #2a2a2e 1px, transparent 1px)
+      top left/var(--pxPerSec) 100%;
+}
 
-/* ===================== TIMELINE ===================== */
-#timeline{display:grid;grid-template-rows:30px 1fr;border-top:1px solid var(--line)}
-#timeline .controls{display:flex;align-items:center;gap:10px;padding:0 8px;font-size:11px}
-#timeline .body{display:grid;grid-template-columns:180px 1fr;overflow:hidden}
-#track-headers{border-right:1px solid var(--line);overflow:auto}
-.track-header{height:var(--trackH);display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--line)}
-.tracks{position:relative;overflow:auto;padding-top:var(--rulerH)}
-.timeline-track{height:var(--trackH);border-bottom:1px solid #191919;position:relative}
-.clip{position:absolute;top:3px;bottom:3px;border-radius:4px;padding:0 6px;font-size:10px;display:flex;align-items:center;cursor:grab}
-.clip.selected{outline:2px solid var(--accent)}
-.clip.audio-clip{background:#3b7a4b}
-.clip.video-clip{background:#3576d6}
-.clip-handle{position:absolute;top:0;bottom:0;width:6px;cursor:ew-resize}
-.clip-handle.left{left:0}
-.clip-handle.right{right:0}
+.timeline-ruler{
+  position:sticky;
+  top:0;
+  height:var(--rulerH);
+  background:#1e1e1e;
+  border-bottom:1px solid #0f0f10;
+  z-index:3;
+}
 
+.timeline-track{
+  height:var(--trackH);
+  border-bottom:1px solid #191919;
+}
+
+/* =========================================================
+   UTILITIES + DEBUG (utilities.css)
+   ========================================================= */
+body.debug-layout *{
+  outline:1px dashed rgba(255,0,0,0.35);
+}
+
+body.debug-layout .viewer-panel{
+  outline:2px solid cyan;
+}
+
+body.debug-layout .tracks{
+  outline:2px solid yellow;
+}
+
+body.layout-error{
+  outline:4px solid red;
+}
 </style>
 </head>
 
 <body>
 
-<!-- ===================== TOP BAR ===================== -->
+<!-- =========================================================
+     TOP BAR
+     ========================================================= -->
 <div id="topbar">
   <div class="left">
-    <button class="tool-btn active" id="toolSelect">⬆</button>
-    <button class="tool-btn" id="toolBlade">✂</button>
-    <button class="tool-btn" id="toolHand">✋</button>
-    <button class="tool-btn" id="toolZoom">🔍</button>
-    <button class="tool-btn active" id="snapBtn">🧲</button>
+    <button class="tool-btn" id="btn-debug" title="Toggle Layout Debug">🧱</button>
   </div>
   <div class="center">00:00:00:00</div>
-  <div class="right">
-    <button class="tool-btn" id="btn-insert">Insert</button>
-    <button class="tool-btn" id="btn-overwrite">Overwrite</button>
-  </div>
+  <div class="right"></div>
 </div>
 
-<!-- ===================== WORKSPACE ===================== -->
+<!-- =========================================================
+     WORKSPACE
+     ========================================================= -->
 <div id="app">
 
-<!-- Browser -->
-<aside id="browser">
-  <div class="browser-header">Browser</div>
-  <div id="bin"></div>
-  <div id="drop-zone">Drop video here</div>
-</aside>
+  <aside id="browser">
+    <div class="browser-header">Browser</div>
+    <div id="bin"></div>
+    <div id="drop-zone">Drop video here</div>
+  </aside>
 
-<!-- Center -->
-<main id="center">
-  <div id="viewers">
-    <section class="viewer-panel">
-      <div class="panel-header">Viewer · Source</div>
-      <div class="viewer-screen">
-        <video id="sourceVideo" controls></video>
-      </div>
-    </section>
-    <section class="viewer-panel">
-      <div class="panel-header">Canvas · Program</div>
-      <div class="viewer-screen">
-        <canvas id="programCanvas"></canvas>
-      </div>
-    </section>
-  </div>
-</main>
+  <main id="center">
+    <div id="viewers">
+      <section class="viewer-panel">
+        <div class="panel-header">Viewer · Source</div>
+        <div class="viewer-screen">
+          <video></video>
+        </div>
+        <div></div>
+      </section>
 
-<!-- Inspector -->
-<aside id="inspector">
-  <div class="browser-header">Inspector</div>
-  <div id="inspectorMain">No selection</div>
-</aside>
+      <section class="viewer-panel">
+        <div class="panel-header">Canvas · Program</div>
+        <div class="viewer-screen" id="program-screen">
+          <canvas id="programCanvas"></canvas>
+        </div>
+        <div></div>
+      </section>
+    </div>
+  </main>
+
+  <aside id="inspector">
+    <div class="browser-header">Inspector</div>
+    <div>No selection</div>
+  </aside>
 
 </div>
 
-<!-- ===================== TIMELINE ===================== -->
+<!-- =========================================================
+     TIMELINE
+     ========================================================= -->
 <div id="timeline">
-  <div class="controls">
-    <span>Timeline</span>
-  </div>
+  <div class="controls">Timeline</div>
   <div class="body">
     <div id="track-headers">
       <div class="track-header">V1</div>
       <div class="track-header">A1</div>
     </div>
-    <div class="tracks" id="timeline-tracks">
-      <div class="timeline-track" id="track-v1" data-track="v1"></div>
-      <div class="timeline-track" id="track-a1" data-track="a1"></div>
+    <div class="tracks">
+      <div class="timeline-ruler"></div>
+      <div class="timeline-track"></div>
+      <div class="timeline-track"></div>
     </div>
   </div>
 </div>
 
 <script>
-/* ===================== STATE ===================== */
-const tl = {
-  clips: [],
-  timeline: [],
-  playhead: 0,
-  zoom: 3,
-  seqDuration: 60,
-  playing: false,
-  snapping: true,
-  selectedId: null
-};
-
-/* ===================== HELPERS ===================== */
-function secToPx(s){ return s * tl.zoom * 10 }
-function pxToSec(px){ return px / (tl.zoom * 10) }
-function formatTC(s){
-  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60),f=Math.floor((s%1)*30);
-  return [h,m,sec,f].map(v=>String(v).padStart(2,'0')).join(':');
+/* =========================================================
+   HiDPI NORMALIZATION
+   ========================================================= */
+function normalizeHiDPI(canvas, w, h){
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width  = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 
-/* ===================== RENDER PROGRAM ===================== */
-function renderProgram(){
-  const c=document.getElementById('programCanvas');
-  const ctx=c.getContext('2d');
-  c.width=1280; c.height=720;
-  ctx.fillStyle="#000"; ctx.fillRect(0,0,c.width,c.height);
+/* =========================================================
+   LAYOUT ASSERTIONS
+   ========================================================= */
+function assertLayout(){
+  const issues = [];
+  const viewer = document.querySelector('.viewer-panel');
+  const timeline = document.getElementById('timeline');
 
-  const active = tl.timeline.filter(e =>
-    tl.playhead>=e.start && tl.playhead<=e.start+e.duration
-  );
+  if(viewer && viewer.offsetHeight < 150) issues.push('Viewer collapsed');
+  if(timeline && timeline.offsetHeight < 200) issues.push('Timeline collapsed');
 
-  active.forEach(e=>{
-    const clip = tl.clips.find(c=>c.id===e.clipId);
-    if(!clip || clip.type!=='video') return;
-    const v = clip._el;
-    if(!v) return;
-
-    const mt = Math.min(e.outPoint ?? v.duration, e.inPoint + (tl.playhead-e.start));
-    if(Math.abs(v.currentTime-mt)>0.05) v.currentTime=mt;
-
-    ctx.drawImage(v,0,0,c.width,c.height);
-  });
+  document.body.classList.toggle('layout-error', issues.length > 0);
+  if(issues.length) console.warn('Layout issues:', issues);
 }
 
-/* ===================== PLAYBACK ===================== */
-function togglePlay(){
-  tl.playing=!tl.playing;
-  const step=()=>{
-    if(!tl.playing) return;
-    tl.playhead+=1/30;
-    if(tl.playhead>tl.seqDuration) tl.playhead=0;
-    renderProgram();
-    requestAnimationFrame(step);
-  };
-  if(tl.playing) step();
-}
+/* =========================================================
+   WIRES
+   ========================================================= */
+document.getElementById('btn-debug').onclick = () =>
+  document.body.classList.toggle('debug-layout');
 
-document.getElementById('btn-insert').onclick=togglePlay;
+window.addEventListener('resize', assertLayout);
+requestAnimationFrame(() => {
+  const c = document.getElementById('programCanvas');
+  const s = document.getElementById('program-screen');
+  normalizeHiDPI(c, s.clientWidth, s.clientHeight);
+  assertLayout();
+});
 </script>
 
 </body>
