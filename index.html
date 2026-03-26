@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CutPro – Browser NLE (Program Canvas + Donor Timeline)</title>
+<title>CutPro — Viewer + Timeline (Pinned Drop Zone + Edge Drag Fix)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
@@ -11,7 +11,8 @@
   --bg:#0f0f10; --panel:#1c1c1e; --panel2:#202022; --line:#111; --text:#d8d8d8;
   --muted:#8b8b8b; --accent:#3b82f6; --warn:#fbbf24;
   --browserW:240px; --inspectorW:300px; --timelineH:260px;
-  --trackH:48px; --pxPerSec:100px; font-family:system-ui,-apple-system,Segoe UI,sans-serif;
+  --trackH:48px; --pxPerSec:100px;
+  font-family:system-ui,-apple-system,Segoe UI,sans-serif;
 }
 
 /* ===================== RESET ===================== */
@@ -35,18 +36,35 @@ body{ display:grid; grid-template-rows:42px 1fr var(--timelineH); }
 #app{ display:grid; grid-template-columns:var(--browserW) 1fr var(--inspectorW); overflow:hidden }
 
 /* ===================== BROWSER ===================== */
-#browser{ background:linear-gradient(#202022,#18181a); border-right:1px solid var(--line);
-  display:flex;flex-direction:column;min-width:0 }
+#browser{
+  background:linear-gradient(#202022,#18181a);
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-width:0;overflow:hidden;
+}
 .browser-header{ padding:8px 10px; font-size:11px; color:var(--muted); text-transform:uppercase; border-bottom:1px solid var(--line) }
-#drop-zone{ margin:10px;padding:14px;border:2px dashed #3b6fa6;border-radius:4px;color:#8fb3d9;text-align:center;cursor:pointer }
+
+/* Bin scrolls; drop-zone is outside the scroller so it stays visible. */
 #bin{ flex:1; overflow:auto; padding:0 8px }
+
+/* Pinned Drop Zone (always visible at the bottom of Browser) */
+#drop-zone{
+  position: sticky; bottom: 0;
+  margin:10px; padding:14px;
+  border:2px dashed #3b6fa6; border-radius:6px;
+  color:#8fb3d9; text-align:center; cursor:pointer;
+  background:linear-gradient(to top, rgba(20,30,45,.45), transparent);
+  z-index:1;
+  box-shadow: 0 -1px 0 rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.03);
+}
+#drop-zone:hover{ background:linear-gradient(to top, rgba(35,55,85,.55), transparent) }
+
 .bin-item{ padding:6px;border-bottom:1px solid #252525;cursor:grab;display:flex;gap:8px;align-items:center }
 .bin-thumb{ width:42px;height:28px;background:#000;border:1px solid #333;font-size:9px;color:#bbb;display:flex;align-items:center;justify-content:center }
 
 /* ===================== CENTER (VIEWERS) ===================== */
 #center{ display:flex;flex-direction:column;overflow:hidden;min-width:0 }
 
-/* ===== Dual viewers (ported look) ===== */
+/* ===== Dual viewers (look) ===== */
 #viewers{ flex:1; display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:6px; border-bottom:2px solid #0a0a0a; min-height:0; background:#0b0b0c }
 .viewer-panel{ display:grid; grid-template-rows:24px 1fr 56px; background:var(--panel); border:1px solid #111; min-height:0 }
 .viewer-panel .panel-header{ background:linear-gradient(#2a2a2c,#202022); border-bottom:1px solid #0c0c0d; padding:0 8px; font-size:11px; color:#8a8a8a; display:flex; align-items:center }
@@ -55,6 +73,9 @@ body{ display:grid; grid-template-rows:42px 1fr var(--timelineH); }
 #programCanvas{ max-width:100%; max-height:100%; display:block }
 .safe-zones{position:absolute;inset:0;pointer-events:none;display:none}
 .safe-zones.show{display:block}
+.safe-zones::before,.safe-zones::after{content:'';position:absolute;border:1px solid rgba(255,255,255,0.28)}
+.safe-zones::before{inset:5%}
+.safe-zones::after{inset:10%}
 .viewer-label-tip{position:absolute;top:6px;left:8px;display:flex;gap:5px;pointer-events:none}
 .viewer-label-badge{font-size:9px;color:rgba(255,255,255,.45);letter-spacing:1px;text-transform:uppercase;background:rgba(0,0,0,.4);border-radius:3px;padding:1px 5px}
 .viewer-label-desc{font-size:9px;color:rgba(255,255,255,.22)}
@@ -67,6 +88,7 @@ body{ display:grid; grid-template-rows:42px 1fr var(--timelineH); }
 .vc-scrub{height:8px;background:#111;border:1px solid #000;border-radius:2px;position:relative;overflow:hidden;cursor:pointer}
 .vc-scrub-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(to right,#2e6fa8,#4a8fcd);width:0%}
 .vc-scrub-head{position:absolute;top:-2px;bottom:-2px;width:3px;background:#e8a020;margin-left:-1px;border-radius:1px}
+.vc-io{position:absolute;top:0;bottom:0;background:rgba(59,130,246,0.25);pointer-events:none} /* In/Out band */
 .vc-buttons{display:flex;align-items:center;gap:4px}
 .vc-btn{ width:22px;height:22px;background:linear-gradient(#3e3e3e,#2a2a2a);border:1px solid #1a1a1a;border-top-color:#4a4a4a;color:#d8d8d8;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px }
 .vc-btn.play-btn{ width:28px;background:linear-gradient(#2a5080,#1e3a5a);border-color:#2e6fa8 }
@@ -101,6 +123,12 @@ body{ display:grid; grid-template-rows:42px 1fr var(--timelineH); }
 .clip-handle.left{ left:0; border-radius:4px 0 0 4px }
 .clip-handle.right{ right:0; border-radius:0 4px 4px 0 }
 
+/* Clip label stays inside with ellipsis */
+.clip-label{
+  position:relative; z-index:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:calc(100% - 12px); pointer-events:none;
+}
+
 /* Playhead + snap guide */
 #playhead-line{ position:absolute; top:0; bottom:0; width:2px; background:#3b82f6; pointer-events:none; z-index:4; left:0 }
 #snap-guide{ position:absolute; top:0; bottom:0; width:2px; background:#ffcc00; pointer-events:none; z-index:5; display:none }
@@ -111,6 +139,17 @@ body.tool-blade  .tracks{ cursor:crosshair }
 body.tool-hand   .tracks{ cursor:grab }
 body.tool-hand   .tracks:active{ cursor:grabbing }
 body.tool-zoom   .tracks{ cursor:zoom-in }
+
+/* INSPECTOR minimal */
+#inspector{ background:linear-gradient(#202022,#18181a); border-left:1px solid var(--line); display:flex; flex-direction:column; min-width:0; overflow:auto }
+.inspector-section{ padding:10px;border-top:1px solid #252525 }
+.inspector-row{ margin-bottom:8px }
+.inspector-row label{ display:block;font-size:10px;color:#999;margin-bottom:4px }
+.inspector-row input,.inspector-row select{ width:100%; background:#111; color:#ddd; border:1px solid #333; height:28px; border-radius:4px }
+
+/* Scroll safety */
+#app, #viewers, #center, #browser, #inspector, #timeline .body { min-height: 0; min-width: 0; }
+html, body { overscroll-behavior: none; }
 </style>
 </head>
 
@@ -127,8 +166,12 @@ body.tool-zoom   .tracks{ cursor:zoom-in }
     <button class="tool-btn" id="saveBtn">💾</button>
     <button class="tool-btn" id="loadBtn">📂</button>
   </div>
+
   <div class="center">00:00:00:00</div>
+
   <div class="right">
+    <button class="tool-btn" id="btn-insert" title="Insert (F9)">Insert</button>
+    <button class="tool-btn" id="btn-overwrite" title="Overwrite (F10)">Overwrite</button>
     <button class="tool-btn" id="exportBtn">Export</button>
   </div>
 </div>
@@ -138,8 +181,12 @@ body.tool-zoom   .tracks{ cursor:zoom-in }
   <!-- BROWSER -->
   <aside id="browser">
     <div class="browser-header">Browser</div>
-    <div id="drop-zone">Drop video here</div>
+
+    <!-- Bin scrolls in the middle -->
     <div id="bin"></div>
+
+    <!-- Pinned drop zone: always visible at the bottom -->
+    <div id="drop-zone" title="Click to import or drop files here">Drop video here</div>
   </aside>
 
   <!-- CENTER: Dual Viewers -->
@@ -165,6 +212,7 @@ body.tool-zoom   .tracks{ cursor:zoom-in }
         </div>
         <div class="viewer-controls">
           <div class="vc-scrub" id="src-scrub">
+            <div class="vc-io" id="src-io" hidden></div>
             <div class="vc-scrub-fill" id="src-fill"></div>
             <div class="vc-scrub-head" id="src-head"></div>
           </div>
@@ -174,8 +222,8 @@ body.tool-zoom   .tracks{ cursor:zoom-in }
             <button class="vc-btn play-btn" id="playSource">▶</button>
             <button class="vc-btn" id="src-step-fwd">▶</button>
             <button class="vc-btn" id="src-go-end">⏭</button>
-            <button class="vc-btn" id="src-mark-in"  title="Mark In"  style="font-size:10px">I</button>
-            <button class="vc-btn" id="src-mark-out" title="Mark Out" style="font-size:10px">O</button>
+            <button class="vc-btn" id="src-mark-in"  title="Mark In">I</button>
+            <button class="vc-btn" id="src-mark-out" title="Mark Out">O</button>
             <div class="vc-tc" id="src-tc">00:00:00:00</div>
           </div>
         </div>
@@ -211,8 +259,8 @@ body.tool-zoom   .tracks{ cursor:zoom-in }
             <button class="vc-btn" id="cvs-step-back">◀</button>
             <button class="vc-btn play-btn" id="playProgram">▶</button>
             <button class="vc-btn" id="cvs-step-fwd">▶</button>
-            <button class="vc-btn" id="cvs-go-end">⏭</button>
-            <button class="vc-btn" id="cvs-fullscreen" style="margin-left:auto">⛶</button>
+            <button class="vc-btn" id="toggleSafe" title="Safe Zones">◎</button>
+            <button class="vc-btn" id="cvs-fullscreen" title="Fullscreen">⛶</button>
             <div class="vc-tc" id="cvs-tc">00:00:00:00</div>
           </div>
         </div>
@@ -220,15 +268,13 @@ body.tool-zoom   .tracks{ cursor:zoom-in }
     </div>
   </main>
 
-  <!-- INSPECTOR (kept minimal for export controls) -->
+  <!-- INSPECTOR -->
   <aside id="inspector">
     <div class="browser-header">Inspector</div>
-    <div class="inspector-section" id="inspectorMain" style="padding:10px;border-top:1px solid #252525">
-      No selection
-    </div>
-    <div class="inspector-section" style="padding:10px;border-top:1px solid #252525">
+    <div class="inspector-section" id="inspectorMain">No selection</div>
+    <div class="inspector-section">
       <div style="font-size:11px;color:#aaa;margin-bottom:6px">Export</div>
-      <select id="exportPreset" style="width:100%;height:28px;background:#111;color:#ddd;border:1px solid #333;border-radius:4px">
+      <select id="exportPreset">
         <option value="youtube">YouTube 1080p</option>
         <option value="prores">ProRes 422</option>
       </select>
@@ -247,7 +293,7 @@ body.tool-zoom   .tracks{ cursor:zoom-in }
 <div id="timeline">
   <div class="controls">
     <span>Snapping</span>
-    <span>Linked</span>
+    <button id="tl-btn-linked" class="tool-btn active" title="Linked Selection">Linked</button>
     <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
       <span style="font-size:11px;color:#bbb">Zoom</span>
       <input id="tl-zoom-slider" type="range" min="1" max="10" step="0.1" value="3"
@@ -273,10 +319,8 @@ body.tool-zoom   .tracks{ cursor:zoom-in }
   </div>
 </div>
 
+<!-- ===================== SOURCE VIEWER (LEFT) SHIM ===================== -->
 <script>
-/* =========================================================
-   SOURCE VIEWER (left monitor): tiny shim
-========================================================= */
 (function(){
   const vid  = document.getElementById('sourceVideo');
   const ph   = document.getElementById('vp-src');
@@ -316,37 +360,71 @@ body.tool-zoom   .tracks{ cursor:zoom-in }
 })();
 </script>
 
+<!-- ===================== TIMELINE + PROGRAM CANVAS ===================== -->
 <script>
 /* =========================================================
-   DONOR-COMPATIBLE TIMELINE + PROGRAM CANVAS
-   - state/ids/time-math mirror the donor file so further features drop in
-   - adds: clip resize handles, blade split, snap-to (edges + beats)
-   (See donor: ids like #timeline-tracks, #ruler-canvas, track-v1/v2/a1; px<->sec helpers; renderTimeline; drawRuler; playhead loop)
-   Reference: donor index you shared.  
+   STATE
 ========================================================= */
-
-/* ---------- State ---------- */
-const TRACK_ORDER = ['v2','v1','a1']; // V2 graphics, V1 video, A1 audio  
+const TRACK_ORDER = ['v2','v1','a1'];
 const tl = {
   clips: [],             // {id,name,url,duration,type:'video'|'audio', beatMarkers?[]}
-  timeline: [],          // {id,clipId,track,start,duration,inPoint,outPoint,fadeIn,fadeOut}
+  timeline: [],          // {id,clipId,track,start,duration,inPoint,outPoint,fadeIn,fadeOut,fit,linkGroup}
   selectedId: null,
   playhead: 0,
-  zoom: 3,               // pixels per second scale: px = sec * zoom * 10  
+  zoom: 3,               // px = sec * zoom * 10
   seqDuration: 60,
   playing: false,
   snapping: true,
   snapPx: 10,
-  tool: 'select',        // 'select'|'blade'|'hand'|'zoom'
+  tool: 'select',
+  linkedSelection: true,
+
+  // Viewer workflow
+  srcClipId: null,
+  markIn: null,
+  markOut: null,
+
+  // Sequence aspect (auto from first placed video)
+  seqW: 16,
+  seqH: 9,
+  seqSet: false,
+  showSafe: true,
+
   _raf: null
 };
 
-/* ---------- Helpers ---------- */
+/* =========================================================
+   HELPERS
+========================================================= */
 function formatTC(sec){ const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=Math.floor(sec%60),f=Math.floor((sec%1)*30); return [h,m,s,f].map(n=>String(n).padStart(2,'0')).join(':'); }
-function pxToSec(px){ return px / (tl.zoom * 10); }           // donor mapping  
-function secToPx(sec){ return sec * tl.zoom * 10; }           // donor mapping  
+function pxToSec(px){ return px / (tl.zoom * 10); }
+function secToPx(sec){ return sec * tl.zoom * 10; }
 
-/* ---------- Timecode + Playhead ---------- */
+function fitContain(srcW, srcH, dstW, dstH) {
+  if (!srcW || !srcH || !dstW || !dstH) return { x:0, y:0, w:dstW, h:dstH };
+  const srcAR = srcW / srcH, dstAR = dstW / dstH;
+  if (srcAR > dstAR) {
+    const w = dstW, h = Math.round(w / srcAR);
+    return { x:0, y:Math.round((dstH - h)/2), w, h };
+  } else {
+    const h = dstH, w = Math.round(h * srcAR);
+    return { x:Math.round((dstW - w)/2), y:0, w, h };
+  }
+}
+function fitCover(srcW, srcH, dstW, dstH) {
+  if (!srcW || !srcH || !dstW || !dstH) return { x:0, y:0, w:dstW, h:dstH };
+  const scale = Math.max(dstW/srcW, dstH/srcH);
+  const w = Math.round(srcW * scale), h = Math.round(srcH * scale);
+  return { x:Math.round((dstW - w)/2), y:Math.round((dstH - h)/2), w, h };
+}
+function fitOneToOne(srcW, srcH, dstW, dstH) {
+  const w = Math.min(srcW, dstW), h = Math.min(srcH, dstH);
+  return { x:Math.round((dstW - w)/2), y:Math.round((dstH - h)/2), w, h };
+}
+
+/* =========================================================
+   TIMECODE + PLAYHEAD + RULER
+========================================================= */
 function updateTimecodes(){
   const tc = formatTC(tl.playhead);
   const mid = document.querySelector('#topbar .center'); if (mid) mid.textContent = tc;
@@ -361,8 +439,6 @@ function updatePlayhead(){
   updateTimecodes();
   renderCanvasFrame();
 }
-
-/* ---------- Ruler ---------- */
 function drawRuler(){
   const canvas = document.getElementById('ruler-canvas');
   const plane  = document.getElementById('timeline-tracks');
@@ -380,7 +456,6 @@ function drawRuler(){
     ctx.beginPath(); ctx.moveTo(x,10); ctx.lineTo(x,H); ctx.stroke();
     if (t%(step*2)===0) ctx.fillText(formatTC(t), x+2, 10);
   }
-  // minor
   const minor=step/4; ctx.strokeStyle='#333';
   for (let t=0; t<=totalSec; t+=minor){
     if (t%step===0) continue;
@@ -389,7 +464,9 @@ function drawRuler(){
   }
 }
 
-/* ---------- Video element cache for Program Canvas ---------- */
+/* =========================================================
+   PROGRAM CANVAS (COMPOSITOR)
+========================================================= */
 const videoEls = new Map(); // clipId -> <video>
 async function ensureVideoEl(clip){
   if (clip.type!=='video') return null;
@@ -400,54 +477,102 @@ async function ensureVideoEl(clip){
     v.addEventListener('loadeddata',done,{once:true}); v.addEventListener('error',done,{once:true});});
   videoEls.set(clip.id,v); return v;
 }
-
-/* ---------- Program Canvas renderer ---------- */
 async function renderCanvasFrame(){
   const screen = document.getElementById('viewer-screen-cvs');
   const canvas = document.getElementById('programCanvas');
   if (!screen || !canvas) return;
-  const W=Math.max(1,screen.clientWidth||1280), H=Math.max(1,screen.clientHeight||720);
-  if (canvas.width!==W || canvas.height!==H){ canvas.width=W; canvas.height=H; }
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,W,H);
-  const ph = document.getElementById('vp-cvs'); if (ph) ph.style.display='none'; canvas.style.display='block';
-  ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+
+  // CSS size of monitor
+  const cssW = Math.max(1, screen.clientWidth  || 1280);
+  const cssH = Math.max(1, screen.clientHeight || 720);
+
+  // Hi-DPI backing store
+  const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+  const pxW = cssW * dpr, pxH = cssH * dpr;
+
+  if (canvas.width !== pxW || canvas.height !== pxH) {
+    canvas.width = pxW; canvas.height = pxH;
+    canvas.style.width  = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const ph = document.getElementById('vp-cvs'); if (ph) ph.style.display='none';
+  canvas.style.display='block';
+
+  // background
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, cssW, cssH);
 
   const t = tl.playhead;
-
-  // draw visible video clips in deterministic order (track order then start)  
   const visible = tl.timeline
-    .filter(e=>{ const c=tl.clips.find(x=>x.id===e.clipId); return c&&c.type==='video'&&(t>=e.start && t<=e.start+e.duration); })
-    .sort((a,b)=> (TRACK_ORDER.indexOf(a.track)-TRACK_ORDER.indexOf(b.track)) || (a.start-b.start));
+    .filter(e => {
+      const c = tl.clips.find(x => x.id === e.clipId);
+      return c && c.type === 'video' && (t >= e.start && t <= e.start + e.duration);
+    })
+    .sort((a,b) => (TRACK_ORDER.indexOf(a.track) - TRACK_ORDER.indexOf(b.track)) || (a.start - b.start));
 
   for (const entry of visible){
-    const clip = tl.clips.find(c=>c.id===entry.clipId);
-    const v = await ensureVideoEl(clip); if (!v || !isFinite(v.duration)) continue;
-    const mediaT = Math.min(v.duration, Math.max(0, t - entry.start + (entry.inPoint||0)));
-    if (Math.abs(v.currentTime - mediaT) > 0.12){ try{ v.currentTime = mediaT; }catch{} }
-    if (tl.playing && v.paused){ try{ await v.play(); }catch{} }
+    const clip = tl.clips.find(c => c.id === entry.clipId);
+    const v = await ensureVideoEl(clip);
+    if (!v || !isFinite(v.duration)) continue;
+
+    const mediaT = Math.min(v.duration, Math.max(0, t - entry.start + (entry.inPoint || 0)));
+    if (Math.abs(v.currentTime - mediaT) > 0.12) { try{ v.currentTime = mediaT; }catch{} }
+    if (tl.playing && v.paused)  { try{ await v.play(); }catch{} }
     if (!tl.playing && !v.paused){ try{ v.pause(); }catch{} }
 
-    // fades
     let alpha=1, elapsed=t-entry.start, remaining=entry.start+entry.duration-t;
-    if (entry.fadeIn>0  && elapsed   < entry.fadeIn)  alpha = Math.min(alpha, elapsed/entry.fadeIn);
-    if (entry.fadeOut>0 && remaining < entry.fadeOut) alpha = Math.min(alpha, remaining/entry.fadeOut);
+    if (entry.fadeIn  > 0 && elapsed   < entry.fadeIn)  alpha = Math.min(alpha, elapsed/entry.fadeIn);
+    if (entry.fadeOut > 0 && remaining < entry.fadeOut) alpha = Math.min(alpha, remaining/entry.fadeOut);
 
-    ctx.globalAlpha=Math.max(0,Math.min(1,alpha));
-    ctx.drawImage(v,0,0,W,H);
-    ctx.globalAlpha=1;
+    const vw = v.videoWidth  || 0;
+    const vh = v.videoHeight || 0;
+    const mode = entry.fit || 'fit';
+
+    let rect;
+    if (mode === 'fit')      rect = fitContain(vw, vh, cssW, cssH);
+    else if (mode === 'fill')rect = fitCover  (vw, vh, cssW, cssH);
+    else                     rect = fitOneToOne(vw, vh, cssW, cssH);
+
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    ctx.drawImage(v, 0, 0, vw, vh, rect.x, rect.y, rect.w, rect.h);
+    ctx.globalAlpha = 1;
+  }
+
+  // Safe zones
+  const safe = document.getElementById('safe-cvs');
+  if (safe) safe.classList.toggle('show', !!tl.showSafe);
+}
+
+/* =========================================================
+   SEQUENCE ASPECT (auto from first placed video)
+========================================================= */
+async function setSequenceAspectFromClip(clip) {
+  if (tl.seqSet || clip.type !== 'video') return;
+  const v = await ensureVideoEl(clip);
+  const vw = v?.videoWidth || 0;
+  const vh = v?.videoHeight || 0;
+  if (vw && vh) {
+    tl.seqW = vw; tl.seqH = vh; tl.seqSet = true;
+    const screen = document.getElementById('viewer-screen-cvs');
+    if (screen) screen.style.aspectRatio = `${tl.seqW} / ${tl.seqH}`;
+    renderCanvasFrame();
   }
 }
 
-/* ---------- Snap system (edges + beats) ---------- */
+/* =========================================================
+   SNAPPING
+========================================================= */
 function getSnapPoints(excludeEntryId){
   const points = [];
-  // clip edges across all tracks
   tl.timeline.forEach(e=>{
     if (e.id===excludeEntryId) return;
     points.push(e.start); points.push(e.start + e.duration);
   });
-  // beat markers (if any): translate clip-local beats to timeline times  
+  // Beat markers if present
   tl.timeline.forEach(e=>{
     const clip = tl.clips.find(c=>c.id===e.clipId);
     if (!clip || !clip.beatMarkers || !clip.beatMarkers.length) return;
@@ -476,7 +601,9 @@ function snapTime(rawSec, excludeEntryId){
   return { time: rawSec, snapped:false, type:null };
 }
 
-/* ---------- Timeline rendering (DOM) ---------- */
+/* =========================================================
+   TIMELINE RENDERING / DRAG / RESIZE / BLADE
+========================================================= */
 function renderTimeline(){
   ['track-v2','track-v1','track-a1'].forEach(id=>{ const el=document.getElementById(id); if (el) el.innerHTML=''; });
 
@@ -486,34 +613,61 @@ function renderTimeline(){
     if (!lane || !clip) return;
 
     const el = document.createElement('div');
-    el.className = 'clip ' + (clip.type==='audio'?'audio-clip':'video-clip') + (entry.id===tl.selectedId?' selected':'');
+    el.className = 'clip ' + (clip.type==='audio'?'audio-clip':'video-clip');
+    if (entry.id===tl.selectedId) el.classList.add('selected');
     el.dataset.id = entry.id;
     el.style.left  = secToPx(entry.start)   + 'px';
     el.style.width = secToPx(entry.duration)+ 'px';
     el.innerHTML = `
       <div class="clip-handle left"></div>
-      <div style="position:relative;z-index:1">${clip.name|| (clip.type==='audio'?'Audio':'Video')}</div>
+      <span class="clip-label">${clip.name || (clip.type==='audio'?'Audio':'Video')}</span>
       <div class="clip-handle right"></div>
     `;
 
+    // Linked-group selection paint
+    if (tl.linkedSelection && tl.selectedId){
+      const sel = tl.timeline.find(t=>t.id===tl.selectedId);
+      if (sel && sel.linkGroup && entry.linkGroup === sel.linkGroup){
+        el.classList.add('selected');
+      }
+    }
+
     // select
-    el.addEventListener('click',(e)=>{ e.stopPropagation(); tl.selectedId=entry.id; renderTimeline(); renderCanvasFrame(); });
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tl.selectedId = entry.id;
+      renderTimeline();
+      renderCanvasFrame();
+      showInspectorFor(entry);
+    });
 
     // move drag
-    let dragStartX, startStartSec;
+    let dragStartX, starts;
     el.addEventListener('mousedown',(e)=>{
-      if (e.target.classList.contains('clip-handle')) return;  // resize takes over
+      if (e.target.classList.contains('clip-handle')) return;
       if (tl.tool==='blade'){ bladeAtPointer(entry, e); return; }
       if (e.button!==0) return;
+
+      const targets = (tl.linkedSelection && entry.linkGroup)
+        ? tl.timeline.filter(t=>t.linkGroup === entry.linkGroup)
+        : [entry];
+
+      starts = targets.map(t=>t.start);
       dragStartX = e.clientX;
-      startStartSec = entry.start;
+
       const onMove = (ev)=>{
         const dx = ev.clientX - dragStartX;
-        const raw = Math.max(0, startStartSec + pxToSec(dx));
+        const raw = Math.max(0, starts[0] + pxToSec(dx));
         const sn  = snapTime(raw, entry.id);
-        entry.start = sn.time;
-        el.style.left = secToPx(entry.start)+'px';
-        tl.seqDuration = Math.max(tl.seqDuration, entry.start + entry.duration + 5);
+        const delta = sn.time - starts[0];
+
+        targets.forEach((t,i)=>{
+          t.start = Math.max(0, starts[i] + delta);
+          const dom = document.querySelector(`.clip[data-id="${t.id}"]`);
+          if (dom) dom.style.left = secToPx(t.start)+'px';
+        });
+
+        tl.seqDuration = Math.max(tl.seqDuration, Math.max(...targets.map(t=>t.start + t.duration)) + 5);
         renderCanvasFrame();
       };
       const onUp = ()=>{
@@ -526,20 +680,32 @@ function renderTimeline(){
       document.addEventListener('mouseup', onUp);
     });
 
-    // resize handles
-    const hLeft  = el.querySelector('.clip-handle.left');
+    // RIGHT resize
     const hRight = el.querySelector('.clip-handle.right');
-
     hRight.addEventListener('mousedown',(e)=>{
       e.stopPropagation(); e.preventDefault();
-      const startX = e.clientX; const startDur = entry.duration;
+
+      const targets = (tl.linkedSelection && entry.linkGroup)
+        ? tl.timeline.filter(t=>t.linkGroup === entry.linkGroup)
+        : [entry];
+
+      const startX  = e.clientX;
+      const durs    = targets.map(t=>t.duration);
+
       const onMove = (ev)=>{
         const dx = ev.clientX - startX;
-        const rawEnd = entry.start + Math.max(0.25, startDur + pxToSec(dx));
+        const rawEnd = entry.start + Math.max(0.25, durs[0] + pxToSec(dx));
         const sn = snapTime(rawEnd, entry.id);
-        entry.duration = Math.max(0.25, sn.time - entry.start);
-        el.style.width = secToPx(entry.duration)+'px';
-        tl.seqDuration = Math.max(tl.seqDuration, entry.start + entry.duration + 5);
+        const newDur0 = Math.max(0.25, sn.time - entry.start);
+        const deltaDur = newDur0 - durs[0];
+
+        targets.forEach((t,i)=>{
+          t.duration = Math.max(0.25, durs[i] + deltaDur);
+          const dom = document.querySelector(`.clip[data-id="${t.id}"]`);
+          if (dom) dom.style.width = secToPx(t.duration)+'px';
+        });
+
+        tl.seqDuration = Math.max(tl.seqDuration, Math.max(...targets.map(t=>t.start + t.duration)) + 5);
         renderCanvasFrame();
       };
       const onUp = ()=>{
@@ -552,18 +718,35 @@ function renderTimeline(){
       document.addEventListener('mouseup', onUp);
     });
 
+    // LEFT resize
+    const hLeft = el.querySelector('.clip-handle.left');
     hLeft.addEventListener('mousedown',(e)=>{
       e.stopPropagation(); e.preventDefault();
-      const startX = e.clientX; const startStart = entry.start; const startDur = entry.duration;
+
+      const targets = (tl.linkedSelection && entry.linkGroup)
+        ? tl.timeline.filter(t=>t.linkGroup === entry.linkGroup)
+        : [entry];
+
+      const startX = e.clientX;
+      const starts = targets.map(t=>t.start);
+      const durs   = targets.map(t=>t.duration);
+
       const onMove = (ev)=>{
-        const dx  = ev.clientX - startX;
-        const raw = Math.max(0, startStart + pxToSec(dx));
-        const sn  = snapTime(raw, entry.id);
-        const delta = sn.time - startStart;
-        entry.start = sn.time;
-        entry.duration = Math.max(0.25, startDur - delta);
-        el.style.left  = secToPx(entry.start)+'px';
-        el.style.width = secToPx(entry.duration)+'px';
+        const dx   = ev.clientX - startX;
+        const raw  = Math.max(0, starts[0] + pxToSec(dx));
+        const sn   = snapTime(raw, entry.id);
+        const deltaStart = sn.time - starts[0];
+
+        targets.forEach((t,i)=>{
+          t.start    = Math.max(0, starts[i] + deltaStart);
+          t.duration = Math.max(0.25, durs[i] - deltaStart);
+          const dom  = document.querySelector(`.clip[data-id="${t.id}"]`);
+          if (dom){
+            dom.style.left  = secToPx(t.start)+'px';
+            dom.style.width = secToPx(t.duration)+'px';
+          }
+        });
+
         renderCanvasFrame();
       };
       const onUp = ()=>{
@@ -583,7 +766,6 @@ function renderTimeline(){
   updatePlayhead();
 }
 
-/* ---------- Blade tool ---------- */
 function bladeAtPointer(entry, e){
   const trackEl = document.getElementById('track-' + entry.track);
   const rect = trackEl.getBoundingClientRect();
@@ -592,7 +774,6 @@ function bladeAtPointer(entry, e){
   bladeClip(entry, cut);
 }
 function bladeClip(entry, cutTime){
-  // only if inside the clip (with a small guard)
   if (cutTime <= entry.start + 0.1 || cutTime >= entry.start + entry.duration - 0.1) return;
   const dur1 = cutTime - entry.start;
   const dur2 = entry.duration - dur1;
@@ -602,19 +783,60 @@ function bladeClip(entry, cutTime){
   renderTimeline();
 }
 
-/* ---------- Add to timeline ---------- */
+/* =========================================================
+   ADD TO TIMELINE (A/V split + linkGroup)
+========================================================= */
+function ensureAudioProxyFor(clip){
+  const audioId = clip.id + ':audio';
+  let a = tl.clips.find(c => c.id === audioId);
+  if (!a){
+    a = { id: audioId, name: clip.name, url: clip.url, duration: clip.duration, type: 'audio', fromVideo: clip.id };
+    tl.clips.push(a);
+  }
+  return a;
+}
+
 function addToTimeline(clipId, track){
   const clip = tl.clips.find(c=>c.id===clipId);
   if (!clip) return;
+
   const siblings = tl.timeline.filter(t=>t.track===track);
   const start = siblings.length ? Math.max(...siblings.map(t=>t.start+t.duration)) : 0;
-  const dur   = Math.max(0.5, Math.min(clip.duration||3, 10));   // donor clamps initial length  
-  tl.timeline.push({ id:crypto.randomUUID(), clipId, track, start, duration:dur, inPoint:0, outPoint:dur, fadeIn:0, fadeOut:0 });
+  const dur   = Math.max(0.5, Math.min(clip.duration||3, 10));
+
+  const pushEntry = (srcClip, lane, s, d, groupId, fit='fit') => {
+    tl.timeline.push({
+      id: crypto.randomUUID(), clipId: srcClip.id, track: lane,
+      start: s, duration: d, inPoint: 0, outPoint: d, fadeIn: 0, fadeOut: 0,
+      fit, linkGroup: groupId || null
+    });
+  };
+
+  if (clip.type === 'audio'){
+    pushEntry(clip, track, start, dur, null);
+  } else {
+    if (track === 'a1'){
+      const a = ensureAudioProxyFor(clip);
+      pushEntry(a, 'a1', start, dur, null);
+    } else {
+      const linkGroup = 'lg_' + crypto.randomUUID();
+      pushEntry(clip, track, start, dur, linkGroup);
+      const a = ensureAudioProxyFor(clip);
+      const aSiblings = tl.timeline.filter(t=>t.track==='a1');
+      const aStart = aSiblings.length ? Math.max(start, Math.max(...aSiblings.map(t=>t.start + t.duration))) : start;
+      pushEntry(a, 'a1', aStart, dur, linkGroup);
+    }
+  }
+
   tl.seqDuration = Math.max(tl.seqDuration, start + dur + 5);
   renderTimeline();
+
+  if (clip.type === 'video') setSequenceAspectFromClip(clip);
 }
 
-/* ---------- Play/Pause ---------- */
+/* =========================================================
+   PLAY / UI WIRING / SHORTCUTS
+========================================================= */
 function togglePlay(){
   tl.playing = !tl.playing;
   ['btn-play','cvs-play','playProgram'].forEach(id=>{ const b=document.getElementById(id); if (b) b.textContent = tl.playing? '⏸':'▶'; });
@@ -631,13 +853,11 @@ function togglePlay(){
   }
 }
 
-/* ---------- Wire UI ---------- */
 (function wireUI(){
   const plane = document.getElementById('timeline-tracks');
   const ruler = document.getElementById('ruler-canvas');
   const zoomS = document.getElementById('tl-zoom-slider');
 
-  // Set tool class on body
   function setTool(t){
     tl.tool = t;
     document.body.className = 'tool-' + t;
@@ -658,9 +878,15 @@ function togglePlay(){
     document.getElementById('snap-guide').style.display='none';
   });
 
+  const btnLinked = document.getElementById('tl-btn-linked');
+  btnLinked?.addEventListener('click', ()=>{
+    tl.linkedSelection = !tl.linkedSelection;
+    btnLinked.classList.toggle('active', tl.linkedSelection);
+    renderTimeline();
+  });
+
   // play buttons
   document.getElementById('playProgram')?.addEventListener('click',togglePlay);
-  document.getElementById('cvs-play')   ?.addEventListener('click',togglePlay);
 
   // click empty space to set playhead
   plane?.addEventListener('click',(e)=>{
@@ -680,6 +906,19 @@ function togglePlay(){
   // zoom
   zoomS?.addEventListener('input', (e)=>{ tl.zoom = parseFloat(e.target.value)||3; renderTimeline(); });
 
+  // Safe zones toggle
+  document.getElementById('toggleSafe')?.addEventListener('click', ()=>{
+    tl.showSafe = !tl.showSafe;
+    const safe = document.getElementById('safe-cvs');
+    if (safe) safe.classList.toggle('show', tl.showSafe);
+  });
+
+  // fullscreen program
+  document.getElementById('cvs-fullscreen')?.addEventListener('click',()=>{
+    const box = document.getElementById('viewer-screen-cvs');
+    if (!document.fullscreenElement) box?.requestFullscreen?.(); else document.exitFullscreen?.();
+  });
+
   // keyboard shortcuts
   document.addEventListener('keydown',(e)=>{
     if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
@@ -694,62 +933,77 @@ function togglePlay(){
       tl.timeline = tl.timeline.filter(t=>t.id!==tl.selectedId);
       tl.selectedId = null; renderTimeline();
     }
-  });
-
-  // fullscreen program
-  document.getElementById('cvs-fullscreen')?.addEventListener('click',()=>{
-    const box = document.getElementById('viewer-screen-cvs');
-    if (!document.fullscreenElement) box?.requestFullscreen?.(); else document.exitFullscreen?.();
+    if (e.key==='F9'){ e.preventDefault(); insertFromViewer('v1'); }
+    if (e.key==='F10'){ e.preventDefault(); overwriteFromViewer('v1'); }
+    if (e.key==='i'||e.key==='I'){ e.preventDefault(); document.getElementById('src-mark-in')?.click(); }
+    if (e.key==='o'||e.key==='O'){ e.preventDefault(); document.getElementById('src-mark-out')?.click(); }
   });
 
   renderTimeline();
 })();
 
 /* =========================================================
-   BIN IMPORT → Donor timeline bridge
-   - creates bin items (draggable) and registers tl.clips
-   - drop to tracks uses addToTimeline(...)
+   BIN IMPORT → Viewer & Timeline bridge
+   - Pinned drop-zone at bottom (#drop-zone)
+   - Edge-safe drag: prevent default navigation and normalize drag data
 ========================================================= */
 (function(){
   const drop = document.getElementById('drop-zone');
   const bin  = document.getElementById('bin');
 
-  // fix the hyphenated id access (must use getElementById) – this line is critical
+  // Factor the file import routine so both click-picker and OS drop reuse it
+  function importFilesFromFileList(fileList){
+    [...fileList].forEach(f=>{
+      const url = URL.createObjectURL(f);
+      const id  = crypto.randomUUID();
+
+      const el = document.createElement('div');
+      el.className='bin-item'; el.dataset.clipId=id; el.draggable=true;
+      el.innerHTML = `<div class="bin-thumb">${f.type.startsWith('audio')?'🎵':'🎬'}</div>${f.name}`;
+
+      // Normalize dragstart so Edge treats it as an internal drag, not a link
+      el.ondragstart = ev => {
+        ev.stopPropagation();
+        ev.dataTransfer.effectAllowed = 'copy';
+        // Provide a generic payload Edge recognizes; our drop handlers read 'clipId'
+        ev.dataTransfer.setData('text/plain', id);
+        ev.dataTransfer.setData('clipId', id);
+      };
+
+      // Double-click opens in Source Viewer (not timeline)
+      el.addEventListener('dblclick', ()=> openInViewer(id));
+      bin.appendChild(el);
+
+      const type = f.type.startsWith('audio') ? 'audio' : 'video';
+      const clip = { id, name:f.name, url, duration:0, type };
+      tl.clips.push(clip);
+
+      const probe = document.createElement(type==='audio'?'audio':'video');
+      probe.src = url;
+      probe.addEventListener('loadedmetadata', ()=>{
+        clip.duration = isFinite(probe.duration) ? probe.duration : 3;
+      }, {once:true});
+    });
+  }
+
+  // Click → open file picker
   drop.onclick = ()=>{
     const input = document.createElement('input');
     input.type='file'; input.accept='video/*,audio/*'; input.multiple=true;
-    input.onchange = e => {
-      [...e.target.files].forEach(f=>{
-        const url = URL.createObjectURL(f);
-        const id  = crypto.randomUUID();
-
-        // Bin item
-        const el = document.createElement('div');
-        el.className='bin-item'; el.dataset.clipId=id; el.draggable=true;
-        el.innerHTML = `<div class="bin-thumb">${f.type.startsWith('audio')?'🎵':'🎬'}</div>${f.name}`;
-        el.ondragstart = ev => ev.dataTransfer.setData('clipId', id);
-        el.addEventListener('dblclick', ()=> addToTimeline(id,'v1'));
-        bin.appendChild(el);
-
-        // Register clip for timeline/compositor
-        const type = f.type.startsWith('audio') ? 'audio' : 'video';
-        const clip = { id, name:f.name, url, duration:0, type };
-        tl.clips.push(clip);
-
-        // probe duration (async)
-        const probe = document.createElement(type==='audio'?'audio':'video');
-        probe.src = url;
-        probe.addEventListener('loadedmetadata', ()=>{
-          clip.duration = isFinite(probe.duration) ? probe.duration : 3;
-          // Optional: basic beat markers for audio (stub; can be enhanced later)
-          if (type==='audio'){ clip.beatMarkers = []; }
-        }, {once:true});
-      });
-    };
+    input.onchange = e => importFilesFromFileList(e.target.files);
     input.click();
   };
 
-  // Track drop targets
+  // ****************** PAGE-WIDE DRAG GUARDS (Edge-safe) ******************
+  // Prevent the browser from navigating / opening the file when dropped anywhere
+  window.addEventListener('dragover', (e)=>{ e.preventDefault(); }, {passive:false});
+  window.addEventListener('drop',     (e)=>{
+    e.preventDefault();
+    const files = e.dataTransfer?.files;
+    if (files && files.length) importFilesFromFileList(files);
+  }, {passive:false});
+
+  // Track drop targets (V2, V1, A1)
   ['track-v2','track-v1','track-a1'].forEach(id=>{
     const lane = document.getElementById(id);
     if(!lane) return;
@@ -757,14 +1011,174 @@ function togglePlay(){
     lane.addEventListener('dragleave', ()=>{ lane.style.background=''; });
     lane.addEventListener('drop', e=>{
       e.preventDefault(); lane.style.background='';
-      const clipId = e.dataTransfer.getData('clipId');
+      // Accept either our custom 'clipId' or the plain text fallback
+      const clipId = e.dataTransfer.getData('clipId') || e.dataTransfer.getData('text/plain');
       const track  = lane.dataset.track;
       if (clipId && track) addToTimeline(clipId, track);
     });
   });
 })();
+
+/* =========================================================
+   SOURCE VIEWER WORKFLOW: open, I/O marks, Insert/Overwrite
+========================================================= */
+function openInViewer(clipId){
+  const clip = tl.clips.find(c=>c.id===clipId);
+  if (!clip) return;
+  tl.srcClipId = clipId;
+  tl.markIn = null; tl.markOut = null;
+
+  const vid = document.getElementById('sourceVideo');
+  const ph  = document.getElementById('vp-src');
+  vid.src = clip.url; vid.load();
+  if (ph) ph.style.display = 'none';
+  vid.style.display = 'block';
+  updateSrcMarkers();
+}
+function updateSrcMarkers(){
+  const io = document.getElementById('src-io');
+  const vid = document.getElementById('sourceVideo');
+  if (!io || !vid || !isFinite(vid.duration) || vid.duration <= 0) { if(io) io.hidden=true; return; }
+  const dur = vid.duration;
+  const hasIn  = (tl.markIn  != null);
+  const hasOut = (tl.markOut != null);
+  if (!hasIn && !hasOut){ io.hidden = true; return; }
+  const inS  = hasIn  ? Math.max(0, Math.min(dur, tl.markIn))  : 0;
+  const outS = hasOut ? Math.max(0, Math.min(dur, tl.markOut)) : dur;
+  const left  = (inS / dur) * 100;
+  const width = Math.max(0, (outS - inS) / dur) * 100;
+  io.style.left  = left + '%';
+  io.style.width = width + '%';
+  io.hidden = width <= 0;
+}
+document.getElementById('src-mark-in')?.addEventListener('click', ()=>{
+  const vid = document.getElementById('sourceVideo');
+  if (!vid || !isFinite(vid.duration)) return;
+  tl.markIn = vid.currentTime;
+  if (tl.markOut != null && tl.markOut <= tl.markIn) tl.markOut = null;
+  updateSrcMarkers();
+});
+document.getElementById('src-mark-out')?.addEventListener('click', ()=>{
+  const vid = document.getElementById('sourceVideo');
+  if (!vid || !isFinite(vid.duration)) return;
+  tl.markOut = vid.currentTime;
+  if (tl.markIn != null && tl.markOut <= tl.markIn) tl.markIn = null;
+  updateSrcMarkers();
+});
+
+function insertFromViewer(targetTrack = 'v1'){
+  const clip = tl.clips.find(c=>c.id === tl.srcClipId);
+  if (!clip) return;
+
+  const vid = document.getElementById('sourceVideo');
+  const srcDur = (vid && isFinite(vid.duration) && vid.duration > 0) ? vid.duration : (clip.duration || 0);
+  const inS  = (tl.markIn  != null) ? Math.min(Math.max(0, tl.markIn), srcDur) : 0;
+  const outS = (tl.markOut != null) ? Math.min(Math.max(0, tl.markOut), srcDur) : srcDur;
+  const segDur = Math.max(0.05, outS - inS);
+  if (segDur <= 0) return;
+
+  const start = tl.playhead;
+  const baseFit = 'fit';
+
+  if (clip.type === 'audio'){
+    tl.timeline.push({ id: crypto.randomUUID(), clipId: clip.id, track: 'a1',
+      start, duration: segDur, inPoint: inS, outPoint: outS, fadeIn:0, fadeOut:0, fit: baseFit, linkGroup: null });
+  } else {
+    const linkGroup = 'lg_' + crypto.randomUUID();
+    tl.timeline.push({ id: crypto.randomUUID(), clipId: clip.id, track: targetTrack,
+      start, duration: segDur, inPoint: inS, outPoint: outS, fadeIn:0, fadeOut:0, fit: baseFit, linkGroup });
+    const a = ensureAudioProxyFor(clip);
+    tl.timeline.push({ id: crypto.randomUUID(), clipId: a.id, track: 'a1',
+      start, duration: segDur, inPoint: inS, outPoint: outS, fadeIn:0, fadeOut:0, fit:'fit', linkGroup });
+  }
+
+  tl.seqDuration = Math.max(tl.seqDuration, start + segDur + 5);
+  renderTimeline();
+  renderCanvasFrame();
+}
+function overwriteFromViewer(targetTrack = 'v1'){
+  const clip = tl.clips.find(c=>c.id === tl.srcClipId);
+  if (!clip) return;
+
+  const vid = document.getElementById('sourceVideo');
+  const srcDur = (vid && isFinite(vid.duration) && vid.duration > 0) ? vid.duration : (clip.duration || 0);
+  const inS  = (tl.markIn  != null) ? Math.min(Math.max(0, tl.markIn), srcDur) : 0;
+  const outS = (tl.markOut != null) ? Math.min(Math.max(0, tl.markOut), srcDur) : srcDur;
+  const segDur = Math.max(0.05, outS - inS);
+  if (segDur <= 0) return;
+
+  const start = tl.playhead;
+  const end   = start + segDur;
+
+  const lanes = (clip.type==='video') ? [targetTrack, 'a1'] : ['a1'];
+  tl.timeline = tl.timeline.filter(e=>{
+    if (!lanes.includes(e.track)) return true;
+    const eStart = e.start, eEnd = e.start + e.duration;
+    return !(eStart < end && eEnd > start);
+  });
+
+  if (clip.type === 'audio'){
+    tl.timeline.push({ id: crypto.randomUUID(), clipId: clip.id, track: 'a1',
+      start, duration: segDur, inPoint: inS, outPoint: outS, fadeIn:0, fadeOut:0, fit:'fit', linkGroup:null });
+  } else {
+    const linkGroup = 'lg_' + crypto.randomUUID();
+    tl.timeline.push({ id: crypto.randomUUID(), clipId: clip.id, track: targetTrack,
+      start, duration: segDur, inPoint: inS, outPoint: outS, fadeIn:0, fadeOut:0, fit:'fit', linkGroup });
+    const a = ensureAudioProxyFor(clip);
+    tl.timeline.push({ id: crypto.randomUUID(), clipId: a.id, track: 'a1',
+      start, duration: segDur, inPoint: inS, outPoint: outS, fadeIn:0, fadeOut:0, fit:'fit', linkGroup });
+  }
+
+  tl.seqDuration = Math.max(tl.seqDuration, end + 5);
+  renderTimeline();
+  renderCanvasFrame();
+}
+
+// Buttons
+document.getElementById('btn-insert')   ?.addEventListener('click', ()=> insertFromViewer('v1'));
+document.getElementById('btn-overwrite')?.addEventListener('click', ()=> overwriteFromViewer('v1'));
+
+/* =========================================================
+   INSPECTOR (per-clip Scale: Fit/Fill/1:1)
+========================================================= */
+function showInspectorFor(entry) {
+  const clip = tl.clips.find(c => c.id === entry.clipId);
+  const root = document.getElementById('inspectorMain');
+  if (!clip || !root) return;
+  const fit = entry.fit || 'fit';
+  root.innerHTML = `
+    <div style="font-size:11px;color:#aaa;margin-bottom:6px">Clip</div>
+    <div class="inspector-row">
+      <label>Start (s)</label>
+      <input type="number" id="i-start" value="${entry.start.toFixed(3)}" step="0.1">
+    </div>
+    <div class="inspector-row">
+      <label>Duration (s)</label>
+      <input type="number" id="i-dur" value="${entry.duration.toFixed(3)}" step="0.1">
+    </div>
+    <div class="inspector-row">
+      <label>Scale</label>
+      <select id="i-fit">
+        <option value="fit"  ${fit==='fit'?'selected':''}>Fit (contain)</option>
+        <option value="fill" ${fit==='fill'?'selected':''}>Fill (cover)</option>
+        <option value="1:1"  ${fit==='1:1'?'selected':''}>1:1 (no scale)</option>
+      </select>
+    </div>
+  `;
+  root.querySelector('#i-start')?.addEventListener('change', (e)=>{
+    entry.start = Math.max(0, parseFloat(e.target.value)||0);
+    renderTimeline();
+  });
+  root.querySelector('#i-dur')?.addEventListener('change', (e)=>{
+    entry.duration = Math.max(0.25, parseFloat(e.target.value)||0.25);
+    renderTimeline();
+  });
+  root.querySelector('#i-fit')?.addEventListener('change', (e)=>{
+    entry.fit = e.target.value;
+    renderCanvasFrame();
+  });
+}
 </script>
 
 </body>
 </html>
-``
