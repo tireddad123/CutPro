@@ -1,84 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>CutPro – Functional NLE (Layout‑Corrected)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+/* ===================== CSS VARIABLES ===================== */
+:root{
+  --bg:#0f0f10;
+  --panel:#1c1c1e;
+  --panel2:#202022;
+  --line:#111;
+  --text:#d8d8d8;
+  --muted:#8b8b8b;
+  --accent:#3b82f6;
+  --warn:#fbbf24;
+
+  --browserW:240px;
+  --inspectorW:300px;
+  --timelineH:260px;
+  --trackH:48px;
+  --pxPerSec:100px;      /* your JS uses pxPerSec=100; keep parity */
+  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+}
+
+/* ===================== RESET ===================== */
+*{box-sizing:border-box}
+html,body{
+  margin:0;height:100%;
+  background:var(--bg);color:var(--text);
+  overflow:hidden;
+}
+
+/* ===================== ROOT GRID ===================== */
+/* ┌──────── Topbar (fixed) ───────┐
+   ├──────── Workspace (grid) ─────┤
+   └──────── Timeline (fixed) ─────┘ */
+body{
+  display:grid;
+  grid-template-rows: 42px 1fr var(--timelineH);
+}
+
+/* ===================== TOP BAR (single, unified) ===================== */
+#topbar{
+  display:grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items:center;
+  gap:8px;
+  padding:0 10px;
+  background:linear-gradient(#2a2a2c,#202022);
+  border-bottom:1px solid var(--line);
+}
+#topbar .left, #topbar .right{display:flex;gap:6px;align-items:center}
+#topbar .center{justify-self:center;font-variant-numeric:tabular-nums;color:#9ee66e}
+.tool-btn{
+  height:28px;min-width:28px;padding:0 10px;
+  background:#2b2b2e;border:1px solid #000; color:#ddd;
+  border-radius:4px;cursor:pointer
+}
+.tool-btn.active{ background:#1e3a5a; border-color:#0b274e }
+
+/* ===================== WORKSPACE GRID ===================== */
+/* ┌──── Browser (fixed) ┬──────── Viewers (1fr) ┬──── Inspector (fixed) ────┐ */
+#app{
+  display:grid;
+  grid-template-columns: var(--browserW) 1fr var(--inspectorW);
+  overflow:hidden;
+}
+
+/* ===================== BROWSER ===================== */
+#browser{
+  background:linear-gradient(#202022,#18181a);
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-width:0; /* allow scroll */
+}
+.browser-header{
+  padding:8px 10px;font-size:11px;color:var(--muted);
+  text-transform:uppercase;border-bottom:1px solid var(--line);
+}
+#drop-zone{
+  margin:10px;padding:14px;border:2px dashed #3b6fa6;
+  border-radius:4px;color:#8fb3d9;text-align:center;cursor:pointer;
+}
+#bin{flex:1;overflow:auto;padding:0 8px}
+.bin-item{
+  padding:6px;border-bottom:1px solid #252525;
+  cursor:grab;display:flex;gap:8px;align-items:center;
+}
+.bin-thumb{
+  width:42px;height:28px;background:#000;border:1px solid #333;font-size:9px;
+  display:flex;align-items:center;justify-content:center;color:#bbb;
+}
+
+/* ===================== CENTER (VIEWERS stacked vertically inside col) ===================== */
+#center{
+  display:flex;flex-direction:column;overflow:hidden;min-width:0;
+}
+
+/* ===================== DUAL VIEWERS ===================== */
+/* Two viewers side-by-side, each: header / 16:9 surface / transport */
+#viewers{
+  flex:1;
+  display:grid;grid-template-columns: 1fr 1fr;gap:6px;padding:6px;
+  border-bottom:1px solid var(--line);min-height:0; /* keep inside */
+}
+.viewer{
+  display:grid;grid-template-rows: 24px 1fr 28px;
+  border:1px solid #0b0b0c;background:#000;min-height:0;
+}
+.viewer-header{
+  background:linear-gradient(#2a2a2c,#202022);
+  border-bottom:1px solid #0c0c0d;
+  padding:0 8px;display:flex;align-items:center;font-size:11px;color:var(--muted);
+}
+.viewer-canvas{
+  background:#000;display:grid;place-items:center;min-height:0;
+}
+.viewer-canvas video{
+  width:100%;height:100%;object-fit:contain; /* locks AR visually */
+}
+.viewer-overlay{
+  position:absolute;top:8px;left:8px;font-size:10px;color:#888;
+}
+.transport{
+  display:flex;align-items:center;gap:6px;padding:0 8px;
+  background:#1c1c1e;border-top:1px solid #0c0c0d;
+}
+
+/* ===================== TIMELINE (authoritative bottom row) ===================== */
+/* Header row for controls + body with two columns: track headers | tracks plane */
+#timeline{
+  display:grid;grid-template-rows: 30px 1fr;
+  background:linear-gradient(#131314,#0f0f10);
+  border-top:1px solid var(--line);
+}
+#timeline .controls{
+  display:flex;align-items:center;gap:10px;padding:0 8px;font-size:11px;color:#bbb;
+  border-bottom:1px solid #141414;background:#1a1a1c;
+}
+#timeline .body{
+  display:grid;grid-template-columns: 180px 1fr;overflow:hidden;min-height:0;
+}
+#track-headers{
+  background:linear-gradient(#202022,#18181a);
+  border-right:1px solid var(--line);overflow:auto;
+}
+.track-header{
+  height:var(--trackH);display:flex;align-items:center;gap:6px;
+  padding:0 8px;color:var(--muted);border-bottom:1px solid var(--line);
+}
+.tracks{
+  position:relative;overflow:auto;background:
+    linear-gradient(#111 1px,transparent 1px) top left/100% var(--trackH),
+    linear-gradient(to right,#2a2a2e 1px,transparent 1px) top left/var(--pxPerSec) 100%;
+}
+.track{
+  height:var(--trackH);border-bottom:1px solid #1a1a1a;position:relative;
+}
+
+/* ===================== CLIPS ===================== */
+.clip{
+  position:absolute;top:6px;bottom:6px;border-radius:4px;
+  background:linear-gradient(#3576d6,#2559a4);color:#fff;font-size:10px;
+  padding:4px 6px;cursor:pointer;display:flex;align-items:center;
+}
+.clip.audio{ background:linear-gradient(#3b7a4b,#235a37); }
+.clip.selected{ outline:2px solid var(--accent); }
+.trim{ position:absolute;top:0;bottom:0;width:6px;cursor:ew-resize;opacity:0; }
+.clip:hover .trim{ opacity:1 }
+.trim.left{ left:0 } .trim.right{ right:0 }
+
+/* ===================== PLAYHEAD ===================== */
+#playhead{ position:absolute; top:-14px; left:200px; width:0; height:0;
+  border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:10px solid var(--accent); }
+#playhead-line{ position:absolute; top:0; bottom:0; width:2px; background:var(--accent); left:206px; }
+
+/* ===================== INSPECTOR ===================== */
+#inspector{
+  background:linear-gradient(#202022,#18181a);
+  border-left:1px solid var(--line);display:flex;flex-direction:column;min-width:0;
+}
+.inspector-header{
+  padding:8px 10px;font-size:11px;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--line);
+}
+.inspector-section{ padding:10px;border-bottom:1px solid #252525; }
+.inspector-row{ margin-bottom:8px }
+.inspector-row label{ display:block;font-size:10px;color:#999;margin-bottom:4px }
+.inspector-row input, .inspector-row select{ width:100%; background:#111; color:#ddd; border:1px solid #333; }
+
+/* ===================== BUTTON REUSE ===================== */
+button{ color:#ddd }
+</style>
+</head>
+
 <body>
 
-  <!-- Unified Top Bar -->
-  <div id="topbar">
-    <div class="top-left">
-      <button>Auto‑Cut</button>
-      <button>Export</button>
-    </div>
-    <div class="top-center">00:00:00:00</div>
-    <div class="top-right">
-      <button>Clean</button>
-      <button>Render</button>
-    </div>
+<!-- =============== TOP BAR (single unified) =============== -->
+<div id="topbar">
+  <div class="left">
+    <!-- Keep your tool IDs to avoid breaking JS -->
+    <button class="tool-btn active" id="toolSelect">⬆</button>
+    <button class="tool-btn" id="toolBlade">✂</button>
+    <button class="tool-btn" id="toolHand">✋</button>
+    <button class="tool-btn" id="toolZoom">🔍</button>
+
+    <button class="tool-btn active" id="snapBtn">🧲</button>
+
+    <button class="tool-btn" id="saveBtn">💾</button>
+    <button class="tool-btn" id="loadBtn">📂</button>
   </div>
 
-  <!-- Workspace -->
-  <div id="workspace">
+  <div class="center">00:00:00:00</div>
 
-    <!-- Browser -->
-    <aside id="browser">
-      <div class="panel-header">Browser</div>
-      <div class="panel-body">
-        <input type="file" multiple />
-        <div class="drop-hint">Drop media here</div>
-      </div>
-    </aside>
+  <div class="right">
+    <button class="tool-btn" id="exportBtn">Export</button>
+  </div>
+</div>
 
-    <!-- Viewers -->
-    <main id="viewers">
+<!-- =============== WORKSPACE (Browser | Viewers | Inspector) =============== -->
+<div id="app">
+  <!-- Browser -->
+  <aside id="browser">
+    <div class="browser-header">Browser</div>
+    <div id="drop-zone">Drop video here</div>
+    <div id="bin"></div>
+  </aside>
 
-      <!-- Source Viewer -->
+  <!-- Center: Dual Viewers stacked in a grid -->
+  <main id="center">
+    <div id="viewers">
+      <!-- Source viewer -->
       <section class="viewer">
-        <div class="viewer-header">Viewer</div>
-        <div class="viewer-surface">
-          <canvas id="sourceCanvas"></canvas>
+        <div class="viewer-header">Viewer · Source clip preview</div>
+        <div class="viewer-canvas" style="position:relative">
+          <video id="sourceVideo"></video>
+          <div class="viewer-overlay">VIEWER</div>
         </div>
-        <div class="viewer-transport">▶ ⏸ ⏹</div>
+        <div class="transport">
+          <button id="playSource">▶</button>
+        </div>
       </section>
 
-      <!-- Program Viewer -->
+      <!-- Program/Canvas viewer -->
       <section class="viewer">
-        <div class="viewer-header">Canvas</div>
-        <div class="viewer-surface">
-          <canvas id="programCanvas"></canvas>
+        <div class="viewer-header">Canvas · Sequence output</div>
+        <div class="viewer-canvas" style="position:relative">
+          <video id="programVideo"></video>
+          <div class="viewer-overlay">CANVAS</div>
         </div>
-        <div class="viewer-transport">▶ ⏸ ⏹</div>
+        <div class="transport">
+          <button id="playProgram">▶</button>
+        </div>
       </section>
+    </div>
+  </main>
 
-    </main>
+  <!-- Inspector -->
+  <aside id="inspector">
+    <div class="inspector-header">Inspector</div>
 
-    <!-- Inspector -->
-    <aside id="inspector">
-      <div class="panel-header">Inspector</div>
-      <div class="panel-body">
-        <!-- Inspector content injected by JS -->
-      </div>
-    </aside>
-
-  </div>
-
-  <!-- Timeline -->
-  <div id="timeline">
-
-    <div id="timeline-header">
-      <span>Snapping</span>
-      <span>Linked</span>
+    <div class="inspector-section" id="inspectorMain">
+      No selection
     </div>
 
-    <div id="timeline-body">
-      <div id="track-headers">
-        <div>V2</div>
-        <div>V1</div>
-        <div>A1</div>
+    <div class="inspector-section">
+      <div class="inspector-row" style="margin-bottom:6px;font-size:11px;color:#aaa">Export</div>
+      <div class="inspector-row">
+        <select id="exportPreset">
+          <option value="youtube">YouTube 1080p</option>
+          <option value="prores">ProRes 422</option>
+        </select>
       </div>
-
-      <div id="tracks">
-        <!-- Clips / playhead rendered here -->
+      <div class="inspector-row" style="display:flex;gap:6px">
+        <button id="startExport">Start Export</button>
+        <button id="cancelExport">Cancel</button>
+      </div>
+      <div class="inspector-row">
+        <div id="progressTrack" style="width:100%;height:8px;background:#333;border-radius:4px;overflow:hidden">
+          <div id="progressBar" style="height:100%;width:0%;background:var(--accent)"></div>
+        </div>
       </div>
     </div>
+  </aside>
+</div>
 
+<!-- =============== TIMELINE (authoritative bottom row) =============== -->
+<div id="timeline">
+  <div class="controls">
+    <span>Snapping</span>
+    <span>Linked</span>
   </div>
+
+  <div class="body">
+    <div id="track-headers">
+      <div class="track-header">V1</div>
+      <div class="track-header">A1</div>
+    </div>
+
+    <div class="tracks" id="tracks">
+      <!-- Playhead -->
+      <div id="playhead"></div>
+      <div id="playhead-line"></div>
+
+      <!-- Visual track lanes (same IDs your JS uses) -->
+      <div class="track" id="vTrack"></div>
+      <div class="track" id="aTrack"></div>
+    </div>
+  </div>
+</div>
+
+<!-- =============== YOUR ORIGINAL JS (kept), with a single-line fix explained below =============== -->
+<script>
+/* =========================================================
+   CORE STATE
+========================================================= */
+const FPS = 30;
+let currentTool = "select";
+let snapping = true;
+let playheadTime = 0;
+let playing = false;
+let clips = [];
+let selectedClip = null;
+let undoStack = [];
+let redoStack = [];
+let renderQueue = [];
+let activeJob = null;
+
+/* =========================================================
+   TOOL HANDLING
+========================================================= */
+function setTool(t){
+  currentTool = t;
+  document.body.className = "tool-" + t;
+  document.querySelectorAll(".tool-btn").forEach(b=>{
+    b.classList.toggle("active", b.id === "tool"+t.charAt(0).toUpperCase()+t.slice(1));
+  });
+}
+toolSelect.onclick = ()=>setTool("select");
+toolBlade.onclick = ()=>setTool("blade");
+toolHand.onclick = ()=>setTool("hand");
+toolZoom.onclick = ()=>setTool("zoom");
+document.addEventListener("keydown",e=>{
+  if(e.key==="a")setTool("select");
+  if(e.key==="b")setTool("blade");
+  if(e.key==="h")setTool("hand");
+  if(e.key==="z")setTool("zoom");
+});
+snapBtn.onclick = ()=>{
+  snapping = !snapping;
+  snapBtn.classList.toggle("active",snapping);
+};
+
+/* =========================================================
+   IMPORT   (** ONE-LINE FIX BELOW **)
+========================================================= */
+/* ORIGINAL BROKEN LINE:
+   drop-zone.onclick = () => { ... }
+   This parses as (drop - zone).onclick and throws at runtime, preventing *all* subsequent JS.
+   We fix it here by selecting the element explicitly. */
+document.getElementById("drop-zone").onclick = () => {
+  const input = document.createElement("input");
+  input.type="file";input.accept="video/*";input.multiple=true;
+  input.onchange = e =>{
+    [...e.target.files].forEach(f=>{
+      const src = URL.createObjectURL(f);
+      const el = document.createElement("div");
+      el.className="bin-item";
+      el.innerHTML=`<div class="bin-thumb">VID</div>${f.name}`;
+      el.draggable=true;
+      el.ondragstart=ev=>ev.dataTransfer.setData("src",src);
+      bin.appendChild(el);
+    });
+  };
+  input.click();
+};
+
+/* =========================================================
+   DROP TO TIMELINE
+========================================================= */
+vTrack.ondragover = e=>e.preventDefault();
+vTrack.ondrop = e=>{
+  const src=e.dataTransfer.getData("src");
+  const start=clips.length?clips[clips.length-1].start+clips[clips.length-1].dur:0;
+  const video={id:crypto.randomUUID(),type:"video",src,start,dur:3};
+  const audio={id:crypto.randomUUID(),type:"audio",src,start,dur:3,linked:video.id};
+  video.linked = audio.id;
+  clips.push(video,audio);
+  pushUndo();render();
+};
+
+/* =========================================================
+   RENDER
+========================================================= */
+function render(){
+  document.querySelectorAll(".clip,.transition").forEach(e=>e.remove());
+  clips.forEach(c=>{
+    const el=document.createElement("div");
+    el.className="clip"+(c.type==="audio"?" audio":"");
+    el.style.left=(c.start*100)+"px";
+    el.style.width=(c.dur*100)+"px";
+    el.innerHTML=`${c.type.toUpperCase()}
+      <div class="trim left"></div>
+      <div class="trim right"></div>`;
+    (c.type==="video"?vTrack:aTrack).appendChild(el);
+    el.onclick=(e)=>{
+      e.stopPropagation();
+      if(currentTool==="blade"){ bladeCut(c,e.offsetX/100); return; }
+      selectClip(c,el);
+    };
+  });
+}
+
+/* =========================================================
+   BLADE
+========================================================= */
+function bladeCut(c,t){
+  const cut=c.start+t;
+  if(cut<=c.start || cut>=c.start+c.dur)return;
+  pushUndo();
+  const right={...c,id:crypto.randomUUID(),start:cut,dur:c.start+c.dur-cut};
+  c.dur=cut-c.start;
+  clips.push(right); render();
+}
+
+/* =========================================================
+   SELECTION
+========================================================= */
+function selectClip(c,el){
+  selectedClip=c;
+  document.querySelectorAll(".clip").forEach(x=>x.classList.remove("selected"));
+  el.classList.add("selected");
+  inspectorMain.innerHTML=`<div>Clip</div>
+    <div class="inspector-row"><label>Start</label><input type="number" value="${c.start}"></div>
+    <div class="inspector-row"><label>Duration</label><input type="number" value="${c.dur}"></div>`;
+}
+
+/* =========================================================
+   UNDO
+========================================================= */
+function pushUndo(){
+  undoStack.push(JSON.stringify(clips));
+  redoStack.length=0;
+}
+document.addEventListener("keydown",e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==="z"){
+    if(!undoStack.length)return;
+    redoStack.push(JSON.stringify(clips));
+    clips=JSON.parse(undoStack.pop());render();
+  }
+});
+
+/* =========================================================
+   EXPORT QUEUE + PROGRESS
+========================================================= */
+function enqueueExport(){
+  const job={id:crypto.randomUUID(),progress:0,status:"rendering"};
+  activeJob=job; updateProgress(0);
+  const timer=setInterval(()=>{
+    job.progress+=Math.random()*10;
+    updateProgress(job.progress);
+    if(job.progress>=100){ clearInterval(timer); updateProgress(100); }
+  },300);
+}
+function updateProgress(p){ progressBar.style.width=Math.min(100,p)+"%"; }
+startExport.onclick=enqueueExport;
+cancelExport.onclick=()=>{progressBar.style.width="0%";};
+
+/* =========================================================
+   PROJECT SAVE / LOAD
+========================================================= */
+saveBtn.onclick=()=>{
+  const blob=new Blob([JSON.stringify({clips},null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="project.cutpro";a.click();
+};
+loadBtn.onclick=()=>{
+  const i=document.createElement("input");
+  i.type="file";i.accept=".cutpro,application/json";
+  i.onchange=e=>{
+    const r=new FileReader();
+    r.onload=()=>{clips=JSON.parse(r.result).clips;render();};
+    r.readAsText(e.target.files[0]);
+  };
+  i.click();
+};
+</script>
 
 </body>
-``
+</html>
