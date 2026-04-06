@@ -377,6 +377,12 @@ width: 100%;
 height: 100%;
 object-fit: cover;
 display: block;
+pointer-events: none;
+user-select: none;
+-webkit-user-drag: none;
+-moz-user-drag: none;
+-ms-user-drag: none;
+user-drag: none;
 }
 
 .bin-item-name {
@@ -384,6 +390,15 @@ flex: 1;
 overflow: hidden;
 text-overflow: ellipsis;
 white-space: nowrap;
+}
+
+/* Hide thumbnails when toggled */
+body.hide-thumbnails .bin-thumb {
+display: none;
+}
+
+body.hide-thumbnails .bin-item {
+padding-left: 12px;
 }
 
 /* ===================== CENTER (VIEWERS) ===================== */ 
@@ -1361,6 +1376,7 @@ transform: scale(0.98);
 <aside id="browser">
 <div class="browser-header">
 Browser
+<button class="close-panel-btn" id="toggle-thumbnails" title="Toggle thumbnails" style="right: 32px; font-size: 14px;">🎬</button>
 <button class="close-panel-btn" id="close-browser">×</button>
 </div>
 <div id="bin">
@@ -1521,8 +1537,10 @@ Inspector
 <div class="inspector-row">
 <label>Preset</label>
 <select id="exportPreset">
-<option value="youtube">YouTube 1080p</option> 
-<option value="prores" selected>ProRes 422</option> 
+<option value="youtube-webm">YouTube 1080p WebM (8 Mbps)</option> 
+<option value="youtube-mp4">YouTube 1080p MP4 (8 Mbps)</option>
+<option value="prores-webm" selected>High Quality WebM (50 Mbps)</option> 
+<option value="prores-mp4">High Quality MP4 (50 Mbps)</option>
 </select> 
 </div> 
 <div class="inspector-row"> 
@@ -1631,6 +1649,17 @@ const menuBtn = document.getElementById('mobile-menu-btn');
 const inspectorBtn = document.getElementById('mobile-inspector-btn');
 const closeBrowser = document.getElementById('close-browser');
 const closeInspector = document.getElementById('close-inspector');
+const toggleThumbnails = document.getElementById('toggle-thumbnails');
+
+// Thumbnail toggle
+let thumbnailsVisible = true;
+toggleThumbnails?.addEventListener('click', (e) => {
+e.stopPropagation();
+thumbnailsVisible = !thumbnailsVisible;
+document.body.classList.toggle('hide-thumbnails', !thumbnailsVisible);
+toggleThumbnails.style.opacity = thumbnailsVisible ? '1' : '0.5';
+toggleThumbnails.title = thumbnailsVisible ? 'Hide thumbnails' : 'Show thumbnails';
+});
 
 function updateMobileUI() {
 if (isMobile()) {
@@ -1736,6 +1765,24 @@ window.addEventListener('resize', handleResize);
 handleResize();
 })();
 
+// ===================== TIMELINE SCROLL SYNC =====================
+(function() {
+const trackHeaders = document.getElementById('track-headers');
+const trackLanes = document.getElementById('timeline-tracks');
+
+if (trackHeaders && trackLanes) {
+// Sync vertical scroll from lanes to headers
+trackLanes.addEventListener('scroll', () => {
+trackHeaders.scrollTop = trackLanes.scrollTop;
+});
+
+// Sync vertical scroll from headers to lanes (in case user scrolls headers)
+trackHeaders.addEventListener('scroll', () => {
+trackLanes.scrollTop = trackHeaders.scrollTop;
+});
+}
+})();
+
 // ===================== SOURCE VIEWER (LEFT) =====================
 
 (function(){
@@ -1832,7 +1879,7 @@ return v.toString(16);
 });
 }
 
-const TRACK_ORDER = ['v3', 'v2', 'v1', 'a1', 'a2', 'a3']; // Maximum possible tracks
+const TRACK_ORDER = ['v1', 'v2', 'v3', 'a1', 'a2', 'a3']; // Video tracks at top, audio at bottom
 const tl = {
 clips: [],
 timeline: [],
@@ -2961,7 +3008,7 @@ showInspectorFor(entry);
 });
 
 // Move clip - touch and mouse support
-let dragStartX, starts;
+let dragStartX, dragStartY, starts, originalTracks;
 function startDrag(e) {
 if (e.target.classList.contains('clip-handle')) return; 
 if (tl.tool==='blade'){ 
@@ -2977,13 +3024,20 @@ const targets = (tl.linkedSelection && entry.linkGroup)
 : [entry];
 
 starts = targets.map(t=>t.start);
+originalTracks = targets.map(t=>t.track);
 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 dragStartX = clientX;
+dragStartY = clientY;
 
 const onMove = (ev)=>{
 ev.preventDefault();
 const currentX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+const currentY = ev.touches ? ev.touches[0].clientY : ev.clientY;
 const dx = currentX - dragStartX;
+const dy = currentY - dragStartY;
+
+// Horizontal movement (time)
 const raw = Math.max(0, starts[0] + pxToSec(dx)); 
 const sn = snapTime(raw, entry.id); 
 const delta = sn.time - starts[0];
@@ -2993,6 +3047,31 @@ t.start = Math.max(0, starts[i] + delta);
 const dom = document.querySelector(`.clip[data-id="${t.id}"]`);
 if (dom) dom.style.left = secToPx(t.start)+'px'; 
 });
+
+// Vertical movement (track change)
+if (Math.abs(dy) > 10) { // Only if moved vertically
+const trackHeight = 48; // Approximate track height
+const trackOffset = Math.round(dy / trackHeight);
+const originalTrack = originalTracks[0];
+const trackType = originalTrack.charAt(0); // 'v' or 'a'
+const trackNum = parseInt(originalTrack.substring(1));
+const newTrackNum = Math.max(1, Math.min(3, trackNum + trackOffset));
+const newTrack = trackType + newTrackNum;
+
+// Only move if target track exists and is active
+if (tl.activeTracks.includes(newTrack)) {
+targets.forEach((t, i) => {
+const origType = originalTracks[i].charAt(0);
+const origNum = parseInt(originalTracks[i].substring(1));
+const newNum = Math.max(1, Math.min(3, origNum + trackOffset));
+const targetTrack = origType + newNum;
+if (tl.activeTracks.includes(targetTrack)) {
+t.track = targetTrack;
+}
+});
+renderTimeline(); // Re-render to show track change
+}
+}
 
 tl.seqDuration = Math.max(tl.seqDuration, Math.max(...targets.map(t=>t.start + t.duration)) + 5); 
 renderCanvasFrame(); 
@@ -3006,6 +3085,7 @@ document.removeEventListener('touchend', onEnd);
 const snapGuide = document.getElementById('snap-guide');
 if(snapGuide) snapGuide.style.display='none'; 
 drawRuler(); 
+renderTimeline(); // Final render after drag
 }; 
 
 document.addEventListener('mousemove', onMove); 
@@ -3444,6 +3524,18 @@ document.getElementById('tl-btn-add-audio')?.addEventListener('click', addAudioT
 // Initialize tracks on load
 initializeTracks();
 updateTrackButtons();
+
+// Debug: Log track initialization
+console.log('Tracks initialized:', tl.activeTracks);
+console.log('Video track count:', tl.videoTrackCount);
+console.log('Audio track count:', tl.audioTrackCount);
+
+// Ensure browser panel is visible on desktop (not mobile)
+const browser = document.getElementById('browser');
+if (browser && window.innerWidth > 768) {
+browser.style.display = 'flex'; // Make sure it's visible
+console.log('Browser panel set to visible');
+}
 })();
 
 /* =========================================================
@@ -3517,6 +3609,12 @@ generateThumbnail(probe, thumbContainer);
 }
 
 function generateThumbnail(videoElement, thumbContainer) {
+// Ensure video is ready
+if (!videoElement.videoWidth || !videoElement.videoHeight) {
+console.log('Video not ready for thumbnail');
+return;
+}
+
 // Seek to 1 second or 10% of duration for thumbnail
 const seekTime = Math.min(1, videoElement.duration * 0.1);
 videoElement.currentTime = seekTime;
@@ -3534,14 +3632,24 @@ canvas.height = thumbHeight;
 const ctx = canvas.getContext('2d');
 ctx.drawImage(videoElement, 0, 0, thumbWidth, thumbHeight);
 
-// Convert to image
+// Convert to image with proper attributes
 const img = document.createElement('img');
-img.src = canvas.toDataURL('image/jpeg', 0.7);
 img.className = 'bin-thumb-img';
+img.alt = 'Video thumbnail';
+img.style.pointerEvents = 'none'; // Prevent interaction
+img.style.userSelect = 'none'; // Prevent selection
+
+// Set source from canvas
+const dataURL = canvas.toDataURL('image/jpeg', 0.7);
+if (dataURL && dataURL.length > 100) { // Verify it's a valid image
+img.src = dataURL;
 
 // Replace emoji with actual thumbnail
 thumbContainer.textContent = '';
 thumbContainer.appendChild(img);
+} else {
+console.log('Invalid thumbnail data');
+}
 } catch (err) {
 console.log('Thumbnail generation failed:', err);
 }
@@ -4066,10 +4174,44 @@ progressText.textContent = 'Initializing export...';
 if (exportBtn) exportBtn.disabled = true;
 
 try {
-const preset = document.getElementById('exportPreset')?.value || 'youtube';
+const preset = document.getElementById('exportPreset')?.value || 'prores-webm';
 const width = 1920;
 const height = 1080;
 const fps = 30;
+
+// Preset configurations
+let mimeType, bitrate, fileExt, containerType;
+
+// Determine format and quality
+if (preset.includes('mp4')) {
+// MP4 / H.264
+mimeType = 'video/webm;codecs=vp9'; // Fallback
+containerType = 'video/mp4';
+fileExt = 'mp4';
+
+// Try H.264 if available
+if (MediaRecorder.isTypeSupported('video/mp4;codecs=h264')) {
+mimeType = 'video/mp4;codecs=h264';
+} else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
+mimeType = 'video/webm;codecs=h264';
+containerType = 'video/webm';
+fileExt = 'webm';
+}
+} else {
+// WebM / VP9
+mimeType = 'video/webm;codecs=vp9';
+containerType = 'video/webm';
+fileExt = 'webm';
+}
+
+// Set bitrate based on quality
+if (preset.includes('prores') || preset.includes('High Quality')) {
+bitrate = 50000000; // 50 Mbps for high quality
+} else {
+bitrate = 8000000; // 8 Mbps for YouTube
+}
+
+console.log('Export settings:', { preset, mimeType, bitrate, fileExt });
 
 // Create offscreen canvas
 const exportCanvas = document.createElement('canvas');
@@ -4081,13 +4223,15 @@ const duration = tl.seqDuration;
 const frameCount = Math.ceil(duration * fps);
 const frameTime = 1 / fps;
 
-// MediaRecorder setup
-const stream = exportCanvas.captureStream(fps);
+// CRITICAL: Use captureStream(0) for manual frame control
+// This tells the stream to only capture frames when we explicitly request them
+const stream = exportCanvas.captureStream(0);
+const videoTrack = stream.getVideoTracks()[0];
 const chunks = [];
 
 const mediaRecorder = new MediaRecorder(stream, {
-mimeType: 'video/webm;codecs=vp9',
-videoBitsPerSecond: 8000000
+mimeType: mimeType,
+videoBitsPerSecond: bitrate
 });
 
 mediaRecorder.ondataavailable = (e) => {
@@ -4095,11 +4239,11 @@ if (e.data.size > 0) chunks.push(e.data);
 };
 
 mediaRecorder.onstop = () => {
-const blob = new Blob(chunks, { type: 'video/webm' });
+const blob = new Blob(chunks, { type: containerType });
 const url = URL.createObjectURL(blob);
 const a = document.createElement('a');
 a.href = url;
-a.download = `cutpro-export-${Date.now()}.webm`;
+a.download = `cutpro-export-${preset}-${Date.now()}.${fileExt}`;
 a.click();
 URL.revokeObjectURL(url);
 
@@ -4110,33 +4254,57 @@ if (exportBtn) exportBtn.disabled = false;
 
 mediaRecorder.start();
 
-// Render each frame
-for (let frame = 0; frame < frameCount; frame++) {
-const t = frame * frameTime;
-const progress = Math.round((frame / frameCount) * 100);
+// Frame-accurate rendering loop
+async function renderFrame(frameIndex) {
+if (frameIndex >= frameCount) {
+// All frames rendered - stop recording
+mediaRecorder.stop();
+return;
+}
+
+const t = frameIndex * frameTime;
+const progress = Math.round((frameIndex / frameCount) * 100);
 
 if (progressBar) progressBar.style.width = progress + '%';
-if (progressText) progressText.textContent = `Rendering: ${progress}% (${frame}/${frameCount})`;
+if (progressText) progressText.textContent = `Rendering: ${progress}% (${frameIndex}/${frameCount})`;
 
+// Clear canvas
 exportCtx.fillStyle = '#000';
 exportCtx.fillRect(0, 0, width, height);
 
+// Get visible video clips at this time
 const visible = tl.timeline
 .filter(e => {
 const c = tl.clips.find(x => x.id === e.clipId);
-return c && c.type === 'video' && (t >= e.start && t <= e.start + e.duration);
+return c && c.type === 'video' && (t >= e.start && t < e.start + e.duration);
 })
 .sort((a,b) => (TRACK_ORDER.indexOf(a.track) - TRACK_ORDER.indexOf(b.track)));
 
+// Render each visible clip
 for (const entry of visible) {
 const clip = tl.clips.find(c => c.id === entry.clipId);
 const v = await ensureVideoEl(clip);
 if (!v || !isFinite(v.duration)) continue;
 
+// Calculate video time
 const mediaT = Math.min(v.duration, Math.max(0, t - entry.start + (entry.inPoint || 0)));
-v.currentTime = mediaT;
-await new Promise(res => setTimeout(res, 16));
 
+// Seek video to exact frame
+v.currentTime = mediaT;
+
+// Wait for video to actually seek
+await new Promise(resolve => {
+const checkSeek = () => {
+if (Math.abs(v.currentTime - mediaT) < 0.01 || v.readyState >= 2) {
+resolve();
+} else {
+setTimeout(checkSeek, 5);
+}
+};
+checkSeek();
+});
+
+// Calculate fade alpha
 let alpha = 1;
 const elapsed = t - entry.start;
 const remaining = entry.start + entry.duration - t;
@@ -4147,6 +4315,7 @@ if (entry.fadeOut > 0 && remaining < entry.fadeOut) {
 alpha = Math.min(alpha, remaining / entry.fadeOut);
 }
 
+// Apply color corrections
 const brightness = entry.brightness || 0;
 const contrast = entry.contrast || 0;
 const saturation = entry.saturation || 0;
@@ -4159,6 +4328,7 @@ if (saturation !== 0) filterStr += `saturate(${1 + saturation/100}) `;
 exportCtx.filter = filterStr.trim() || 'none';
 exportCtx.globalAlpha = Math.max(0, Math.min(1, alpha));
 
+// Draw video frame
 const vw = v.videoWidth || 0;
 const vh = v.videoHeight || 0;
 const rect = fitContain(vw, vh, width, height);
@@ -4169,10 +4339,21 @@ exportCtx.globalAlpha = 1;
 exportCtx.filter = 'none';
 }
 
-await new Promise(res => requestAnimationFrame(res));
+// CRITICAL: Request a new frame to be captured from the canvas
+// This is what makes frame-accurate export work
+if (videoTrack.requestFrame) {
+videoTrack.requestFrame();
 }
 
-mediaRecorder.stop();
+// Small delay to let MediaRecorder process the frame
+await new Promise(resolve => setTimeout(resolve, 1));
+
+// Render next frame
+renderFrame(frameIndex + 1);
+}
+
+// Start rendering from frame 0
+renderFrame(0);
 
 } catch (err) {
 console.error('Export failed:', err);
